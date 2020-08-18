@@ -1,5 +1,4 @@
 
-
 '''
 Code to...
 a) take in user input to determine data naming and file structure
@@ -205,6 +204,8 @@ while run_camera:
 
 print("COMPRESSING DATA")
 os.chdir(home_directory)
+
+# todo: log that we did this trial, double check if we are repeating trials based on the text input
 
 shutil.make_archive(zipfile, 'zip', folder_path)
 #shutil.make_archive(zipfile, 'zip', subject_name)
