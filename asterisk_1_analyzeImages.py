@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jul 11 07:10:18 2019
-
-@author: kartik (original), john (edits)
+@author: kartik (original), john (edits, cleaning)
 """
 import numpy as np
 import sys
@@ -20,8 +18,7 @@ import time
 
 ## === IMPORTANT ATTRIBUTES ===
 marker_side = 0.03
-
-test_name = 'test.csv'
+processing_freq = 1 #analyze every 1 image
 
 ## ============================
 
@@ -86,6 +83,24 @@ def angle_between(v1, v2):
     v2_u = unit_vector(v2)
     return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
+def pose_estimation_process(folder, image_tag, mtx_val, dist_val, init_corners, init_rvec, init_tvec ):
+    frame = cv2.imread(os.path.join(folder, image_tag))
+
+    next_rvec, next_tvec, next_corners = estimatePose(frame,marker_side, mtx_val, dist_val)
+    next_corners = next_corners[0].squeeze()
+
+    rel_angle  = angle_between(init_corners[0]-init_corners[2],next_corners[0]-next_corners[2])
+    rel_rvec, rel_tvec = relativePosition(init_rvec, init_tvec, next_rvec, next_tvec)
+
+    translation_val = np.round(np.linalg.norm(rel_tvec),4)
+    rotation_val = rel_angle*180/np.pi
+
+    rotM = np.zeros(shape=(3,3))
+    cv2.Rodrigues(rel_rvec, rotM, jacobian = 0)
+    ypr = cv2.RQDecomp3x3(rotM)
+
+    return rel_rvec, rel_tvec, translation, rotation, ypr
+
 #mtx = camera intrinsic matrix , dist =  distortion coefficients (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]])
 
 if __name__ == "__main__":
@@ -97,71 +112,56 @@ if __name__ == "__main__":
 
 #================ FILE PATH TO IMAGE FOLDER =====================
 
-    path = '/home/john/Documents/research'
-    image_folder = '/C'
+    subject_name = input("Enter which subject you want to process: ")
+    hand = input("Enter which hand you want to process: ")
+    trial_type = input("Enter what kind of asterisk you are processing: ")
+    dir_label = input("Enter which direction you want to process: ")
+    trial_num = input("Enter which trial number you want to process: ")
+
+    data_path = "data/" + subject_name + "_" + hand + "_" + dir_label + "_" + trial_type + "_" + trial_num + "/"
 
 #================================================================
 
-    frame = cv2.imread(os.path.join(path,image_folder,'left0000.jpg'))
-
-#================================================================
-
+    frame = cv2.imread(os.path.join(data_path,'left0000.jpg'))
     orig_rvec, orig_tvec, orig_corners = estimatePose(frame,marker_side, mtx, dist)
     orig_corners = orig_corners[0].squeeze()
+    print("Tag found in initial image.")
 
-    total = 0;
+    total = 0
     while(True):
         f = []
-#        path = '/home/kartik/Boeing/aruco/'
-#        image_folder = 'data/camera_images_v6'
-        counter = 0;
-        for (dirpath, dirnames, filenames) in os.walk(os.path.join(path,image_folder)):
+        counter = 0
+        for (dirpath, dirnames, filenames) in os.walk(data_path):
             f.extend(filenames)
             f.sort()
             break
 
-
         if len(f) == 0:
             time.sleep(0.5)
             continue
+
         else:
             for image_ in f:
                 if '.ini' in image_:
-                    os.remove(os.path.join(path,image_folder,image_))
-                    # print('removing'+image_)
+                    # camera configuration file, skip over
                     continue
 
-                #to control processing frequency
-#=========++==== CONTROL PROCESSING FREQUENCY HERE ==============
-                if np.mod(counter,5) > 0:
-#================================================================
+                if np.mod(counter, processing_freq) > 0:
                     counter += 1
-                    os.remove(os.path.join(path,image_folder,image_))
                     continue
 
                 try:
-                    frame = cv2.imread(os.path.join(path,image_folder,image_))
-                    next_rvec, next_tvec, next_corners = estimatePose(frame,marker_side, mtx, dist)
-                    next_corners = next_corners[0].squeeze()
-
-                    rel_angle  = angle_between(orig_corners[0]-orig_corners[2],next_corners[0]-next_corners[2])
-
-                    rel_rvec, rel_tvec = relativePosition(orig_rvec,orig_tvec, next_rvec,next_tvec)
-                    translation = np.round(np.linalg.norm(rel_tvec),4)
-                    rotation = rel_angle*180/np.pi
-                    rotM = np.zeros(shape=(3,3))
-                    cv2.Rodrigues(rel_rvec, rotM, jacobian = 0)
-                    ypr = cv2.RQDecomp3x3(rotM)
+                    rel_rvec, rel_tvec, translation, rotation, ypr = pose_estimation_process(data_path, image_, mtx, dist, orig_corners, orig_rvec, orig_tvec)
                 except:
-                    os.remove(os.path.join(path,image_folder,image_))
+                    print("Error with finding ARuco tag.")
                     continue
-
-                os.remove(os.path.join(path,image_folder,image_))
 
                 counter += 1
                 total +=1
 
                 rel_pose = np.concatenate((rel_rvec,rel_tvec))
+
+                #old, not sure what it is...
 #                point_ = []
 #                for i in dst_modified:
 ##                    for y in i:
@@ -170,14 +170,11 @@ if __name__ == "__main__":
                 # point_.append('/n')
                 # [point_.append(str(i)) for i in dst_modified]
 
-                #
-                file_name = test_name
+                data_file = subject_name + "_" + hand + "_" + dir_label + "_" + trial_type + "_" + trial_num + ".csv"
 
-
-                with open(os.path.join(path,file_name),'a') as fd:
-                # with open('document.csv','wb') as fd:
+                with open(data_file,'a') as fd:
                     for i in rel_pose:
-#                        for y in i:
+#                       for y in i:
                         fd.write(str(i[0]))
                         fd.write(',')
                         # print('here')
@@ -187,5 +184,6 @@ if __name__ == "__main__":
                     fd.write(str(rotation))
                     fd.write('\n')
 #                    print(rel_pose)
-				print('Completed ' + file_name)
-                print('Total: ' + str(total) +' Done '+image_)
+
+                print('Completed ' + file_name)
+                print('Total: ' + str(total) +' Done '+ image_)
