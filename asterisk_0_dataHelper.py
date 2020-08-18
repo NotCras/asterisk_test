@@ -63,7 +63,7 @@ trial_num = None
 #------------------------------------
 type_prompt = """
 WHAT TYPE OF TRIAL IS THIS
-(lowercase! ... :P)
+(lowercase!)
 
 Options ...
 """
@@ -71,6 +71,49 @@ type_options = ["none", "plus15", "minus15"]
 trial_type = None
 
 #------------------------------------
+def check_prev_settings():
+    try:
+        answer, lines = check_temp_file()
+    except:
+        print("Did not find previous settings. Continuing...")
+        answer = "n"
+
+    if answer is "y":
+        subject_name = lines[0]
+        hand = lines[1]
+
+    elif answer is "n":
+        subject_name = collect_prompt_data(
+            subject_name_prompt, subject_name_options)
+        hand = collect_prompt_data(hand_prompt, hand_options)
+
+        update_temp_file(subject_name, hand)
+
+    else:
+        quit()
+    
+    return subject_name, hand
+
+def check_temp_file():
+    with open('.asterisk_temp') as f:
+        print("Found previous settings.")
+        lines = [line.rstrip() for line in f]
+
+    if lines:
+        print("Previous settings:   " + lines[0] + ", " + lines[1])
+        answer = input("Is this still correct? [y/n/c]  ")
+    else:
+        answer = "n"
+
+    return answer, lines
+
+def update_temp_file(subject, hand):
+    with open(".asterisk_temp", 'w') as filetowrite:
+        filetowrite.write(subject + '\n')
+        filetowrite.write(hand)
+
+    print("Updated settings.")
+
 def collect_prompt_data(prompt, options):
     print(prompt)
     for opt in options:
@@ -123,8 +166,8 @@ def run_the_camera():
 #=========================================================================
 home_directory = Path(__file__).parent.absolute()
 
-subject_name = collect_prompt_data(subject_name_prompt, subject_name_options)
-hand = collect_prompt_data(hand_prompt, hand_options)
+subject_name, hand = check_prev_settings()
+
 dir_label = collect_prompt_data(dir_prompt, dir_options)
 trial_type = collect_prompt_data(type_prompt, type_options)
 trial_num = collect_prompt_data(trial_prompt, trial_options)
@@ -133,8 +176,10 @@ trial_num = collect_prompt_data(trial_prompt, trial_options)
 folder_path = subject_name + "/" + hand + "/" + dir_label + "/" + trial_type + "/" + trial_num + "/"
 zipfile = subject_name + "_" + hand + "_" + dir_label + "_" + trial_type + "_" + trial_num
 
+
 print("FOLDER PATH")
 print(folder_path)
+
 
 run_camera = True
 while run_camera:
@@ -155,8 +200,8 @@ while run_camera:
         shutil.rmtree(full_folder_path)
 
         if response == "cancel":
+            quit()
             break
-
 
 print("COMPRESSING DATA")
 os.chdir(home_directory)
@@ -165,7 +210,6 @@ shutil.make_archive(zipfile, 'zip', folder_path)
 #shutil.make_archive(zipfile, 'zip', subject_name)
 print("COMPLETED TRIAL")
 print(zipfile)
-
 
 #collect files
 
