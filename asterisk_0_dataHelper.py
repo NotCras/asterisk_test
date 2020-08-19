@@ -56,7 +56,7 @@ WHAT NUMBER TRIAL IS THIS
 
 Up to ...
 """
-trial_options = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+trial_options = ["1", "2", "3", "4", "5"] #, "6", "7", "8", "9", "10"]
 trial_num = None
 
 #------------------------------------
@@ -139,10 +139,12 @@ def collect_prompt_data(prompt, options):
 def run_the_camera():
     print("   ")
     print("Ready to run camera...")
-    input("Press <ENTER> to start the camera")
-    print("CAMERA STARTED")
     print("   ")
-    print("PRESS <SPACE> TO STOP CAMERA")
+    print("PRESS <SPACE> TO STOP CAMERA WHEN RUNNING")
+    print("   ")
+    input("Press <ENTER>, when ready, to start the camera")
+    print("CAMERA STARTED")
+    
 
     camera_cmd = "rosrun image_view image_saver image:=/camera/color/image_raw"
 
