@@ -50,18 +50,22 @@ def relativePosition(rvec1, tvec1, rvec2, tvec2):
 
 def estimatePose(frame, marker_side, mtx,dist):
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
+    gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_250) #                                        MAKE SURE YOU HAVE RIGHT ONE!!!!
     # detector parameters can be set here (List of detection parameters[3])
     parameters =  aruco.DetectorParameters_create()
     #parameters.adaptiveThreshConstant = 10
 
     corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
     if np.all(ids != None):
-
+        #print("Found a tag.")
         # estimate pose of each marker and return the values
         # rvet and tvec-different from camera coefficients
-        rvec, tvec = aruco.estimatePoseSingleMarkers(corners, marker_side, mtx, dist)
+        rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, marker_side, mtx, dist)
+
+    else:
+        print("Could not find marker in frame.")
+        quit()
 
     return rvec, tvec, corners
 
@@ -99,7 +103,7 @@ def pose_estimation_process(folder, image_tag, mtx_val, dist_val, init_corners, 
     cv2.Rodrigues(rel_rvec, rotM, jacobian = 0)
     ypr = cv2.RQDecomp3x3(rotM)
 
-    return rel_rvec, rel_tvec, translation, rotation, ypr
+    return rel_rvec, rel_tvec, translation_val, rotation_val, ypr
 
 #mtx = camera intrinsic matrix , dist =  distortion coefficients (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]])
 
@@ -114,11 +118,12 @@ if __name__ == "__main__":
 
     subject_name = input("Enter which subject you want to process: ")
     hand = input("Enter which hand you want to process: ")
-    trial_type = input("Enter what kind of asterisk you are processing: ")
     dir_label = input("Enter which direction you want to process: ")
+    trial_type = input("Enter what kind of asterisk you are processing: ")
     trial_num = input("Enter which trial number you want to process: ")
 
     data_path = "data/" + subject_name + "_" + hand + "_" + dir_label + "_" + trial_type + "_" + trial_num + "/"
+    print(data_path)
 
 #================================================================
 
@@ -128,14 +133,15 @@ if __name__ == "__main__":
     print("Tag found in initial image.")
 
     total = 0
-    while(True):
-        f = []
-        counter = 0
-        for (dirpath, dirnames, filenames) in os.walk(data_path):
-            f.extend(filenames)
-            f.sort()
-            break
 
+    f = []
+    counter = 0
+    for (dirpath, dirnames, filenames) in os.walk(data_path):
+        f.extend(filenames)
+        f.sort()
+        break
+
+    while(True):
         if len(f) == 0:
             time.sleep(0.5)
             continue
@@ -143,6 +149,7 @@ if __name__ == "__main__":
         else:
             for image_ in f:
                 if '.ini' in image_:
+                    print("Configuration file found. Skipping over.")
                     # camera configuration file, skip over
                     continue
 
@@ -152,8 +159,9 @@ if __name__ == "__main__":
 
                 try:
                     rel_rvec, rel_tvec, translation, rotation, ypr = pose_estimation_process(data_path, image_, mtx, dist, orig_corners, orig_rvec, orig_tvec)
-                except:
+                except Exception as e: 
                     print("Error with finding ARuco tag.")
+                    print(e)
                     continue
 
                 counter += 1
@@ -185,5 +193,7 @@ if __name__ == "__main__":
                     fd.write('\n')
 #                    print(rel_pose)
 
-                print('Completed ' + file_name)
                 print('Total: ' + str(total) +' Done '+ image_)
+
+            print('Completed ' + data_file)
+            break
