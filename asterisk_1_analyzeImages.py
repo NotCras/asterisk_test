@@ -195,5 +195,6 @@ if __name__ == "__main__":
 
                 print('Total: ' + str(total) +' Done '+ image_)
 
+            print("          ")
             print('Completed ' + data_file)
             break
