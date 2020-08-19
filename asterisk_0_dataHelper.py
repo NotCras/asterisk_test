@@ -144,7 +144,6 @@ def run_the_camera():
     print("   ")
     input("Press <ENTER>, when ready, to start the camera")
     print("CAMERA STARTED")
-    
 
     camera_cmd = "rosrun image_view image_saver image:=/camera/color/image_raw"
 
@@ -190,11 +189,12 @@ while run_camera:
 
     run_the_camera()
 
+    print("reminder: " + zipfile)
     response = input("Are you happy with this data? [yes/no/cancel] : ")
 
     if response == "yes":
         break
-    else:
+    else: #todo: doesn't actually check for no right now... leaving as is for now
         print("DELETING DATA")
         full_folder_path = Path.cwd()
         print(full_folder_path)
@@ -208,6 +208,7 @@ print("COMPRESSING DATA")
 os.chdir(home_directory)
 
 # todo: log that we did this trial, double check if we are repeating trials based on the text input
+# note: currently script will error out if you enter the info for an existing trial... keeping as is
 
 shutil.make_archive(zipfile, 'zip', folder_path)
 #shutil.make_archive(zipfile, 'zip', subject_name)
