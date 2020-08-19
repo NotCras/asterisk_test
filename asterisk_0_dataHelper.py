@@ -77,11 +77,11 @@ def check_prev_settings():
         print("Did not find previous settings. Continuing...")
         answer = "n"
 
-    if answer is "y":
+    if answer == "y":
         subject_name = lines[0]
         hand = lines[1]
 
-    elif answer is "n":
+    elif answer == "n":
         subject_name = collect_prompt_data(
             subject_name_prompt, subject_name_options)
         hand = collect_prompt_data(hand_prompt, hand_options)
@@ -172,7 +172,7 @@ trial_type = collect_prompt_data(type_prompt, type_options)
 trial_num = collect_prompt_data(trial_prompt, trial_options)
 
 
-folder_path = subject_name + "/" + hand + "/" + dir_label + "/" + trial_type + "/" + trial_num + "/"
+folder_path = "data/" + subject_name + "/" + hand + "/" + dir_label + "/" + trial_type + "/" + trial_num + "/"
 zipfile = subject_name + "_" + hand + "_" + dir_label + "_" + trial_type + "_" + trial_num
 
 
