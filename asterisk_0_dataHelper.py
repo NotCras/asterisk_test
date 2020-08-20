@@ -47,6 +47,7 @@ ENTER DIRECTION OF CURRENT TRIAL
 Possible options:
 """
 dir_options = ["a", "b", "c", "d", "e", "f", "g", "h", "cw", "ccw"]
+dir_options_no_rot = ["a", "b", "c", "d", "e", "f", "g", "h"]
 dir_label = None
 
 #------------------------------------
@@ -68,6 +69,10 @@ Options ...
 """
 type_options = ["none", "plus15", "minus15"]
 trial_type = None
+
+#------------------------------------
+check_prompt = "Are you happy with this data? : "
+check_options = ["yes", "no", "cancel"]
 
 #------------------------------------
 def check_prev_settings():
@@ -168,8 +173,13 @@ home_directory = Path(__file__).parent.absolute()
 
 subject_name, hand = check_prev_settings()
 
-dir_label = collect_prompt_data(dir_prompt, dir_options)
 trial_type = collect_prompt_data(type_prompt, type_options)
+
+if trial_type == "none":
+    dir_label = collect_prompt_data(dir_prompt, dir_options)
+else:
+    dir_label = collect_prompt_data(dir_prompt, dir_options_no_rot)
+
 trial_num = collect_prompt_data(trial_prompt, trial_options)
 
 
@@ -190,11 +200,11 @@ while run_camera:
     run_the_camera()
 
     print("reminder: " + zipfile)
-    response = input("Are you happy with this data? [yes/no/cancel] : ")
+    response = collect_prompt_data(check_prompt, check_options)
 
     if response == "yes":
         break
-    else: #todo: doesn't actually check for no right now... leaving as is for now
+    else: 
         print("DELETING DATA")
         full_folder_path = Path.cwd()
         print(full_folder_path)
