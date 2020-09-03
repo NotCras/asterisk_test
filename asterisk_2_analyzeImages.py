@@ -22,14 +22,12 @@ processing_freq = 1 #analyze every 1 image
 
 ## ============================
 
-
 def inversePerspective(rvec, tvec):
     R, _ = cv2.Rodrigues(rvec)
     R = np.matrix(R).T
     invTvec = np.dot(-R, np.matrix(tvec))
     invRvec, _ = cv2.Rodrigues(R)
     return invRvec, invTvec
-
 
 def relativePosition(rvec1, tvec1, rvec2, tvec2):
 
@@ -46,7 +44,6 @@ def relativePosition(rvec1, tvec1, rvec2, tvec2):
     composedTvec = composedTvec.reshape((3, 1))
 
     return composedRvec, composedTvec
-
 
 def estimatePose(frame, marker_side, mtx,dist):
 

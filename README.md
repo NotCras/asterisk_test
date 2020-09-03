@@ -9,6 +9,7 @@ Dependencies to run all of the scripts are:
 - opencv (with aruco package)
 - curtsies
 - keyboard
+- matplotlib
 
 Install with pip.
 
@@ -26,10 +27,12 @@ I made the prompts file to help clean up the data helper file.
 ---
 
 
-### step 1 - data extraction
+### step 1 - data extraction and trial viewing
 I made this step to extract the zips that I downloaded from box. This script is wired to grab the zip files in `asterisk_test_folder/[sub_name]/[hand]`. 
 
 It will extract the files to a folder named `viz/`. Inside are folders named for each trial.
+
+The viewImage script will look for data in the `viz` folder and play it back using matplotlib.
 
 
 ---
