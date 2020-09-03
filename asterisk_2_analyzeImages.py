@@ -65,7 +65,7 @@ def estimatePose(frame, marker_side, mtx,dist):
 
     else:
         print("Could not find marker in frame.")
-        quit()
+        #quit()
 
     return rvec, tvec, corners
 
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     trial_type = input("Enter what kind of asterisk you are processing: ")
     trial_num = input("Enter which trial number you want to process: ")
 
-    data_path = "data/" + subject_name + "_" + hand + "_" + dir_label + "_" + trial_type + "_" + trial_num + "/"
+    data_path = "viz/" + subject_name + "_" + hand + "_" + dir_label + "_" + trial_type + "_" + trial_num + "/"
     print(data_path)
 
 #================================================================
@@ -154,7 +154,6 @@ if __name__ == "__main__":
                     continue
 
                 if np.mod(counter, processing_freq) > 0:
-                    counter += 1
                     continue
 
                 try:
@@ -162,6 +161,7 @@ if __name__ == "__main__":
                 except Exception as e: 
                     print("Error with finding ARuco tag.")
                     print(e)
+                    counter += 1
                     continue
 
                 counter += 1
@@ -169,18 +169,11 @@ if __name__ == "__main__":
 
                 rel_pose = np.concatenate((rel_rvec,rel_tvec))
 
-                #old, not sure what it is...
-#                point_ = []
-#                for i in dst_modified:
-##                    for y in i:
-#                    point_.append(str(i))
-
-                # point_.append('/n')
-                # [point_.append(str(i)) for i in dst_modified]
 
                 data_file = subject_name + "_" + hand + "_" + dir_label + "_" + trial_type + "_" + trial_num + ".csv"
+                csv_loc = "csv/" + data_file
 
-                with open(data_file,'a') as fd:
+                with open(csv_loc,'a') as fd:
                     for i in rel_pose:
 #                       for y in i:
                         fd.write(str(i[0]))
@@ -197,4 +190,5 @@ if __name__ == "__main__":
 
             print("          ")
             print('Completed ' + data_file)
+            print("Finished: " + str(total) + "/" + str(counter) )
             break

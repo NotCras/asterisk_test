@@ -6,6 +6,7 @@ sage/
 zips/
 asterisk_test_data/
 viz/
-__pychache__/
+csv/
+__pycache__/
 *.zip
 *.csv
