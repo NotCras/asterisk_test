@@ -15,9 +15,9 @@ e) compress the data into a zip file
 
 '''
 
-import os, shutil, keyboard, subprocess
-from curtsies import Input
-from pathlib import Path
+import os, shutil, keyboard, subprocess 
+from curtsies import Input 
+from pathlib import Path 
 import asterisk_0_prompts as prompts 
 
 #------------------------------------
@@ -31,7 +31,7 @@ trial_type = None
 #------------------------------------
 def check_prev_settings():
     try:
-        answer, type_ans, lines = check_temp_file()
+        answer, lines = check_temp_file()
     except:
         print("Did not find previous settings. Continuing...")
         answer = "n"
@@ -40,11 +40,14 @@ def check_prev_settings():
         subject_name = lines[0]
         hand = lines[1]
 
-        print("Are you still doing this asterisk type: " + lines[2])
+        print("Previous asterisk type: " + lines[2])
         type_ans = input("Is this still correct? [y/n/c]  ")
 
         if(type_ans == "y"):
-            pass
+            trial_type = lines[2]
+        else:
+            print("Then please enter the new asterisk type.")
+            trial_type = collect_prompt_data(prompts.type_prompt, prompts.type_options)
 
     elif answer == "n":
         subject_name = collect_prompt_data(
@@ -52,13 +55,13 @@ def check_prev_settings():
         hand = collect_prompt_data(prompts.hand_prompt, prompts.hand_options)
         trial_type = "none" #if we are starting a new hand, we will definitely start with none
 
-        update_temp_file(subject_name, hand, trial_type)
+        
         print("Set trial type to none because new hand.")
 
     else:
         quit()
-
-    collect_prompt_data(prompts.type_prompt, prompts.type_options)
+    
+    update_temp_file(subject_name, hand, trial_type)
     
     return subject_name, hand, trial_type
 
@@ -73,14 +76,19 @@ def check_temp_file():
 
     else:
         answer = "n"
-        type_ans = "n"
 
-    return answer,type_ans, lines
+    # if answer == 'y':
+    #     #are you still doing the same type?
+    #     print("Previous type of asterisk: " + lines[2])
+    #     type_ans = input("Is this still correct? [y/n/c]  ")
 
-def update_temp_file(subject, hand):
+    return answer, lines
+
+def update_temp_file(subject, hand, trial):
     with open(".asterisk_temp", 'w') as filetowrite:
         filetowrite.write(subject + '\n')
-        filetowrite.write(hand)
+        filetowrite.write(hand + '\n')
+        filetowrite.write(trial)
 
     print("Updated settings.")
 
@@ -142,7 +150,7 @@ if __name__ == "__main__":
 
     subject_name, hand, trial_type = check_prev_settings()
 
-    trial_type = collect_prompt_data(prompts.type_prompt, prompts.type_options)
+    #trial_type = 
 
     if trial_type == "none":
         dir_label = collect_prompt_data(
