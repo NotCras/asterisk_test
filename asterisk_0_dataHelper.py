@@ -18,66 +18,20 @@ e) compress the data into a zip file
 import os, shutil, keyboard, subprocess
 from curtsies import Input
 from pathlib import Path
+import asterisk_0_prompts as prompts 
 
 #------------------------------------
-subject_name_prompt = """
-ENTER SUBJECTS NAME
-(lowercase!)
 
-Possible options:
-"""
-subject_name_options = ["john", "josh", "sage", "garth"]
 subject_name = None
-
-#------------------------------------
-hand_prompt = """
-ENTER HAND YOU ARE USING FOR THIS TRIAL
-(lowercase!)
-
-Possible options:
-"""
-hand_options = ["human", "barrett", "m2stiff", "m2active", "modelo", "modelk", "basic", "modelvf", "2v2", "2v3", "3v3"]
 hand = None
-
-#------------------------------------
-dir_prompt = """
-ENTER DIRECTION OF CURRENT TRIAL
-(lowercase!)
-
-Possible options:
-"""
-dir_options = ["a", "b", "c", "d", "e", "f", "g", "h", "cw", "ccw"]
-dir_options_no_rot = ["a", "b", "c", "d", "e", "f", "g", "h"]
 dir_label = None
-
-#------------------------------------
-trial_prompt = """
-WHAT NUMBER TRIAL IS THIS
-(lowercase! ... :P)
-
-Up to ...
-"""
-trial_options = ["1", "2", "3", "4", "5"] #, "6", "7", "8", "9", "10"]
 trial_num = None
-
-#------------------------------------
-type_prompt = """
-WHAT TYPE OF TRIAL IS THIS
-(lowercase!)
-
-Options ...
-"""
-type_options = ["none", "plus15", "minus15"]
 trial_type = None
-
-#------------------------------------
-check_prompt = "Are you happy with this data? : "
-check_options = ["yes", "no", "cancel"]
 
 #------------------------------------
 def check_prev_settings():
     try:
-        answer, lines = check_temp_file()
+        answer, type_ans, lines = check_temp_file()
     except:
         print("Did not find previous settings. Continuing...")
         answer = "n"
@@ -86,17 +40,27 @@ def check_prev_settings():
         subject_name = lines[0]
         hand = lines[1]
 
+        print("Are you still doing this asterisk type: " + lines[2])
+        type_ans = input("Is this still correct? [y/n/c]  ")
+
+        if(type_ans == "y"):
+            pass
+
     elif answer == "n":
         subject_name = collect_prompt_data(
-            subject_name_prompt, subject_name_options)
-        hand = collect_prompt_data(hand_prompt, hand_options)
+            prompts.subject_name_prompt, prompts.subject_name_options)
+        hand = collect_prompt_data(prompts.hand_prompt, prompts.hand_options)
+        trial_type = "none" #if we are starting a new hand, we will definitely start with none
 
-        update_temp_file(subject_name, hand)
+        update_temp_file(subject_name, hand, trial_type)
+        print("Set trial type to none because new hand.")
 
     else:
         quit()
+
+    collect_prompt_data(prompts.type_prompt, prompts.type_options)
     
-    return subject_name, hand
+    return subject_name, hand, trial_type
 
 def check_temp_file():
     with open('.asterisk_temp') as f:
@@ -106,10 +70,12 @@ def check_temp_file():
     if lines:
         print("Previous settings:   " + lines[0] + ", " + lines[1])
         answer = input("Is this still correct? [y/n/c]  ")
+
     else:
         answer = "n"
+        type_ans = "n"
 
-    return answer, lines
+    return answer,type_ans, lines
 
 def update_temp_file(subject, hand):
     with open(".asterisk_temp", 'w') as filetowrite:
@@ -164,68 +130,77 @@ def run_the_camera():
                     a.terminate()
                     print("KILLING CAMERA PROCESS")
                     waiting = False
+
             break
+
 
 #=========================================================================
 #============================ SCRIPT START ===============================
 #=========================================================================
-home_directory = Path(__file__).parent.absolute()
+if __name__ == "__main__":
+    home_directory = Path(__file__).parent.absolute()
 
-subject_name, hand = check_prev_settings()
+    subject_name, hand, trial_type = check_prev_settings()
 
-trial_type = collect_prompt_data(type_prompt, type_options)
+    trial_type = collect_prompt_data(prompts.type_prompt, prompts.type_options)
 
-if trial_type == "none":
-    dir_label = collect_prompt_data(dir_prompt, dir_options)
-else:
-    dir_label = collect_prompt_data(dir_prompt, dir_options_no_rot)
+    if trial_type == "none":
+        dir_label = collect_prompt_data(
+            prompts.dir_prompt, prompts.dir_options)
+    else:
+        dir_label = collect_prompt_data(
+            prompts.dir_prompt, prompts.dir_options_no_rot)
 
-trial_num = collect_prompt_data(trial_prompt, trial_options)
-
-
-folder_path = "data/" + subject_name + "/" + hand + "/" + dir_label + "/" + trial_type + "/" + trial_num + "/"
-zipfile = subject_name + "_" + hand + "_" + dir_label + "_" + trial_type + "_" + trial_num
-
-
-print("FOLDER PATH")
-print(folder_path)
+    trial_num = collect_prompt_data(
+        prompts.trial_prompt, prompts.trial_options)
 
 
-run_camera = True
-while run_camera:
-    os.chdir(home_directory)
-    Path(folder_path).mkdir(parents=True)#, exist_ok=True)
-    os.chdir(folder_path)
+    folder_path = "data/" + subject_name + "/" + hand + "/" + dir_label + "/" + trial_type + "/" + trial_num + "/"
+    zipfile = subject_name + "_" + hand + "_" + dir_label + "_" + trial_type + "_" + trial_num
 
-    run_the_camera()
 
-    print("reminder: " + zipfile)
-    response = collect_prompt_data(check_prompt, check_options)
+    print("FOLDER PATH")
+    print(folder_path)
 
-    if response == "yes":
-        break
-    else: 
-        print("DELETING DATA")
-        full_folder_path = Path.cwd()
-        print(full_folder_path)
-        shutil.rmtree(full_folder_path)
 
-        if response == "cancel":
-            quit()
+    run_camera = True
+    while run_camera:
+        os.chdir(home_directory)
+        Path(folder_path).mkdir(parents=True)#, exist_ok=True)
+        os.chdir(folder_path)
+
+        run_the_camera()
+
+        print(" ")
+        print("reminder: " + zipfile)
+        print(" ")
+        response = collect_prompt_data(
+            prompts.check_prompt, prompts.check_options)
+
+        if response == "yes":
             break
+        else: 
+            print("DELETING DATA")
+            full_folder_path = Path.cwd()
+            print(full_folder_path)
+            shutil.rmtree(full_folder_path)
 
-print("COMPRESSING DATA")
-os.chdir(home_directory)
+            if response == "cancel":
+                quit()
+                break
 
-# todo: log that we did this trial, double check if we are repeating trials based on the text input
-# note: currently script will error out if you enter the info for an existing trial... keeping as is
+    print("COMPRESSING DATA")
+    os.chdir(home_directory)
 
-shutil.make_archive(zipfile, 'zip', folder_path)
-#shutil.make_archive(zipfile, 'zip', subject_name)
-print("COMPLETED TRIAL")
-print(zipfile)
+    # todo: log that we did this trial, double check if we are repeating trials based on the text input
+    # note: currently script will error out if you enter the info for an existing trial... keeping as is
 
-#collect files
+    shutil.make_archive(zipfile, 'zip', folder_path)
+    #shutil.make_archive(zipfile, 'zip', subject_name)
+    print("COMPLETED TRIAL")
+    print(zipfile)
 
-    
+    #collect files
+
+        
 

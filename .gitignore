@@ -4,5 +4,8 @@ john/
 garth/
 sage/
 zips/
+asterisk_test_data/
+viz/
+__pychache__/
 *.zip
 *.csv
