@@ -9,9 +9,19 @@ This file will...
 """
 
 import csv
+import pandas as pd
 
-def normalize_data(val, hand_span):
-    return val / hand_span
+def convert_to_mm(val):
+    return val * 1000 #TODO: make it only return a certain number of sig figs
+
+def normalize_vertical_data(val, depth):
+    return val / depth
+
+def normalize_horizontal_data(val, span):
+    return val / depth
+
+def normalize_diagonal_data(val, span, depth):
+    pass
 
 def filter_data(data):
     #moving average
@@ -19,19 +29,6 @@ def filter_data(data):
 
     return filtered_data
 
-def remove_clusters(data):
-    #remove clusters
-    declustered_data = data
-
-    return declustered_data
-
-def resample_data(data):
-    #resample data
-    resampled_data = data
-
-    return resampled_data
-
 
 if __name__ == "__main__":
-
-pass
+    pass
