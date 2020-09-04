@@ -14,8 +14,8 @@ ENTER HAND YOU ARE USING FOR THIS TRIAL
 
 Possible options:
 """
-hand_options = ["human", "barrett", "m2-passive", "m2-active",
-                "modelo", "modelk", "basic", "modelvf", "2v2", "2v3", "3v3"]
+hand_options = ["human", "basic",  "m2stiff", "m2active",
+                "2v2", "3v3", "2v3", "barrett", "modelvf"]  # "modelo", "modelk",
 
 #------------------------------------
 dir_prompt = """
