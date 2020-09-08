@@ -6,7 +6,7 @@ Resources for running the asterisk test.
 This uses python 3. 
 
 Dependencies to run all of the scripts are:
-- opencv (with aruco package)
+- opencv ( opencv-contrib-python )
 - curtsies
 - keyboard
 - matplotlib
@@ -42,7 +42,15 @@ Contains the code to analyze each image for the aruco tag. All aruco tag locatio
 
 Generates csv file in `csv/` folder. (I know, lots of folders but I want the data for every step just in case something goes wrong)
 
-**csv columns**: roll, pitch, yaw, x, y, z, magnitude of rotation from initial pose, magnitude of translation from initial pose
+**csv columns**: 
+1. roll (radians)
+2. pitch (radians)
+3. yaw (radians)
+4. x (meters)
+5. y (meters)
+6. z (meters)
+7. magnitude of translation relative to initial pose
+8. magnitude of rotation relative to initial pose (in deg)
 
 ---
 
