@@ -37,7 +37,7 @@ if __name__ == "__main__":
     hand_spans = dict()
     hand_depths = dict()
 
-    print("LOADING HAND DIMENSIONS")
+    print("LOADING HAND MEASUREMENTS")
     with open(".hand_dimensions") as csv_file:
         csv_reader_hands = csv.reader(csv_file, delimiter=',')
         #populating dictionaries with dimensions
@@ -79,41 +79,50 @@ if __name__ == "__main__":
 
                 total_path = folder_path + file_name
                 
-                print(" ")
-                print("READ IN DATA CSV")
-                df = pd.read_csv(total_path, names=["roll", "pitch", "yaw", "x", "y", "z", "tmag", "rmag"])
+                #print(" ")
+                print("READING NEW FILE")
 
-                print(" ")
-                print("CONVERT M TO MM")
+                try:
+                    df = pd.read_csv(total_path, names=[
+                                     "roll", "pitch", "yaw", "x", "y", "z", "tmag", "rmag"])
+
+                except:
+                    print("Didn't work: " + total_path)
+                    continue
+
+                #print(" ")
+                #print("CONVERT M TO MM")
                 #convert m to mm in translational data
                 df = df * [1, 1, 1, 1000, 1000, 1000, 1000, 1]
                 df = df.round(4)
 
-                print(" ")
-                print("NORMALIZE DATA BY HAND DIMENSION")
-                print(f"Hand span: {hand_spans[hand]}")
-                print(f"Hand depth: {hand_depths[hand]}")
+                #print(" ")
+                #print("NORMALIZE DATA BY HAND DIMENSION")
+                #print(f"Hand span: {hand_spans[hand]}")
+                #print(f"Hand depth: {hand_depths[hand]}")
                 #normalize translational data by hand span
                 df = df / [1, 1, 1, #orientation data
-                    hand_spans[hand] * 0.5, #x
+                    hand_spans[hand], #x
                     hand_depths[hand], #y
                     1, #z - doesn't matter
                     1, #translational magnitude - don't use
                     1]
                 df = df.round(4)
 
-                print(" ")
-                print("FILTER DATA WITH MOVING AVERAGE")
+                #print(" ")
+                #print("FILTER DATA WITH MOVING AVERAGE")
                 #filter the data, by column
                 rolling_window_size = 15
                 df["f_x"] = df["x"].rolling(window=rolling_window_size).mean()
                 df["f_y"] = df["y"].rolling(window=rolling_window_size).mean()
                 df["f_rot_mag"] = df["rmag"].rolling(window=rolling_window_size).mean() #TODO: FILL IN THE NaN spots with values from unfiltered section
                 df = df.round(4)
+                
+                print("DATA CONDITIONING COMPLETE.")
 
                 #store in a new file
                 print("GENERATING FILE FOR: " + file_name)
                 new_file_name = "filtered/filt_" + file_name 
-                df.to_csv(new_file_name, index=True, columns = ["f_x", "f_y", "f_rot_mag"])
-                print("COMPLETED!")
+                df.to_csv(new_file_name, index=True, columns = ["x", "y", "rmag", "f_x", "f_y", "f_rot_mag"])
+                #print("FILE COMPLETED!")
 
