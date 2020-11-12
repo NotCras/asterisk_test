@@ -49,7 +49,7 @@ def plot_data(df):
 
     #plot data points separately to show angle error with marker size
     for n in range(len(data_x)):
-        plt.plot(data_x[n], data_y[n], 'r.', alpha=0.5, markersize=5*theta[n]) #rn having difficulty doing marker size in a batch, so plotting each point separately 
+        plt.plot(data_x[n], data_y[n], 'r.', alpha=0.5, markersize=3*theta[n]) #rn having difficulty doing marker size in a batch, so plotting each point separately 
     
     max_x = max(data_x)
     max_y = max(data_y)
@@ -62,14 +62,15 @@ def plot_data(df):
     plt.ylabel('Y')
     plt.title('Path of Object')
     #plt.grid()
-    plt.savefig(file_name + "plotted")
-
     
     plt.xticks(np.linspace(round_half_down(min_x, decimals=2), round_half_up(max_x, decimals=2), 10), rotation=30)
+    #plt.xticks(np.linspace(0, round_half_up(max_y, decimals=2), 10), rotation=30) #gives a realistic view of what the path looks like
     plt.yticks(np.linspace(0, round_half_up(max_y, decimals=2), 10))
 
     #plt.xlim(0., 0.5)
     #plt.ylim(0., 0.5)
+
+    plt.savefig("plot4_" + file_name + ".jpg", format='jpg')
     plt.show()
 
 

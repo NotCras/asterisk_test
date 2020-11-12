@@ -10,3 +10,6 @@ csv/
 __pycache__/
 *.zip
 *.csv
+*.png
+*.jpg
+*.jpeg
