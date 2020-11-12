@@ -14,25 +14,60 @@ import numpy as np
 import asterisk_0_prompts as prompts
 import matplotlib.pyplot as plt
 
-folder_path = "filtered/"
-file_name = "filt_" + "josh_2v2_a_none_1" + ".csv"
-
-total_path = folder_path + file_name
-print(total_path)
-
-df = pd.read_csv(total_path, names=[
-    "x", "y", "rmag", "f_x", "f_y","f_rot_mag"],
-    skip_blank_lines=True,
+def get_data(path_to_data):
+    df = pd.read_csv(total_path, 
+        #names=["x", "y", "rmag", "f_x", "f_y", "f_rot_mag"],
+        skip_blank_lines=True
     )
 
-df.dropna()
+    df_numeric = df.apply( pd.to_numeric )
 
-#plt.scatter([1.5,2.1,3.2], [1.75,2.0,3.9], marker='o', s=[5,30,60])
-print(df["f_x"])
-plt.plot(df["f_x"].to_numpy(), df["f_y"].to_numpy())#, marker='o', s=df["f_rot_mag"].to_numpy() )
+    df_numeric.columns = ["row", "x", "y", "rmag", "f_x", "f_y", "f_rot_mag"]
+    #df_numeric = pd.to_numeric(df) #data comes in as a str?
 
-plt.xlabel('x')
-plt.ylabel('y')
-#plt.xlim(0, 100)
-#plt.ylim(0, 5)
-plt.show()
+    return df_numeric
+
+def plot_data(df):
+    data_x = pd.Series.to_list(df["f_x"])
+    data_y = pd.Series.to_list(df["f_y"])
+    theta = pd.Series.to_list(df["f_rot_mag"])
+
+    #plt.plot(data_x, data_y, marker='o', markersize=theta)
+    max_x = 0
+    max_y = 0
+    min_x = 0
+    plt.plot(data_x, data_y, color='crimson', label='trajectory')
+
+    #plot data points separately to show angle error with marker size
+    for n in range(len(data_x)):
+        max_x = max(data_x[n], max_x)
+        max_y = max(data_y[n], max_y)
+
+        min_x = min(data_x[n], min_x)
+        plt.plot(data_x[n], data_y[n], 'r.', markersize=5*theta[n])
+
+    print(f"max_x: {max_x}, min_x: {min_x}, y: {max_y}")
+
+    plt.xlabel('x path')
+    plt.ylabel('y path')
+    plt.title('Path of Object')
+    #plt.grid()
+    plt.savefig(file_name + "plotted")
+
+    plt.xticks(np.linspace(min_x, max_x, 10), rotation=45 )
+    plt.yticks(np.linspace(0, max_y, 10) )
+
+    #plt.xlim(0., 0.5)
+    #plt.ylim(0., 0.5)
+    plt.show()
+
+
+if __name__ == "__main__":
+    folder_path = "filtered/"
+    file_name = "filt_" + "josh_2v2_a_none_1" 
+    total_path = folder_path + file_name + ".csv"
+    print(total_path)
+
+    df = get_data(total_path)
+
+    plot_data(df)
