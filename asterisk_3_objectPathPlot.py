@@ -9,10 +9,23 @@ TODO: what to do about combining multiple trials of a single direction? Should t
 """
 
 import csv
-import pandas as pd
 import numpy as np
+import pandas as pd
+import math as m
 import asterisk_0_prompts as prompts
 import matplotlib.pyplot as plt
+
+
+#from: https://realpython.com/python-rounding/
+def round_half_up(n, decimals=0):
+    multiplier = 10 ** decimals
+    return m.floor(n*multiplier + 0.5) / multiplier
+
+#from: https://realpython.com/python-rounding/
+def round_half_down(n, decimals=0):
+    multiplier = 10 ** decimals
+    return m.ceil(n*multiplier - 0.5) / multiplier
+
 
 def get_data(path_to_data):
     df = pd.read_csv(total_path, 
@@ -32,30 +45,28 @@ def plot_data(df):
     data_y = pd.Series.to_list(df["f_y"])
     theta = pd.Series.to_list(df["f_rot_mag"])
 
-    #plt.plot(data_x, data_y, marker='o', markersize=theta)
-    max_x = 0
-    max_y = 0
-    min_x = 0
     plt.plot(data_x, data_y, color='crimson', label='trajectory')
 
     #plot data points separately to show angle error with marker size
     for n in range(len(data_x)):
-        max_x = max(data_x[n], max_x)
-        max_y = max(data_y[n], max_y)
-
-        min_x = min(data_x[n], min_x)
-        plt.plot(data_x[n], data_y[n], 'r.', markersize=5*theta[n])
+        plt.plot(data_x[n], data_y[n], 'r.', alpha=0.5, markersize=5*theta[n]) #rn having difficulty doing marker size in a batch, so plotting each point separately 
+    
+    max_x = max(data_x)
+    max_y = max(data_y)
+    min_x = min(data_x)
+    #plt.scatter(data_x, data_y, marker='o', color='red', alpha=0.5, s=5*theta)
 
     print(f"max_x: {max_x}, min_x: {min_x}, y: {max_y}")
 
-    plt.xlabel('x path')
-    plt.ylabel('y path')
+    plt.xlabel('X')
+    plt.ylabel('Y')
     plt.title('Path of Object')
     #plt.grid()
     plt.savefig(file_name + "plotted")
 
-    plt.xticks(np.linspace(min_x, max_x, 10), rotation=45 )
-    plt.yticks(np.linspace(0, max_y, 10) )
+    
+    plt.xticks(np.linspace(round_half_down(min_x, decimals=2), round_half_up(max_x, decimals=2), 10), rotation=30)
+    plt.yticks(np.linspace(0, round_half_up(max_y, decimals=2), 10))
 
     #plt.xlim(0., 0.5)
     #plt.ylim(0., 0.5)
@@ -64,6 +75,7 @@ def plot_data(df):
 
 if __name__ == "__main__":
     folder_path = "filtered/"
+    #TODO: Add a prompt for plotting different data
     file_name = "filt_" + "josh_2v2_a_none_1" 
     total_path = folder_path + file_name + ".csv"
     print(total_path)
