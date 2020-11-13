@@ -14,6 +14,7 @@ import pandas as pd
 import math as m
 from pathlib import Path
 import asterisk_0_prompts as prompts
+import asterisk_4_idealLine as id
 import matplotlib.pyplot as plt
 
 
@@ -122,6 +123,26 @@ def plot_trial(df, file_name):
     plt.savefig("plot4_" + file_name + ".jpg", format='jpg')
     plt.show()
 
+def plot_all_ideal(order_of_colors):
+    print("PLOTTING IDEAL LINES")
+
+    x_a, y_a = id.get_a()
+    x_b, y_b = id.get_b()
+    x_c, y_c = id.get_c()
+    x_d, y_d = id.get_d()
+    x_e, y_e = id.get_e()
+    x_f, y_f = id.get_f()
+    x_g, y_g = id.get_g()
+    x_h, y_h = id.get_h()
+
+    ideal_xs = [x_a, x_b, x_c, x_d, x_e, x_f, x_g, x_h]
+    ideal_ys = [y_a, y_b, y_c, y_d, y_e, y_f, y_g, y_h]
+
+    for i in range(8):
+        plt.plot(ideal_xs[i], ideal_ys[i], color=order_of_colors[i], label='ideal', linestyle = '--')
+
+
+
 def batch_plot():
     colors = ["tab:blue", "tab:purple", "tab:red",  "tab:olive", "tab:cyan", "tab:green", "tab:pink", "tab:orange"]
 
@@ -129,6 +150,7 @@ def batch_plot():
 
     dfs = get_batch(sub,hand)
 
+    #plot data
     for i,df in enumerate(dfs):
         data_x = pd.Series.to_list(df["f_x"])
         data_y = pd.Series.to_list(df["f_y"])
@@ -139,6 +161,9 @@ def batch_plot():
         #plot data points separately to show angle error with marker size
         for n in range(len(data_x)):
             plt.plot(data_x[n], data_y[n], color=colors[i], alpha=0.5, markersize=5*theta[n])
+
+    #plot ideal lines
+    plot_all_ideal(colors)
 
     plt.xticks( np.linspace(-0.5, 0.5, 11), rotation=30 )
     plt.yticks( np.linspace(-0.5, 0.5, 11))
