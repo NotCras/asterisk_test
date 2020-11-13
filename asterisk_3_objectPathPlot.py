@@ -140,8 +140,8 @@ def batch_plot():
         for n in range(len(data_x)):
             plt.plot(data_x[n], data_y[n], color=colors[i], alpha=0.5, markersize=5*theta[n])
 
-    plt.xticks( np.linspace(-0.6, 0.6, 12), rotation=30 )
-    plt.yticks( np.linspace(-0.6, 0.6))
+    plt.xticks( np.linspace(-0.5, 0.5, 11), rotation=30 )
+    plt.yticks( np.linspace(-0.5, 0.5, 11))
 
     plt.savefig(f"fullplot4_{sub}_{hand}.jpg", format='jpg') #name -> tuple: subj, hand  names
     plt.show()
