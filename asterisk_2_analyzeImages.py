@@ -8,6 +8,7 @@ import sys
 if  '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path : sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2, PIL
 from cv2 import aruco
+from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import pandas as pd
@@ -48,7 +49,7 @@ def relativePosition(rvec1, tvec1, rvec2, tvec2):
 def estimatePose(frame, marker_side, mtx,dist):
 
     gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-    aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_250) #                                        MAKE SURE YOU HAVE RIGHT ONE!!!!
+    aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_250) # MAKE SURE YOU HAVE RIGHT ONE!!!!
     # detector parameters can be set here (List of detection parameters[3])
     parameters =  aruco.DetectorParameters_create()
     #parameters.adaptiveThreshConstant = 10
@@ -105,6 +106,7 @@ def pose_estimation_process(folder, image_tag, mtx_val, dist_val, init_corners, 
 #mtx = camera intrinsic matrix , dist =  distortion coefficients (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]])
 
 if __name__ == "__main__":
+    home_directory = Path(__file__).parent.absolute()
 
     mtx = np.array(((617.0026849655,-0.153855356,315.5900337131),#fx, s,cx
                    (0,614.4461785395,243.0005874753), ##0,fy,cy
@@ -119,8 +121,11 @@ if __name__ == "__main__":
     trial_type = input("Enter what kind of asterisk you are processing: ")
     trial_num = input("Enter which trial number you want to process: ")
 
-    data_path = "viz/" + subject_name + "_" + hand + "_" + dir_label + "_" + trial_type + "_" + trial_num + "/"
+    inner_path = "viz/" + subject_name + "_" + hand + "_" + dir_label + "_" + trial_type + "_" + trial_num + "/"
+    os.chdir(home_directory)
+    data_path = inner_path
     print(data_path)
+
 
 #================================================================
 
@@ -138,6 +143,9 @@ if __name__ == "__main__":
         f.sort()
         break
 
+    print(f)
+    print(" ")
+
     while(True):
         if len(f) == 0:
             time.sleep(0.5)
@@ -145,6 +153,7 @@ if __name__ == "__main__":
 
         else:
             for image_ in f:
+                print(image_)
                 if '.ini' in image_:
                     print("Configuration file found. Skipping over.")
                     # camera configuration file, skip over
@@ -155,8 +164,10 @@ if __name__ == "__main__":
 
                 try:
                     rel_rvec, rel_tvec, translation, rotation, ypr = pose_estimation_process(data_path, image_, mtx, dist, orig_corners, orig_rvec, orig_tvec)
+                    print(f"Succeeded at image {counter}")
+                    
                 except Exception as e: 
-                    print("Error with finding ARuco tag.")
+                    print(f"Error with finding ARuco tag in image {counter}.")
                     print(e)
                     counter += 1
                     continue
@@ -165,7 +176,6 @@ if __name__ == "__main__":
                 total +=1
 
                 rel_pose = np.concatenate((rel_rvec,rel_tvec))
-
 
                 data_file = subject_name + "_" + hand + "_" + dir_label + "_" + trial_type + "_" + trial_num + ".csv"
                 csv_loc = "csv/" + data_file
