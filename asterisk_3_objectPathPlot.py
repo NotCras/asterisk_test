@@ -59,19 +59,19 @@ def get_batch(sub, h):
 
     list_of_dfs = list()
     
-    #if h == "basic" or h == "m2stiff" or h == "vf": #TODO: Fix this later
-    types = ["none"]
+    #if h == "basic" or h == "m2stiff" or h == "vf": 
+    types = ["none"] #TODO: Add in a prompt for this one
     #else:
     #    types = prompts.type_options
 
     for t in types:
-        #if t == "none": #TODO: add back in
+        #if t == "none": #TODO: add back in?
         #    directions = prompts.dir_options
         #else:
-        directions = prompts.dir_options_no_rot
+        directions = prompts.dir_options_no_rot #TODO: Not gonna plot rotation? Does this need fixing?
 
         for d in directions:
-            for num in ["1"]: #TODO: add more trial nums?
+            for num in ["1"]: #TODO: add more trial nums? TODO: Need to find a way to 'average' the trials
                 file_name = file_root + d + "_" + t + "_" + num + ".csv"
 
                 total_path = folder + file_name
@@ -142,11 +142,10 @@ def plot_all_ideal(order_of_colors):
         plt.plot(ideal_xs[i], ideal_ys[i], color=order_of_colors[i], label='ideal', linestyle = '--')
 
 
-
 def batch_plot():
     colors = ["tab:blue", "tab:purple", "tab:red",  "tab:olive", "tab:cyan", "tab:green", "tab:pink", "tab:orange"]
 
-    folder, sub, hand = request_name_hand()
+    folder, sub, hand = prompts.request_name_hand_simple("filtered/")
 
     dfs = get_batch(sub,hand)
 
@@ -160,7 +159,7 @@ def batch_plot():
 
         #plot data points separately to show angle error with marker size
         for n in range(len(data_x)):
-            plt.plot(data_x[n], data_y[n], color=colors[i], alpha=0.5, markersize=5*theta[n])
+            plt.plot(data_x[n], data_y[n], color=colors[i], alpha=0.5, markersize=10*theta[n])
 
     #plot ideal lines
     plot_all_ideal(colors)
@@ -170,17 +169,6 @@ def batch_plot():
 
     plt.savefig(f"fullplot4_{sub}_{hand}.jpg", format='jpg') #name -> tuple: subj, hand  names
     plt.show()
-
-def request_name_hand():
-    #import csv file of data
-    #for now, just write it out each time
-    path = "filtered/"
-    sub = "josh"
-    h = "2v2"
-    #t = "none"
-    #d = "a"
-
-    return path, sub, h
 
 def single_plot():
     folder_path = "filtered/"

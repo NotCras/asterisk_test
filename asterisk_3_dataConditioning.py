@@ -12,6 +12,7 @@ import csv
 import pandas as pd
 import numpy as np
 import asterisk_0_prompts as prompts
+import asterisk_0_dataHelper as helper
 
 def load_measurements():
     #import hand span data
@@ -32,17 +33,6 @@ def load_measurements():
     
     return spans, depths
 
-def request_name_hand():
-    #import csv file of data
-    #for now, just write it out each time
-    path = "csv/"
-    sub = "josh"
-    h = "2v2"
-    #t = "none"
-    #d = "a"
-
-    return path, sub, h
-
 def moving_average(df_to_filter, window_size=15):
     df_to_filter["f_x"] = df_to_filter["x"].rolling(
         window=window_size, min_periods=1).mean()
@@ -58,7 +48,7 @@ def moving_average(df_to_filter, window_size=15):
 if __name__ == "__main__":
     hand_spans, hand_depths = load_measurements()
 
-    folder_path, subject_name, hand = request_name_hand()
+    folder_path, subject_name, hand = prompts.request_name_hand_simple("csv/")
 
     #num = "3"
 

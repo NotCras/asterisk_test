@@ -1,3 +1,5 @@
+import asterisk_0_dataHelper as helper
+
 #------------------------------------
 subject_name_prompt = """
 ENTER SUBJECTS NAME
@@ -50,3 +52,17 @@ check_prompt = "Are you happy with this data? : "
 check_options = ["yes", "no", "cancel"]
 
 temp_file_check = "Are you still doing"
+
+
+def request_name_hand_simple(path):
+    #import csv file of data
+    #for now, just write it out each time
+    folder = path #TODO: make smarter
+    sub = helper.collect_prompt_data(
+        subject_name_prompt, subject_name_options)
+    h = helper.collect_prompt_data(
+        hand_prompt, hand_options)
+    #t = "none"
+    #d = "a"
+
+    return folder, sub, h
