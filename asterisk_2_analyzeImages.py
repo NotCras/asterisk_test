@@ -24,18 +24,24 @@ processing_freq = 1 #analyze every 1 image
 ## ============================
 
 def inversePerspective(rvec, tvec):
+    print("first rod")
+    print(rvec)
+    print(" next ")
+    print(rvec[0][0]) #TODO: Something wrong is going on here... need to look into the rodrigues function
     R, _ = cv2.Rodrigues(rvec)
     R = np.matrix(R).T
     invTvec = np.dot(-R, np.matrix(tvec))
+    print("second rod")
     invRvec, _ = cv2.Rodrigues(R)
     return invRvec, invTvec
 
 def relativePosition(rvec1, tvec1, rvec2, tvec2):
-
+    print("entering function")
     rvec1, tvec1 = np.expand_dims(rvec1.squeeze(),1), np.expand_dims(tvec1.squeeze(),1)
     rvec2, tvec2 = np.expand_dims(rvec2.squeeze(),1), np.expand_dims(tvec2.squeeze(),1)
     invRvec, invTvec = inversePerspective(rvec2, tvec2)
 
+    print("second chunk")
     orgRvec, orgTvec = inversePerspective(invRvec, invTvec)
 
     info = cv2.composeRT(rvec1, tvec1, invRvec, invTvec)
@@ -91,6 +97,7 @@ def pose_estimation_process(folder, image_tag, mtx_val, dist_val, init_corners, 
     next_rvec, next_tvec, next_corners = estimatePose(frame,marker_side, mtx_val, dist_val)
     next_corners = next_corners[0].squeeze()
 
+    print(f"calculating angle, {next_corners}")
     rel_angle  = angle_between(init_corners[0]-init_corners[2],next_corners[0]-next_corners[2])
     rel_rvec, rel_tvec = relativePosition(init_rvec, init_tvec, next_rvec, next_tvec)
 
@@ -144,6 +151,8 @@ if __name__ == "__main__":
         break
 
     print(f)
+    print(" ")
+    print(dirpath)
     print(" ")
 
     while(True):
