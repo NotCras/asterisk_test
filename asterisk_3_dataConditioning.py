@@ -14,6 +14,8 @@ import numpy as np
 import asterisk_0_prompts as prompts
 import asterisk_0_dataHelper as helper
 
+from scipy import stats
+
 def load_measurements():
     #import hand span data
     spans = dict()
@@ -32,6 +34,24 @@ def load_measurements():
             depths[hand_name] = hand_depth
     
     return spans, depths
+
+def remove_outliers(df_to_fix, columns):
+    #df_filtered = df_to_fix
+
+    for col in columns:
+        #see: https://stackoverflow.com/questions/23199796/detect-and-exclude-outliers-in-pandas-data-frame
+        #q_low = df_to_fix[col].quantile(0.01)
+        q_hi  = df_to_fix[col].quantile(0.99)
+
+        df_to_fix = df_to_fix[(df_to_fix[col] < q_hi)]
+
+        #print(col)
+        #print(f"q_low: {q_low}")
+        #print(f"q_hi: {q_hi}")
+        #print(" ")
+
+    return df_to_fix
+
 
 def moving_average(df_to_filter, window_size=15):
     df_to_filter["f_x"] = df_to_filter["x"].rolling(
@@ -56,7 +76,7 @@ if __name__ == "__main__":
 
     #total_path = folder_path + file_name
 
-    if hand == "basic" or hand == "m2stiff" or hand == "vf":
+    if hand == "basic" or hand == "m2stiff" or hand == "modelvf":
         types = ["none"]
     else:
         types = prompts.type_options
@@ -80,7 +100,7 @@ if __name__ == "__main__":
                         names=["roll", "pitch", "yaw", "x", "y", "z", "tmag", "rmag"])
 
                 except:
-                    print("FAILED")
+                    print(f"FAILED: {total_path}")
                     continue
 
                 #print(" ")
@@ -102,7 +122,8 @@ if __name__ == "__main__":
                     1.]
                 df = df.round(4)
 
-                filtered_df = moving_average(df, window_size=15)
+                inlier_df = remove_outliers(df, ["x", "y", "rmag"]) #occasionally get a val waaaay above 1, I filter them out here
+                filtered_df = moving_average(inlier_df, window_size=15) #TODO: Maybe I should do teh translational data normalization after the filtering?
                 
                 #filtered_df.dropna()
 

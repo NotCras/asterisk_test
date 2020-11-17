@@ -53,13 +53,13 @@ def data_from_df(df):
 
     return x, y, ang
 
-def get_batch(sub, h):
+def get_batch(sub, h, num):
     folder = "filtered/"
     file_root = f"filt_{sub}_{h}_"
 
     list_of_dfs = list()
     
-    #if h == "basic" or h == "m2stiff" or h == "vf": 
+    #if h == "basic" or h == "m2stiff" or h == "modelvf": 
     types = ["none"] #TODO: Add in a prompt for this one
     #else:
     #    types = prompts.type_options
@@ -71,24 +71,24 @@ def get_batch(sub, h):
         directions = prompts.dir_options_no_rot #TODO: Not gonna plot rotation? Does this need fixing?
 
         for d in directions:
-            for num in ["1"]: #TODO: add more trial nums? TODO: Need to find a way to 'average' the trials
-                file_name = file_root + d + "_" + t + "_" + num + ".csv"
+            #TODO: add more trial nums? TODO: Need to find a way to 'average' the trials
+            file_name = file_root + d + "_" + t + "_" + num + ".csv"
 
-                total_path = folder + file_name
-                
-                print("FILE: " + str(total_path))
-
-                try:
-                    df = pd.read_csv(total_path)
-
-                except:
-                    print("FAILED")
-                    continue
-
-                df_numeric = condition_df(df)
+            total_path = folder + file_name
             
-                list_of_dfs.append(df_numeric)
-                print(f"ADDED: {file_name}")
+            print("FILE: " + str(total_path))
+
+            try:
+                df = pd.read_csv(total_path)
+
+            except:
+                print("FAILED")
+                continue
+
+            df_numeric = condition_df(df)
+        
+            list_of_dfs.append(df_numeric)
+            print(f"ADDED: {file_name}")
 
     return list_of_dfs
 
@@ -142,12 +142,15 @@ def plot_all_ideal(order_of_colors):
         plt.plot(ideal_xs[i], ideal_ys[i], color=order_of_colors[i], label='ideal', linestyle = '--')
 
 
-def batch_plot():
+def batch_plot(folder=None, sub=None, hand=None, num=None, show_plot=True):
     colors = ["tab:blue", "tab:purple", "tab:red",  "tab:olive", "tab:cyan", "tab:green", "tab:pink", "tab:orange"]
 
-    folder, sub, hand = prompts.request_name_hand_simple("filtered/")
+    if all(v is not None for v in [folder, sub, hand, num]):
+        pass
+    else:
+        folder, sub, hand, num = prompts.request_name_hand_num_simple("filtered/")
 
-    dfs = get_batch(sub,hand)
+    dfs = get_batch(sub, hand, num)
 
     #plot data
     for i,df in enumerate(dfs):
@@ -167,13 +170,65 @@ def batch_plot():
     plt.xticks( np.linspace(-0.5, 0.5, 11), rotation=30 )
     plt.yticks( np.linspace(-0.5, 0.5, 11))
 
-    plt.savefig(f"fullplot4_{sub}_{hand}.jpg", format='jpg') #name -> tuple: subj, hand  names
-    plt.show()
+    plt.title(f"Plot: {sub}-{hand}, set #{num}")
+
+    #saving figure
+    plt.savefig(f"fullplot4_{sub}_{hand}_{num}.jpg", format='jpg') #name -> tuple: subj, hand  names
+    print("Figure saved.")
+    print(" ")
+    if(show_plot):
+        plt.show()
+
+
+def auto_plot():
+    folder_path, subject_name, hand = prompts.request_name_hand_simple("filtered/")
+
+    #if hand == "basic" or hand == "m2stiff" or hand == "vf":
+    #    types = ["none"]
+    #else:
+    #    types = prompts.type_options
+
+    #for t in types: #TODO: add in a prompt for type of ast
+        #if t == "none":
+        #    directions = prompts.dir_options
+        #else:
+        #    directions = prompts.dir_options_no_rot
+
+        #for d in directions:
+    for num in ["1", "2", "3"]:
+        batch_plot(folder=folder_path, sub=subject_name, hand=hand, num=num, show_plot=False)
+
+
+
 
 def single_plot():
     folder_path = "filtered/"
-    #TODO: Add a prompt for plotting different data
-    file_name = "filt_" + "josh_2v2_a_none_1" 
+
+    subject_name = helper.collect_prompt_data(
+        prompts.subject_name_prompt, prompts.subject_name_options)
+
+    hand = helper.collect_prompt_data(
+        prompts.hand_prompt, prompts.hand_options)
+
+    if hand == "basic" or hand == "m2stiff" or hand == "vf":
+        types = ["none"]
+    else:
+        types = prompts.type_options
+
+    t = helper.collect_prompt_data(
+        prompts.type_prompt, types)
+
+    if t == "none":
+        directions = prompts.dir_options
+    else:
+        directions = prompts.dir_options_no_rot
+
+    d = helper.collect_prompt_data(prompts.dir_prompt, directions)
+
+    num = helper.collect_prompt_data(prompts.trial_prompt, prompts.trial_options)
+
+
+    file_name = f"filt_{subject_name}_{hand}_{d}_{t}_{num}"
     total_path = folder_path + file_name + ".csv"
     print(total_path)
 
@@ -193,9 +248,11 @@ if __name__ == "__main__":
     """)
     input("PRESS <ENTER> TO CONTINUE.  ")
     
-    mode = input("Do you want to plot a batch of files? [y/n] ")
+    mode = input("Do you want to plot a batch of files? [y/n/auto] ")
 
     if mode == "y":
         batch_plot()
+    elif mode == "auto":
+        auto_plot()
     else:
         single_plot()

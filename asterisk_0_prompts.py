@@ -7,7 +7,7 @@ ENTER SUBJECTS NAME
 
 Possible options:
 """
-subject_name_options = ["john", "josh", "sage", "garth"]
+subject_name_options = ["john", "josh", "sage", "garth", "test"]
 
 #------------------------------------
 hand_prompt = """
@@ -66,3 +66,18 @@ def request_name_hand_simple(path):
     #d = "a"
 
     return folder, sub, h
+
+def request_name_hand_num_simple(path):
+    #import csv file of data
+    #for now, just write it out each time
+    folder = path #TODO: make smarter
+    sub = helper.collect_prompt_data(
+        subject_name_prompt, subject_name_options)
+    h = helper.collect_prompt_data(
+        hand_prompt, hand_options)
+    #t = "none"
+    #d = "a"
+    num = helper.collect_prompt_data(
+        trial_prompt, trial_options)
+
+    return folder, sub, h, num

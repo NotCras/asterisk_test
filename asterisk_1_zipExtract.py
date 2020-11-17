@@ -28,7 +28,7 @@ def batch_extract():
 
     #construct all the zip file names
 
-    if hand == "basic" or hand == "m2stiff" or hand == "vf":
+    if hand == "basic" or hand == "m2stiff" or hand == "modelvf":
         types = ["none"]
     else:
         types = prompts.type_options
@@ -44,7 +44,11 @@ def batch_extract():
 
                 zip_file = subject_name + "_" + hand + "_" + d + "_" + t + "_" + num
 
-                extract_file(folder_path, zip_file)
+                try:            
+                    extract_file(folder_path, zip_file)
+                except Exception as e: 
+                    print(e)
+
 
 def single_extract():
     subject_name = helper.collect_prompt_data(
