@@ -64,6 +64,44 @@ def moving_average(df_to_filter, window_size=15):
     df_rounded = df_to_filter.round(4)
     return df_rounded
 
+def average_the_lines(dfs, line_size):
+    #see: https://stackoverflow.com/questions/49037902/how-to-interpolate-a-line-between-two-other-lines-in-python 
+    #or: https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.LinearNDInterpolator.html 
+    resampled_dfs = list()
+
+    #resampled the paths so they are all the same length
+    for df in dfs:
+        new_df = resample_paths(samples=line_size)
+        resampled_dfs.append(new_df)   
+
+    #interpolate the average between each point... also get the std at each point
+    average_line = list()
+
+    for i in range(line_size):
+        #get average
+        averaged_point = get_average_point(resampled_dfs, i) #TODO: Include std in the output here
+
+        #get std
+        #point_std
+
+        average_line.append(averaged_point)
+
+
+    #plot the average line
+
+def get_average_point(dfs, index):
+
+    #get average x at index
+
+
+    #get average y at index
+
+
+    #get average theta at index
+
+
+
+     
 
 if __name__ == "__main__":
     hand_spans, hand_depths = load_measurements()
