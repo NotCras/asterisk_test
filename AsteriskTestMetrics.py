@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+from typing import List, Any, Tuple
 
 import numpy as np
 from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan
+import csv
+from asterisk_0_prompts import generate_fname
 
 
 class Pose2D:
@@ -282,6 +285,7 @@ def test_translation(my_tests):
 
 def test_rotation(my_tests):
     """ Make fake translation data and add it
+    :rtype: None
     :param my_tests AsteriskTestMetrics2D"""
     from numpy.random import uniform
 
@@ -334,9 +338,62 @@ def test_rotation_translation(my_tests):
         print("Rotation {} Translation, angle {}, distances {}".format("Counterclockwise", ang, dists))
 
 
-if __name__ == '__main__':
+def run_tests():
     my_asterisk_tests = AsteriskTestMetrics2D()
 
     test_translation(my_asterisk_tests)
     test_rotation(my_asterisk_tests)
     test_rotation_translation(my_asterisk_tests)
+
+
+def process_files(dir_name, subject_name, hand, my_tests):
+    """Read the files, compute the metrics
+    !param dir_name input file name
+    :param subject_name name of subject to process
+    :param hand name of hand to process
+    :param my_tests Array of AsteriskTestMetrics to put tests in"""
+
+    ret_dists: List[Tuple[Any, Any]] = []
+    for fname in generate_fname(dir_name, subject_name, hand):
+        fname_pieces = fname.split("_")
+        try:
+            with open(fname, "r") as csvfile:
+                csv_file = csv.reader(csvfile, delimiter=',')
+                obj_poses = []
+                for i, row in enumerate(csv_file):
+                    try:
+                        obj_poses.append([float(row[1]), float(row[2]), float(row[3])])
+                    except:
+                        pass
+    
+                obj_poses = np.transpose(np.array(obj_poses))
+                print("{0} x{1} y{2} t{3}".format(fname, obj_poses[0,-1], obj_poses[1, -1], obj_poses(2, -1)))
+                trial_number = int(fname_pieces[-1][0])-1
+                trial_type = fname_pieces[-2]
+                ang = ord(fname_pieces[-3][0]) - ord('a')
+                if trial_type is "minus15":
+                    dists = my_tests[trial_number].add_rotation_translation_test(1, ang, obj_poses)
+                elif trial_type is "plus15":
+                    dists = my_tests[trial_number].add_rotation_translation_test(0, ang, obj_poses)
+                elif fname_pieces[-3] is "cw":
+                    dists = my_tests[trial_number].add_rotation_test(0, obj_poses)
+                elif fname_pieces[-3] is "ccw":
+                    dists = my_tests[trial_number].add_rotation_test(1, obj_poses)
+                else:
+                    dists = my_tests[trial_number].add_translation_test(ang, obj_poses)
+    
+                ret_dists.append((fname, dists))
+                print("{0} dists {1} ".format(fname, dists))
+        except:
+            print("File not found: {0}".format(fname))
+
+    return ret_dists
+
+
+if __name__ == '__main__':
+    my_tests = [AsteriskTestMetrics2D() for i in range(0, 3)]
+
+    dir_name_process = "/Volumes/Macintosh HD/Users/grimmc/Box/Grasping/asterisk_test_data/filtered_data/"
+    subject_name_process = "filt_josh"
+    hand_process = "2v2"
+    ret_dists = process_files(dir_name_process, subject_name_process, hand_process, my_tests)
