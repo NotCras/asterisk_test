@@ -7,6 +7,10 @@ zips/
 asterisk_test_data/
 viz/
 csv/
+pics/
 __pycache__/
 *.zip
 *.csv
+*.png
+*.jpg
+*.jpeg

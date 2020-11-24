@@ -1,3 +1,5 @@
+import asterisk_0_dataHelper as helper
+
 #------------------------------------
 subject_name_prompt = """
 ENTER SUBJECTS NAME
@@ -5,7 +7,7 @@ ENTER SUBJECTS NAME
 
 Possible options:
 """
-subject_name_options = ["john", "josh", "sage", "garth"]
+subject_name_options = ["john", "josh", "sage", "garth", "test"]
 
 #------------------------------------
 hand_prompt = """
@@ -52,6 +54,36 @@ check_options = ["yes", "no", "cancel"]
 temp_file_check = "Are you still doing"
 
 #------------------------------------
+def request_name_hand_simple(path):
+    #import csv file of data
+    #for now, just write it out each time
+    folder = path #TODO: make smarter
+    sub = helper.collect_prompt_data(
+        subject_name_prompt, subject_name_options)
+    h = helper.collect_prompt_data(
+        hand_prompt, hand_options)
+    #t = "none"
+    #d = "a"
+
+    return folder, sub, h
+
+#------------------------------------
+def request_name_hand_num_simple(path):
+    #import csv file of data
+    #for now, just write it out each time
+    folder = path #TODO: make smarter
+    sub = helper.collect_prompt_data(
+        subject_name_prompt, subject_name_options)
+    h = helper.collect_prompt_data(
+        hand_prompt, hand_options)
+    #t = "none"
+    #d = "a"
+    num = helper.collect_prompt_data(
+        trial_prompt, trial_options)
+
+    return folder, sub, h, num
+
+#------------------------------------
 def generate_fname(folder_path, subject_name, hand):
     """Create the full pathname
     :param folder_path Directory where data is located
@@ -75,3 +107,4 @@ def generate_fname(folder_path, subject_name, hand):
 
                 total_path = folder_path + file_name
                 yield total_path
+
