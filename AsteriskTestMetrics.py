@@ -53,7 +53,7 @@ class AsteriskTestMetrics2D:
 
         self.test_names = {"Translation": 0, "Rotation": 1, "Rotation_translation": 2}
         self.metric_names = {"Distance_along, Distance_target, Frechet_distance"}
-        self.translation_angles = linspace(0, 360, 8, endpoint=False)
+        self.translation_angles = linspace(90, 360+90, 8, endpoint=False)
         self.rotation_directions = {"Clockwise": -15, "Counterclockwise": 15}
         self.status_values = {"Successful", "Unsuccessful", "Not_tried"}
 
@@ -367,7 +367,10 @@ def process_files(dir_name, subject_name, hand, my_tests):
                         pass
     
                 obj_poses = np.transpose(np.array(obj_poses))
-                print("{0} x{1} y{2} t{3}".format(fname, obj_poses[0,-1], obj_poses[1, -1], obj_poses(2, -1)))
+                x = obj_poses[0, -1]
+                y = obj_poses[1, -1]
+                theta = obj_poses[2, -1]
+                print("{0} \nx {1} y {2} t {3}".format(fname, x, y, theta))
                 trial_number = int(fname_pieces[-1][0])-1
                 trial_type = fname_pieces[-2]
                 ang = ord(fname_pieces[-3][0]) - ord('a')
@@ -384,7 +387,7 @@ def process_files(dir_name, subject_name, hand, my_tests):
     
                 ret_dists.append((fname, dists))
                 print("{0} dists {1} ".format(fname, dists))
-        except:
+        except FileNotFoundError:
             print("File not found: {0}".format(fname))
 
     return ret_dists
