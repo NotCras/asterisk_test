@@ -53,7 +53,7 @@ check_options = ["yes", "no", "cancel"]
 
 temp_file_check = "Are you still doing"
 
-
+#------------------------------------
 def request_name_hand_simple(path):
     #import csv file of data
     #for now, just write it out each time
@@ -67,6 +67,7 @@ def request_name_hand_simple(path):
 
     return folder, sub, h
 
+#------------------------------------
 def request_name_hand_num_simple(path):
     #import csv file of data
     #for now, just write it out each time
@@ -81,3 +82,29 @@ def request_name_hand_num_simple(path):
         trial_prompt, trial_options)
 
     return folder, sub, h, num
+
+#------------------------------------
+def generate_fname(folder_path, subject_name, hand):
+    """Create the full pathname
+    :param folder_path Directory where data is located
+    :param subject_name Name of subject
+    :param hand Name of hand"""
+
+    if hand == "basic" or hand == "m2stiff" or hand == "vf":
+        types = ["none"]
+    else:
+        types = type_options
+
+    for t in types:
+        if t == "none":
+            directions = dir_options
+        else:
+            directions = dir_options_no_rot
+
+        for d in directions:
+            for num in ["1", "2", "3"]:
+                file_name = subject_name + "_" + hand + "_" + d + "_" + t + "_" + num + ".csv"
+
+                total_path = folder_path + file_name
+                yield total_path
+
