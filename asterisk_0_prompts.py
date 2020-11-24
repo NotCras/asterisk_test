@@ -1,5 +1,3 @@
-import asterisk_0_dataHelper as helper
-
 #------------------------------------
 subject_name_prompt = """
 ENTER SUBJECTS NAME
