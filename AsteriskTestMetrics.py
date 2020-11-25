@@ -46,6 +46,34 @@ class Pose2D:
         return "x : {0:.2f}, y : {1:.2f}, theta : {2}".format(self.x, self.y, self.theta)
 
 
+class AsteriskTestResults:
+    def __init__(self, name):
+        """distances, angles, index in test
+        :param n_samples - number of samples in target paths"""
+        self.test_name = name
+        self.end_target_index = -1
+        self.dist_target = nan
+        self.dist_frechet = nan
+        self.dist_along = nan
+        self.target_indices = []
+
+    def __str__(self):
+        """Print results"""
+        if self.end_target_index == -1:
+            return "Test: {0}, no result".format(self.test_name)
+        if len(self.dist_along) == 2:
+            return "Test: {0} Along: d {1:0.3f} t{2:0.3f} Target: {3:0.3f} Frechet: {4:0.3f}\n ".format(self.test_name,
+                                                                                                        self.dist_along[0],
+                                                                                                        self.dist_along[1],
+                                                                                                        self.dist_target,
+                                                                                                        self.dist_frechet)
+
+        return "Test: {0} Along: {1:0.3f} Target: {2:0.3f} Frechet: {3:0.3f}\n ".format(self.test_name,
+                                                                                        self.dist_along,
+                                                                                        self.dist_target,
+                                                                                        self.dist_frechet)
+
+
 class AsteriskTestMetrics2D:
     def __init__(self, n_samples=15):
         """
@@ -65,20 +93,19 @@ class AsteriskTestMetrics2D:
 
     def reset_test_results(self):
         """Zero out the results"""
-        no_result = (nan, nan, nan)
 
         for t in self.test_names:
             self.test_results[t] = []
 
-        self.test_results["Rotation"].append(no_result)
-        self.test_results["Rotation"].append(no_result)
+        self.test_results["Rotation"].append(AsteriskTestResults("Rotation_cw", n_samples))
+        self.test_results["Rotation"].append(AsteriskTestResults("Rotation_ccw", n_samples))
 
         self.test_results["Rotation_translation"].append([])
         self.test_results["Rotation_translation"].append([])
-        for _ in self.translation_angles:
-            self.test_results["Translation"].append(no_result)
-            self.test_results["Rotation_translation"][0].append(no_result)
-            self.test_results["Rotation_translation"][1].append(no_result)
+        for a in self.translation_angles:
+            self.test_results["Translation"].append(AsteriskTestResults("Translation {0}".format(a), n_samples))
+            self.test_results["Rotation_translation"][0].append(AsteriskTestResults("Rotation_translation_cw {0}".format(a), n_samples))
+            self.test_results["Rotation_translation"][1].append(AsteriskTestResults("Rotation_translation_ccw {0}".format(a), n_samples))
 
     def _add_target_paths(self, n_samples):
         """Create ideal paths for each movement type
@@ -107,7 +134,8 @@ class AsteriskTestMetrics2D:
         self.target_paths["Rotation"] = target_rotation_paths
         self.target_paths["Rotation_translation"] = target_rotation_translation_paths
 
-    def _narrow_target(self, obj_pose, target_poses):
+    @staticmethod
+    def _narrow_target(obj_pose, target_poses):
         """ narrown down the closest point on the target poses
         :param obj_pose last object pose Pose2D
         :param target_poses [Pose2D;
@@ -118,7 +146,8 @@ class AsteriskTestMetrics2D:
 
         return i_target
 
-    def _frechet_dist(self, poses_obj, i_target, target_poses):
+    @staticmethod
+    def _frechet_dist(poses_obj, i_target, target_poses):
         """ Implement Frechet distance
         :param poses_obj all the object poses np.array
         :param i_target the closest point in target_poses
@@ -126,25 +155,28 @@ class AsteriskTestMetrics2D:
         :returns max of the min distance between target_poses and obj_poses """
 
         dist_frechet = []
+        target_index = []
         n_total = poses_obj.shape[1]
         # Don't search the whole list, just a bracket around where you would expect the closest sample to be
         i_start_search = 0
         step_along = int(floor(1.5 * n_total / i_target)) + 1
         for tp in target_poses[0:i_target]:
             dist_found = 1e30
-            i_target = i_start_search
+            i_along_search = i_start_search
             i_end_search = min(i_start_search + step_along, n_total)
             for i_p in range(i_start_search, i_end_search):
                 p = poses_obj[:, i_p]
                 dist = tp.distance(Pose2D(p[0], p[1], p[2]))
                 if dist < dist_found:
                     dist_found = dist
-                    i_target = i_p
+                    i_along_search = i_p
 
-            print("{} {} {}".format(i_start_search, i_target, dist_found))
-            i_start_search = i_target + 1
+            print("{} {} {}".format(i_start_search, i_along_search, dist_found))
+            target_index.append(i_along_search)
+            i_start_search = i_along_search + 1
             dist_frechet.append(dist_found)
-        return max(dist_frechet)
+
+        return max(dist_frechet), target_index
 
     def add_translation_test(self, in_which, poses_obj):
         """Add the translation test
@@ -154,6 +186,7 @@ class AsteriskTestMetrics2D:
 
         target_poses = self.target_paths["Translation"][in_which]
         target_pose = target_poses[-1]
+        res = self.test_results["Translation"][in_which]
         last_pose_obj = Pose2D(poses_obj[0, -1], poses_obj[1, -1], poses_obj[2, -1])
         n_total = poses_obj.shape[1]
 
@@ -172,20 +205,18 @@ class AsteriskTestMetrics2D:
                                                                                           self.translation_angles[
                                                                                               in_which]))
 
-        dist_along = sqrt(max([poses_obj[0, i_p]**2 + poses_obj[1, i_p]**2 for i_p in range(0, n_total)]))
+        res.dist_along = sqrt(max([poses_obj[0, i_p]**2 + poses_obj[1, i_p]**2 for i_p in range(0, n_total)]))
         i_target = self._narrow_target(last_pose_obj, target_poses)
 
-        dist_target = last_pose_obj.distance(target_pose)
+        res.dist_target = last_pose_obj.distance(target_pose)
 
         if i_target == 0:
             print("Warning: Closest pose was first pose")
             i_target += 1
 
-        dist_frechet = self._frechet_dist(poses_obj, i_target, target_poses)
+        res.dist_frechet, res.target_index = self._frechet_dist(poses_obj, i_target, target_poses)
 
-        self.test_results["Translation"][in_which] = (dist_along, dist_target, dist_frechet)
-
-        return dist_along, dist_target, dist_frechet
+        return res
 
     def add_rotation_test(self, in_which, poses_obj):
         """Add the translation test
@@ -367,7 +398,7 @@ def process_files(dir_name, subject_name, hand, my_tests):
                         pass
     
                 obj_poses = np.transpose(np.array(obj_poses))
-                print("{0} x{1} y{2} t{3}".format(fname, obj_poses[0,-1], obj_poses[1, -1], obj_poses[2, -1]))
+                print("{0}\n x {1} y {2} t {3}".format(fname, obj_poses[0,-1], obj_poses[1, -1], obj_poses[2, -1]))
                 trial_number = int(fname_pieces[-1][0])-1
                 trial_type = fname_pieces[-2]
                 ang = ord(fname_pieces[-3][0]) - ord('a')
@@ -384,7 +415,7 @@ def process_files(dir_name, subject_name, hand, my_tests):
     
                 ret_dists.append((fname, dists))
                 print("{0} dists {1} ".format(fname, dists))
-        except:
+        except FileNotFoundError:
             print("File not found: {0}".format(fname))
 
     return ret_dists
@@ -393,7 +424,7 @@ def process_files(dir_name, subject_name, hand, my_tests):
 if __name__ == '__main__':
     my_tests = [AsteriskTestMetrics2D() for i in range(0, 3)]
 
-    dir_name_process = "/Volumes/Macintosh HD/Users/grimmc/Box/Grasping/asterisk_test_data/filtered_data/"
+    dir_name_process = "/Users/grimmc/Box/Grasping/asterisk_test_data/filtered_data/"
     subject_name_process = "filt_josh"
     hand_process = "2v2"
     ret_dists = process_files(dir_name_process, subject_name_process, hand_process, my_tests)
