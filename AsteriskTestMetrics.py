@@ -4,7 +4,7 @@ from typing import List, Any, Tuple
 import numpy as np
 from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan
 import csv
-from asterisk_0_prompts import generate_fname
+from asterisk_0_prompts import generate_fname, dir_options_no_rot, type_options
 
 
 class Pose2D:
@@ -47,65 +47,82 @@ class Pose2D:
 
 
 class AsteriskTestResults:
-    def __init__(self, name):
+    test_type = ["Translation", "Rotation", "Rotation_translation"]
+    def __init__(self, name, in_test_type = "none", in_translation_angle="none", in_rotation_angle="none"):
         """distances, angles, index in test
         :param n_samples - number of samples in target paths"""
         self.test_name = name
+        self.test_type = in_test_type
+        self.translation_angle = in_translation_angle
+        self.rotation_angle = in_rotation_angle
         self.end_target_index = -1
         self.dist_target = nan
         self.dist_frechet = nan
-        self.dist_along = nan
+        self.dist_along_translation = nan
+        self.dist_along_rotation = nan
         self.target_indices = []
 
     def __str__(self):
         """Print results"""
+        ret_str = "Test: {0} {1} {2} {3}: ".format(self.test_name, self.test_type, self.translation_angle, self.rotation_angle)
         if self.end_target_index == -1:
-            return "Test: {0}, no result".format(self.test_name)
-        if len(self.dist_along) == 2:
-            return "Test: {0} Along: d {1:0.3f} t{2:0.3f} Target: {3:0.3f} Frechet: {4:0.3f}\n ".format(self.test_name,
-                                                                                                        self.dist_along[0],
-                                                                                                        self.dist_along[1],
-                                                                                                        self.dist_target,
-                                                                                                        self.dist_frechet)
+            ret_str = ret_str + ", no result"
+        if self.dist_target is not nan:
+            ret_str = ret_str + " Target: {0:0.3f}".format(self.dist_target)
+        if self.dist_along_translation is not nan:
+            ret_str = ret_str + " D Trans: {0:0.3f}".format(self.dist_along_translation)
+        if self.dist_along_rotation is not nan:
+            ret_str = ret_str + " D Rot: {0:0.3f}".format(self.dist_along_rotation)
+        if self.dist_frechet is not nan:
+            ret_str = ret_str + " D Frec: {0:0.3f}".format(self.dist_frechet)
+        return ret_str
 
-        return "Test: {0} Along: {1:0.3f} Target: {2:0.3f} Frechet: {3:0.3f}\n ".format(self.test_name,
-                                                                                        self.dist_along,
-                                                                                        self.dist_target,
-                                                                                        self.dist_frechet)
+    @staticmethod
+    def write_header_data(f):
+        """ Header row for csv file """
+        col_names = ["Name", "Type", "TranslationAngle", "RotationAngle"]
+        col_names.extend(["DistToTarget", "DistAlongTranslation", "DistAlongRotation", "FrechetDistance"])
+        col_names.extend(["LastIndex", "Indices"])
+        f.writerow(col_names)
+
+    def write_data(self, f):
+        """ Write out data to a csv file
+        :param f - csv file writer"""
+
+        row_data = []
+        row_data.append(self.test_name)
+        row_data.append(self.test_type)
+        row_data.append(self.translation_angle)
+        row_data.append(self.rotation_angle)
+        row_data.append(self.dist_target)
+        row_data.append(self.dist_along_translation)
+        row_data.append(self.dist_along_rotation)
+        row_data.append(self.dist_frechet)
+        row_data.append(self.end_target_index)
+        for i in self.target_indices:
+            row_data.append("{}".format(i))
+
+        f.writerow(row_data)
 
 
 class AsteriskTestMetrics2D:
+    metric_names = {"Distance_along, Distance_target, Frechet_distance"}
+    translation_angles = linspace(90, 90-360, 8, endpoint=False)
+    rotation_directions = {"Clockwise": -15, "Counterclockwise": 15}
+    status_values = {"Successful", "Unsuccessful", "Not_tried"}
+
     def __init__(self, n_samples=15):
         """
         :param n_samples number of samples in target path"""
-
-        self.test_names = {"Translation": 0, "Rotation": 1, "Rotation_translation": 2}
-        self.metric_names = {"Distance_along, Distance_target, Frechet_distance"}
-        self.translation_angles = linspace(90, 90-360, 8, endpoint=False)
-        self.rotation_directions = {"Clockwise": -15, "Counterclockwise": 15}
-        self.status_values = {"Successful", "Unsuccessful", "Not_tried"}
-
         self.target_paths = {}
-        self.test_results = {}
+        self.test_results = []
         self._add_target_paths(n_samples)
         self.reset_test_results()
-        self.object_paths = {}
 
     def reset_test_results(self):
         """Zero out the results"""
 
-        for t in self.test_names:
-            self.test_results[t] = []
-
-        self.test_results["Rotation"].append(AsteriskTestResults("Rotation_cw", n_samples))
-        self.test_results["Rotation"].append(AsteriskTestResults("Rotation_ccw", n_samples))
-
-        self.test_results["Rotation_translation"].append([])
-        self.test_results["Rotation_translation"].append([])
-        for a in self.translation_angles:
-            self.test_results["Translation"].append(AsteriskTestResults("Translation {0}".format(a), n_samples))
-            self.test_results["Rotation_translation"][0].append(AsteriskTestResults("Rotation_translation_cw {0}".format(a), n_samples))
-            self.test_results["Rotation_translation"][1].append(AsteriskTestResults("Rotation_translation_ccw {0}".format(a), n_samples))
+        self.test_results = []
 
     def _add_target_paths(self, n_samples):
         """Create ideal paths for each movement type
@@ -178,253 +195,279 @@ class AsteriskTestMetrics2D:
 
         return max(dist_frechet), target_index
 
-    def add_translation_test(self, in_which, poses_obj):
+    def add_translation_test(self, name, in_which, poses_obj):
         """Add the translation test
+        :param name: str - name of test, eg, hand type
         :param in_which is 0..7, which angle in the asterisk
         :param poses_obj is a 3xn matrix of x,y,theta poses
         :returns Percentage distance traveled, percentage error last pose, overall path score"""
 
-        target_poses = self.target_paths["Translation"][in_which]
+        test_type = AsteriskTestResults.test_type[0]
+        target_poses = self.target_paths[test_type][in_which]
         target_pose = target_poses[-1]
-        res = self.test_results["Translation"][in_which]
+        ret_dists = AsteriskTestResults(name, test_type, in_translation_angle=dir_options_no_rot[in_which])
         last_pose_obj = Pose2D(poses_obj[0, -1], poses_obj[1, -1], poses_obj[2, -1])
         n_total = poses_obj.shape[1]
 
         # Check that we're in at least roughly the right ballpark for the end pose
-        last_angle = 180.0 * arctan2(last_pose_obj.y, last_pose_obj.x) / pi
-        if last_angle < 0:
-            last_angle += 360
+        last_pose_angle = 180.0 * arctan2(last_pose_obj.y, last_pose_obj.x) / pi
+        expected_angle = self.translation_angles[in_which]
+        if last_pose_angle - expected_angle > 180:
+            last_pose_angle -= 360
+        elif expected_angle - last_pose_angle > 180:
+            last_pose_angle += 360
 
-        if in_which == 0 and last_angle > 180:
-            last_angle -= 360
-        elif in_which == 7 and last_angle < 180:
-            last_angle += 360
-
-        if abs(last_angle - self.translation_angles[in_which]) > 65:
+        if abs(last_pose_angle - expected_angle) > 65:
             print("Warning: Translation {} detected bad last pose {}, expected {}".format(in_which, last_angle,
                                                                                           self.translation_angles[
                                                                                               in_which]))
 
-        res.dist_along = sqrt(max([poses_obj[0, i_p]**2 + poses_obj[1, i_p]**2 for i_p in range(0, n_total)]))
-        i_target = self._narrow_target(last_pose_obj, target_poses)
+        ret_dists.dist_along_translation = sqrt(max([poses_obj[0, i_p]**2 + poses_obj[1, i_p]**2 for i_p in range(0, n_total)]))
+        ret_dists.end_target_index = self._narrow_target(last_pose_obj, target_poses)
 
-        res.dist_target = last_pose_obj.distance(target_pose)
+        ret_dists.dist_target = last_pose_obj.distance(target_pose)
 
-        if i_target == 0:
+        if ret_dists.end_target_index == 0:
             print("Warning: Closest pose was first pose")
-            i_target += 1
+            ret_dists.end_target_index += 1
 
-        res.dist_frechet, res.target_index = self._frechet_dist(poses_obj, i_target, target_poses)
+        ret_dists.dist_frechet, ret_dists.target_indices = self._frechet_dist(poses_obj, ret_dists.end_target_index, target_poses)
 
-        return res
+        self.test_results.append(ret_dists)
+        return ret_dists
 
-    def add_rotation_test(self, in_which, poses_obj):
+    def add_rotation_test(self, name, in_which, poses_obj):
         """Add the translation test
         :param in_which is Clockwise or Counterclockwise
         :param poses_obj is a 3xn matrix of x,y,theta poses
         :returns Percentage distance traveled, percentage error last pose, overall path score"""
 
-        target_poses = self.target_paths["Rotation"][in_which]
+        test_type = AsteriskTestResults.test_type[1]
+        target_poses = self.target_paths[test_type][in_which]
         target_pose = target_poses[-1]
         last_pose_obj = Pose2D(poses_obj[0, -1], poses_obj[1, -1], poses_obj[2, -1])
+        ret_dists = AsteriskTestResults(name, test_type, in_rotation_angle=type_options[in_which+1])
 
         # Check that we're in at least roughly the right ballpark for the end pose
         dist_from_center = sqrt(last_pose_obj.x**2 + last_pose_obj.y**2)
         if dist_from_center > 0.2:
             print("Warning: rotation test {} had big offset {}".format(in_which, dist_from_center))
 
-        dist_along = abs(last_pose_obj.theta) / self.rotation_directions["Counterclockwise"]
-        i_target = self._narrow_target(last_pose_obj, target_poses)
+        ret_dists.dist_along_rotation = abs(last_pose_obj.theta) / self.rotation_directions["Counterclockwise"]
+        ret_dists.end_target_index = self._narrow_target(last_pose_obj, target_poses)
 
-        dist_target = last_pose_obj.distance(target_pose)
+        ret_dists.dist_target = last_pose_obj.distance(target_pose)
 
-        if i_target == 0:
+        if ret_dists.end_target_index == 0:
             print("Warning: Closest pose was first pose")
-            i_target += 1
+            ret_dists.end_target_index += 1
 
-        dist_frechet = self._frechet_dist(poses_obj, i_target, target_poses)
+        ret_dists.dist_frechet, ret_dists.target_indices = self._frechet_dist(poses_obj, ret_dists.end_target_index, target_poses)
 
-        self.test_results["Rotation"][in_which] = (dist_along, dist_target, dist_frechet)
+        self.test_results.append(ret_dists)
+        return ret_dists
 
-        return dist_along, dist_target, dist_frechet
-
-    def add_rotation_translation_test(self, in_which_rot, in_which_trans, poses_obj):
+    def add_rotation_translation_test(self, name, in_which_rot, in_which_trans, poses_obj):
         """Add the translation test
         :param in_which_rot is 0 or 1, clockwise or counter
         :param in_which_trans is 0..7, which angle in the asterisk
         :param poses_obj is a 3xn matrix of x,y,theta poses
         :returns Percentage distance traveled, percentage error last pose, overall path score"""
 
-        target_poses = self.target_paths["Rotation_translation"][in_which_rot][in_which_trans]
+        test_type = AsteriskTestResults.test_type[2]
+        target_poses = self.target_paths[test_type][in_which_rot][in_which_trans]
         target_pose = target_poses[-1]
         last_pose_obj = Pose2D(poses_obj[0, -1], poses_obj[1, -1], poses_obj[2, -1])
         n_total = poses_obj.shape[1]
+        ret_dists = AsteriskTestResults(name, test_type,
+                                        in_translation_angle=dir_options_no_rot[in_which_trans],
+                                        in_rotation_angle=type_options[in_which_rot+1])
 
         # Check that we're in at least roughly the right ballpark for the end pose
-        last_angle = 180.0 * arctan2(last_pose_obj.y, last_pose_obj.x) / pi
-        if last_angle < 0:
-            last_angle += 360
+        last_pose_angle = 180.0 * arctan2(last_pose_obj.y, last_pose_obj.x) / pi
+        expected_angle = self.translation_angles[in_which_trans]
+        if last_pose_angle - expected_angle > 180:
+            last_pose_angle -= 360
+        elif expected_angle - last_pose_angle > 180:
+            last_pose_angle += 360
 
-        if in_which_trans == 0 and last_angle > 180:
-            last_angle -= 360
-        elif in_which_trans == 7 and last_angle < 180:
-            last_angle += 360
-
-        if abs(last_angle - self.translation_angles[in_which_trans]) > 65:
+        if abs(last_pose_angle - expected_angle) > 65:
             print("Warning: Translation {} detected bad last pose {}, expected {}".format(in_which_trans, last_angle,
                                                                                           self.translation_angles[
                                                                                               in_which_trans]))
 
-        dist_along_trans = sqrt(max([poses_obj[0, i_p]**2 + poses_obj[1, i_p]**2 for i_p in range(0, n_total)]))
-        dist_along_rot = abs(last_pose_obj.theta) / self.rotation_directions["Counterclockwise"]
+        ret_dists.dist_along_translation = sqrt(max([poses_obj[0, i_p]**2 + poses_obj[1, i_p]**2 for i_p in range(0, n_total)]))
+        ret_dists.dist_along_rotation = abs(last_pose_obj.theta) / self.rotation_directions["Counterclockwise"]
 
-        i_target = self._narrow_target(last_pose_obj, target_poses)
+        ret_dists.end_target_index = self._narrow_target(last_pose_obj, target_poses)
 
-        dist_target = last_pose_obj.distance(target_pose)
+        ret_dists.dist_target = last_pose_obj.distance(target_pose)
 
-        if i_target == 0:
+        if ret_dists.end_target_index == 0:
             print("Warning: Closest pose was first pose")
-            i_target += 1
+            ret_dists.end_target_index += 1
 
-        dist_frechet = self._frechet_dist(poses_obj, i_target, target_poses)
+        ret_dists.dist_frechet, ret_dists.target_indices = self._frechet_dist(poses_obj, ret_dists.end_target_index, target_poses)
+        self.test_results.append(ret_dists)
+        return ret_dists
 
-        self.test_results["Rotation_translation"][in_which_rot][in_which_trans] = ((dist_along_trans, dist_along_rot), dist_target, dist_frechet)
+    def write_test_results(self, fname):
+        """ Write the test results out to a csv file
+        :param fname: str
+        :rtype none"""
+        with open(fname, "w") as f:
+            csv_f = csv.writer(f, delimiter=',')
+            AsteriskTestResults.write_header_data(csv_f)
+            for t in self.test_results:
+                t.write_data(csv_f)
 
-        return (dist_along_trans, dist_along_rot), dist_target, dist_frechet
+    def test_translation(self):
+        """ Make fake translation data and add it
+        :rtype: None
+        """
+        from numpy.random import uniform
 
+        n_poses = 100
+        obj_poses = zeros([3, n_poses])
+        noise_x = uniform(-0.1, 0.1, (8, n_poses))
+        noise_y = uniform(-0.1, 0.1, (8, n_poses))
+        noise_ang = uniform(-5, 5, (8, n_poses))
 
-def test_translation(my_tests):
-    """ Make fake translation data and add it
-    :param my_tests AsteriskTestMetrics2D"""
-    from numpy.random import uniform
+        print("Testing translations")
+        for i_ang, ang in enumerate(self.translation_angles):
+            for i_p, div in enumerate(linspace(0, 1, n_poses)):
+                obj_poses[0, i_p] = div * cos(pi*ang/180) + noise_x[i_ang, i_p]
+                obj_poses[1, i_p] = div * sin(pi*ang/180) + noise_y[i_ang, i_p]
+                obj_poses[2, i_p] = noise_ang[i_ang, i_p]
 
-    n_poses = 100
-    obj_poses = zeros([3, n_poses])
-    noise_x = uniform(-0.1, 0.1, (8, n_poses))
-    noise_y = uniform(-0.1, 0.1, (8, n_poses))
-    noise_ang = uniform(-5, 5, (8, n_poses))
+            dists = self.add_translation_test("Test", i_ang, obj_poses)
+            print("Translation, angle {0}: {1}".format(ang, dists))
 
-    for i_ang, ang in enumerate(my_tests.translation_angles):
-        for i_p, div in enumerate(linspace(0, 1, n_poses)):
-            obj_poses[0, i_p] = div * cos(pi*ang/180) + noise_x[i_ang, i_p]
-            obj_poses[1, i_p] = div * sin(pi*ang/180) + noise_y[i_ang, i_p]
-            obj_poses[2, i_p] = noise_ang[i_ang, i_p]
+    def test_rotation(self):
+        """ Make fake translation data and add it
+        :rtype: None """
+        from numpy.random import uniform
 
-        dists = my_tests.add_translation_test(i_ang, obj_poses)
-        print("Translation, angle {0}, distances {1}".format(ang, dists))
+        n_poses = 50
+        obj_poses = zeros([3, n_poses])
+        noise_x = uniform(-0.1, 0.1, n_poses)
+        noise_y = uniform(-0.1, 0.1, n_poses)
+        noise_ang = uniform(-0.5, 0.5, n_poses)
 
+        for i_ang, ang in enumerate(linspace(0, self.rotation_directions["Clockwise"], n_poses)):
+            obj_poses[0, i_ang] = noise_x[i_ang]
+            obj_poses[1, i_ang] = noise_y[i_ang]
+            obj_poses[2, i_ang] = ang + noise_ang[i_ang]
 
-def test_rotation(my_tests):
-    """ Make fake translation data and add it
-    :rtype: None
-    :param my_tests AsteriskTestMetrics2D"""
-    from numpy.random import uniform
+        dists = self.add_rotation_test("Test", 0, obj_poses)
+        print("Rotation, angle {0}, distances {1}".format("Clockwise", dists))
+        for i_ang, ang in enumerate(linspace(0, self.rotation_directions["Counterclockwise"], n_poses)):
+            obj_poses[2, i_ang] = ang + noise_ang[i_ang]
+        dists = self.add_rotation_test("Test", 1, obj_poses)
+        print("Rotation, angle {0}: {1}".format("Counterclockwise", dists))
 
-    n_poses = 50
-    obj_poses = zeros([3, n_poses])
-    noise_x = uniform(-0.1, 0.1, n_poses)
-    noise_y = uniform(-0.1, 0.1, n_poses)
-    noise_ang = uniform(-0.5, 0.5, n_poses)
+    def test_rotation_translation(self):
+        """ Make fake translation data and add it
+        :rtype: None """
+        from numpy.random import uniform
 
-    for i_ang, ang in enumerate(linspace(0, my_tests.rotation_directions["Clockwise"], n_poses)):
-        obj_poses[0, i_ang] = noise_x[i_ang]
-        obj_poses[1, i_ang] = noise_y[i_ang]
-        obj_poses[2, i_ang] = ang + noise_ang[i_ang]
+        n_poses = 100
+        obj_poses = zeros([3, n_poses])
+        noise_x = uniform(-0.1, 0.1, (8, n_poses))
+        noise_y = uniform(-0.1, 0.1, (8, n_poses))
+        noise_ang = uniform(-5, 5, (8, n_poses))
 
-    dists = my_tests.add_rotation_test(0, obj_poses)
-    print("Rotation, angle {0}, distances {1}".format("Clockwise", dists))
-    for i_ang, ang in enumerate(linspace(0, my_tests.rotation_directions["Counterclockwise"], n_poses)):
-        obj_poses[2, i_ang] = ang + noise_ang[i_ang]
-    dists = my_tests.add_rotation_test(1, obj_poses)
-    print("Rotation, angle {0}, distances {1}".format("Counterclockwise", dists))
+        for i_ang, ang in enumerate(self.translation_angles):
+            for i_p, div in enumerate(linspace(0, 1, n_poses)):
+                obj_poses[0, i_p] = div * cos(pi*ang/180) + noise_x[i_ang, i_p]
+                obj_poses[1, i_p] = div * sin(pi*ang/180) + noise_y[i_ang, i_p]
+                obj_poses[2, i_p] = self.rotation_directions["Clockwise"] + noise_ang[i_ang, i_p]
 
+            dists = self.add_rotation_translation_test("Test", 0, i_ang, obj_poses)
+            print("Rotation {} Translation, angle {}: {}".format("Clockwise", ang, dists))
 
-def test_rotation_translation(my_tests):
-    """ Make fake translation data and add it
-    :param my_tests AsteriskTestMetrics2D"""
-    from numpy.random import uniform
+        for i_ang, ang in enumerate(self.translation_angles):
+            for i_p, div in enumerate(linspace(0, 1, n_poses)):
+                obj_poses[0, i_p] = div * cos(pi*ang/180) + noise_x[i_ang, i_p]
+                obj_poses[1, i_p] = div * sin(pi*ang/180) + noise_y[i_ang, i_p]
+                obj_poses[2, i_p] = self.rotation_directions["Counterclockwise"] + noise_ang[i_ang, i_p]
 
-    n_poses = 100
-    obj_poses = zeros([3, n_poses])
-    noise_x = uniform(-0.1, 0.1, (8, n_poses))
-    noise_y = uniform(-0.1, 0.1, (8, n_poses))
-    noise_ang = uniform(-5, 5, (8, n_poses))
+            dists = self.add_rotation_translation_test("Test", 1, i_ang, obj_poses)
+            print("Rotation {} Translation, angle {}: {}".format("Counterclockwise", ang, dists))
 
-    for i_ang, ang in enumerate(my_tests.translation_angles):
-        for i_p, div in enumerate(linspace(0, 1, n_poses)):
-            obj_poses[0, i_p] = div * cos(pi*ang/180) + noise_x[i_ang, i_p]
-            obj_poses[1, i_p] = div * sin(pi*ang/180) + noise_y[i_ang, i_p]
-            obj_poses[2, i_p] = my_tests.rotation_directions["Clockwise"] + noise_ang[i_ang, i_p]
+    @staticmethod
+    def run_tests():
+        my_asterisk_tests = AsteriskTestMetrics2D()
 
-        dists = my_tests.add_rotation_translation_test(0, i_ang, obj_poses)
-        print("Rotation {} Translation, angle {}, distances {}".format("Clockwise", ang, dists))
+        my_asterisk_tests.test_translation()
+        my_asterisk_tests.test_rotation()
+        my_asterisk_tests.test_rotation_translation()
 
-    for i_ang, ang in enumerate(my_tests.translation_angles):
-        for i_p, div in enumerate(linspace(0, 1, n_poses)):
-            obj_poses[0, i_p] = div * cos(pi*ang/180) + noise_x[i_ang, i_p]
-            obj_poses[1, i_p] = div * sin(pi*ang/180) + noise_y[i_ang, i_p]
-            obj_poses[2, i_p] = my_tests.rotation_directions["Counterclockwise"] + noise_ang[i_ang, i_p]
+        my_asterisk_tests.write_test_results("test_results.csv")
 
-        dists = my_tests.add_rotation_translation_test(1, i_ang, obj_poses)
-        print("Rotation {} Translation, angle {}, distances {}".format("Counterclockwise", ang, dists))
+    def process_file(self, trial_type: str, ang_name: str, obj_poses):
+        """Read the files, compute the metrics
+        !param trial_type from asterisk_0_prompts, minus, plus, etc
+        :param ang_name from asterisk_0_prompts, none or a, b, c etc
+        :param obj_poses object poses
+        :returns Distances"""
 
+        print("{0}\n x {1} y {2} t {3}".format(trial_type+ang_name, obj_poses[0,-1], obj_poses[1, -1], obj_poses[2, -1]))
+        ang = ord(ang_name[0]) - ord('a')
+        if trial_type is "minus15":
+            dists = self.add_rotation_translation_test(1, ang, obj_poses)
+        elif trial_type is "plus15":
+            dists = self.add_rotation_translation_test(0, ang, obj_poses)
+        elif ang_name is "cw":
+            dists = self.add_rotation_test(0, obj_poses)
+        elif ang_name is "ccw":
+            dists = self.add_rotation_test(1, obj_poses)
+        else:
+            dists = self.add_translation_test(ang, obj_poses)
 
-def run_tests():
-    my_asterisk_tests = AsteriskTestMetrics2D()
+        return dists
 
-    test_translation(my_asterisk_tests)
-    test_rotation(my_asterisk_tests)
-    test_rotation_translation(my_asterisk_tests)
+    @staticmethod
+    def process_files(dir_name, subject_name, hand):
+        """Read the files, compute the metrics
+        !param dir_name input file name
+        :param subject_name name of subject to process
+        :param hand name of hand to process
+        :return my_tests Array of AsteriskTestMetrics with tests"""
 
+        ret_dists = []
+        my_tests = [AsteriskTestMetrics2D() for _ in range(0,3)]
+        for fname in generate_fname(dir_name, subject_name, hand):
+            fname_pieces = fname.split("_")
+            try:
+                with open(fname, "r") as csvfile:
+                    csv_file = csv.reader(csvfile, delimiter=',')
+                    obj_poses = []
+                    for i, row in enumerate(csv_file):
+                        try:
+                            obj_poses.append([float(row[1]), float(row[2]), float(row[3])])
+                        except:
+                            pass
 
-def process_files(dir_name, subject_name, hand, my_tests):
-    """Read the files, compute the metrics
-    !param dir_name input file name
-    :param subject_name name of subject to process
-    :param hand name of hand to process
-    :param my_tests Array of AsteriskTestMetrics to put tests in"""
+                    obj_poses = np.transpose(np.array(obj_poses))
+                    print("{0}\n x {1} y {2} t {3}".format(fname, obj_poses[0,-1], obj_poses[1, -1], obj_poses[2, -1]))
+                    trial_number = int(fname_pieces[-1][0])-1
+                    trial_type = fname_pieces[-2]
+                    angle_name = fname_pieces[-3]
+                    dists = my_tests[trial_number].process_file(trial_type, angle_name, obj_poses)
 
-    ret_dists: List[Tuple[Any, Any]] = []
-    for fname in generate_fname(dir_name, subject_name, hand):
-        fname_pieces = fname.split("_")
-        try:
-            with open(fname, "r") as csvfile:
-                csv_file = csv.reader(csvfile, delimiter=',')
-                obj_poses = []
-                for i, row in enumerate(csv_file):
-                    try:
-                        obj_poses.append([float(row[1]), float(row[2]), float(row[3])])
-                    except:
-                        pass
-    
-                obj_poses = np.transpose(np.array(obj_poses))
-                print("{0}\n x {1} y {2} t {3}".format(fname, obj_poses[0,-1], obj_poses[1, -1], obj_poses[2, -1]))
-                trial_number = int(fname_pieces[-1][0])-1
-                trial_type = fname_pieces[-2]
-                ang = ord(fname_pieces[-3][0]) - ord('a')
-                if trial_type is "minus15":
-                    dists = my_tests[trial_number].add_rotation_translation_test(1, ang, obj_poses)
-                elif trial_type is "plus15":
-                    dists = my_tests[trial_number].add_rotation_translation_test(0, ang, obj_poses)
-                elif fname_pieces[-3] is "cw":
-                    dists = my_tests[trial_number].add_rotation_test(0, obj_poses)
-                elif fname_pieces[-3] is "ccw":
-                    dists = my_tests[trial_number].add_rotation_test(1, obj_poses)
-                else:
-                    dists = my_tests[trial_number].add_translation_test(ang, obj_poses)
-    
-                ret_dists.append((fname, dists))
-                print("{0} dists {1} ".format(fname, dists))
-        except FileNotFoundError:
-            print("File not found: {0}".format(fname))
+                    ret_dists.append((fname, dists))
+                    print("{0} dists {1} ".format(fname, dists))
+            except FileNotFoundError:
+                print("File not found: {0}".format(fname))
 
-    return ret_dists
-
+        return my_tests
 
 if __name__ == '__main__':
+    AsteriskTestMetrics2D.run_tests()
     my_tests = [AsteriskTestMetrics2D() for i in range(0, 3)]
 
     dir_name_process = "/Users/grimmc/Box/Grasping/asterisk_test_data/filtered_data/"
     subject_name_process = "filt_josh"
     hand_process = "2v2"
-    ret_dists = process_files(dir_name_process, subject_name_process, hand_process, my_tests)
+    my_test_results = AsteriskTestMetrics2D.process_files(dir_name_process, subject_name_process, hand_process)
