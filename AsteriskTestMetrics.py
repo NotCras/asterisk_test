@@ -405,25 +405,26 @@ class AsteriskTestMetrics2D:
 
         my_asterisk_tests.write_test_results("test_results.csv")
 
-    def process_file(self, trial_type: str, ang_name: str, obj_poses):
+    def process_file(self, name: str, trial_type: str, ang_name: str, obj_poses):
         """Read the files, compute the metrics
-        !param trial_type from asterisk_0_prompts, minus, plus, etc
+        :param name subject + hand + trial name
+        :param trial_type from asterisk_0_prompts, minus, plus, etc
         :param ang_name from asterisk_0_prompts, none or a, b, c etc
         :param obj_poses object poses
         :returns Distances"""
 
         print("{0}\n x {1} y {2} t {3}".format(trial_type+ang_name, obj_poses[0,-1], obj_poses[1, -1], obj_poses[2, -1]))
         ang = ord(ang_name[0]) - ord('a')
-        if trial_type is "minus15":
-            dists = self.add_rotation_translation_test(1, ang, obj_poses)
-        elif trial_type is "plus15":
-            dists = self.add_rotation_translation_test(0, ang, obj_poses)
-        elif ang_name is "cw":
-            dists = self.add_rotation_test(0, obj_poses)
-        elif ang_name is "ccw":
-            dists = self.add_rotation_test(1, obj_poses)
+        if trial_type == "minus15":
+            dists = self.add_rotation_translation_test(name, 1, ang, obj_poses)
+        elif trial_type == "plus15":
+            dists = self.add_rotation_translation_test(name, 0, ang, obj_poses)
+        elif ang_name == "cw":
+            dists = self.add_rotation_test(name, 1, obj_poses)
+        elif ang_name == "ccw":
+            dists = self.add_rotation_test(name, 0, obj_poses)
         else:
-            dists = self.add_translation_test(ang, obj_poses)
+            dists = self.add_translation_test(name, ang, obj_poses)
 
         return dists
 
@@ -435,8 +436,7 @@ class AsteriskTestMetrics2D:
         :param hand name of hand to process
         :return my_tests Array of AsteriskTestMetrics with tests"""
 
-        ret_dists = []
-        my_tests = [AsteriskTestMetrics2D() for _ in range(0,3)]
+        my_tests = [AsteriskTestMetrics2D() for _ in range(0, 5)]
         for fname in generate_fname(dir_name, subject_name, hand):
             fname_pieces = fname.split("_")
             try:
@@ -454,20 +454,23 @@ class AsteriskTestMetrics2D:
                     trial_number = int(fname_pieces[-1][0])-1
                     trial_type = fname_pieces[-2]
                     angle_name = fname_pieces[-3]
-                    dists = my_tests[trial_number].process_file(trial_type, angle_name, obj_poses)
+                    name = subject_name + "_" + fname_pieces[-4] + "_" + "Trial{0}".format(trial_number)
+                    dists = my_tests[trial_number].process_file(name, trial_type, angle_name, obj_poses)
 
-                    ret_dists.append((fname, dists))
-                    print("{0} dists {1} ".format(fname, dists))
+                    print("{0}".format(dists))
             except FileNotFoundError:
                 print("File not found: {0}".format(fname))
 
         return my_tests
 
 if __name__ == '__main__':
-    AsteriskTestMetrics2D.run_tests()
-    my_tests = [AsteriskTestMetrics2D() for i in range(0, 3)]
+    #AsteriskTestMetrics2D.run_tests()
 
-    dir_name_process = "/Users/grimmc/Box/Grasping/asterisk_test_data/filtered_data/"
+    #dir_name_process = "/Users/grimmc/Box/Grasping/asterisk_test_data/filtered_data/"
+    dir_name_process = "/Users/grimmc/Downloads/filtered/"
     subject_name_process = "filt_josh"
-    hand_process = "2v2"
+    hand_process = "2v3"
     my_test_results = AsteriskTestMetrics2D.process_files(dir_name_process, subject_name_process, hand_process)
+
+    for i, t in enumerate(my_test_results):
+        t.write_test_results("check_res{0}.csv".format(i))
