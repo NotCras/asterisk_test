@@ -61,6 +61,7 @@ class AsteriskTestResults:
         self.dist_along_translation = nan
         self.dist_along_rotation = nan
         self.target_indices = []
+        self.obj_poses = []
 
     def __str__(self):
         """Print results"""
@@ -206,6 +207,7 @@ class AsteriskTestMetrics2D:
         target_poses = self.target_paths[test_type][in_which]
         target_pose = target_poses[-1]
         ret_dists = AsteriskTestResults(name, test_type, in_translation_angle=dir_options_no_rot[in_which])
+        ret_dists.obj_poses = poses_obj.copy()
         last_pose_obj = Pose2D(poses_obj[0, -1], poses_obj[1, -1], poses_obj[2, -1])
         n_total = poses_obj.shape[1]
 
@@ -247,6 +249,7 @@ class AsteriskTestMetrics2D:
         target_pose = target_poses[-1]
         last_pose_obj = Pose2D(poses_obj[0, -1], poses_obj[1, -1], poses_obj[2, -1])
         ret_dists = AsteriskTestResults(name, test_type, in_rotation_angle=type_options[in_which+1])
+        ret_dists.obj_poses = poses_obj.copy()
 
         # Check that we're in at least roughly the right ballpark for the end pose
         dist_from_center = sqrt(last_pose_obj.x**2 + last_pose_obj.y**2)
@@ -282,6 +285,7 @@ class AsteriskTestMetrics2D:
         ret_dists = AsteriskTestResults(name, test_type,
                                         in_translation_angle=dir_options_no_rot[in_which_trans],
                                         in_rotation_angle=type_options[in_which_rot+1])
+        ret_dists.obj_poses = poses_obj.copy()
 
         # Check that we're in at least roughly the right ballpark for the end pose
         last_pose_angle = 180.0 * arctan2(last_pose_obj.y, last_pose_obj.x) / pi
