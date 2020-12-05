@@ -49,15 +49,20 @@ class AsteriskTestResults(AsteriskTestTypes):
     status_values = {"Successful", "Unsuccessful", "Not_tried"}
     def __init__(self, name, in_obj_poses: np.array, in_target_path: [Pose2D]):
         """distances, angles, index in test
-        :param n_samples - number of samples in target paths"""
+        :param name - trial file name"""
         self.test_name = name
 
-        self.end_target_index = -1
+        # Actual distances
         self.dist_target = nan
         self.dist_frechet = nan
         self.dist_along_translation = nan
         self.dist_along_rotation = nan
+
+        # Data for Frechet distance
+        self.end_target_index = -1
         self.target_indices = []
+
+        # Save data
         self.obj_poses = in_obj_poses.copy()  # Copy because re-written each time
         self.target_path = in_target_path # These should be stable
 

@@ -107,6 +107,11 @@ class AsteriskTestTypes:
             ret_str = ret_str + " Twist {0}".format(self.get_twist_name())
         return ret_str
 
+    def set(self, att):
+        self.test_type_index = att.test_type_index
+        self.translation_index = att.translation_index
+        self.rotation_index = att.rotation_index
+
     def set_translation_test(self, in_translation_index: int):
         self.test_type_index = 0
         self.translation_index = in_translation_index
@@ -185,6 +190,28 @@ class AsteriskTestTypes:
         if in_att.rotation_index is not self.rotation_index:
             return False
         return True
+
+    @staticmethod
+    def generate_translation():
+        for i in range(0, 8):
+            att = AsteriskTestTypes()
+            att.set_translation_test(i)
+            yield att
+
+    @staticmethod
+    def generate_rotation():
+        for i in range(0, 2):
+            att = AsteriskTestTypes()
+            att.set_rotation_test(i)
+            yield att
+
+    @staticmethod
+    def generate_twist_translation():
+        for ir in range(0, 2):
+            for it in range(0, 8):
+                att = AsteriskTestTypes()
+                att.set_twist_translation_test(it, ir)
+                yield att
 
 
 #------------------------------------
