@@ -30,7 +30,7 @@ class Pose2D:
         ang_rot = abs(self.theta - pose.theta)
         if ang_rot > 180:
             ang_rot -= 180
-        dist_rot = (ang_rot / 20.0)
+        dist_rot = 0.1 * (ang_rot / 45.0)
 
         # return the average
         return 0.5 * (dist_trans + dist_rot)
@@ -62,6 +62,7 @@ class AsteriskTestResults:
         self.dist_along_rotation = nan
         self.target_indices = []
         self.obj_poses = []
+        self.target_path = []
 
     def __str__(self):
         """Print results"""
@@ -175,10 +176,12 @@ class AsteriskTestMetrics2D:
         dist_frechet = []
         target_index = []
         n_total = poses_obj.shape[1]
+
+        i_last_target = min(i_target+1, len(target_poses))
         # Don't search the whole list, just a bracket around where you would expect the closest sample to be
         i_start_search = 0
-        step_along = int(floor(1.5 * n_total / i_target)) + 1
-        for tp in target_poses[0:i_target]:
+        step_along = int(floor(1.5 * n_total / i_last_target)) + 1
+        for tp in target_poses[0:i_last_target]:
             dist_found = 1e30
             i_along_search = i_start_search
             i_end_search = min(i_start_search + step_along, n_total)
@@ -204,14 +207,17 @@ class AsteriskTestMetrics2D:
         :returns Percentage distance traveled, percentage error last pose, overall path score"""
 
         test_type = AsteriskTestResults.test_type[0]
-        target_poses = self.target_paths[test_type][in_which]
-        target_pose = target_poses[-1]
+        target_path = self.target_paths[test_type][in_which]
+        target_pose = target_path[-1]
+
+        # Setup test results
         ret_dists = AsteriskTestResults(name, test_type, in_translation_angle=dir_options_no_rot[in_which])
         ret_dists.obj_poses = poses_obj.copy()
-        last_pose_obj = Pose2D(poses_obj[0, -1], poses_obj[1, -1], poses_obj[2, -1])
-        n_total = poses_obj.shape[1]
+        ret_dists.target_path = target_path
 
         # Check that we're in at least roughly the right ballpark for the end pose
+        last_pose_obj = Pose2D(poses_obj[0, -1], poses_obj[1, -1], poses_obj[2, -1])
+        n_total = poses_obj.shape[1]
         last_pose_angle = 180.0 * arctan2(last_pose_obj.y, last_pose_obj.x) / pi
         expected_angle = self.translation_angles[in_which]
         if last_pose_angle - expected_angle > 180:
@@ -220,12 +226,12 @@ class AsteriskTestMetrics2D:
             last_pose_angle += 360
 
         if abs(last_pose_angle - expected_angle) > 65:
-            print("Warning: Translation {} detected bad last pose {}, expected {}".format(in_which, last_angle,
+            print("Warning: Translation {} detected bad last pose {}, expected {}".format(in_which, last_pose_angle,
                                                                                           self.translation_angles[
                                                                                               in_which]))
 
         ret_dists.dist_along_translation = sqrt(max([poses_obj[0, i_p]**2 + poses_obj[1, i_p]**2 for i_p in range(0, n_total)]))
-        ret_dists.end_target_index = self._narrow_target(last_pose_obj, target_poses)
+        ret_dists.end_target_index = self._narrow_target(last_pose_obj, target_path)
 
         ret_dists.dist_target = last_pose_obj.distance(target_pose)
 
@@ -233,8 +239,7 @@ class AsteriskTestMetrics2D:
             print("Warning: Closest pose was first pose")
             ret_dists.end_target_index += 1
 
-        ret_dists.dist_frechet, ret_dists.target_indices = self._frechet_dist(poses_obj, ret_dists.end_target_index, target_poses)
-
+        ret_dists.dist_frechet, ret_dists.target_indices = self._frechet_dist(poses_obj, ret_dists.end_target_index, target_path)
         self.test_results.append(ret_dists)
         return ret_dists
 
@@ -245,19 +250,23 @@ class AsteriskTestMetrics2D:
         :returns Percentage distance traveled, percentage error last pose, overall path score"""
 
         test_type = AsteriskTestResults.test_type[1]
-        target_poses = self.target_paths[test_type][in_which]
-        target_pose = target_poses[-1]
-        last_pose_obj = Pose2D(poses_obj[0, -1], poses_obj[1, -1], poses_obj[2, -1])
+        target_path = self.target_paths[test_type][in_which]
+        target_pose = target_path[-1]
+
+        # Setup test results
         ret_dists = AsteriskTestResults(name, test_type, in_rotation_angle=type_options[in_which+1])
+        ret_dists.target_path = target_path
         ret_dists.obj_poses = poses_obj.copy()
 
         # Check that we're in at least roughly the right ballpark for the end pose
+        last_pose_obj = Pose2D(poses_obj[0, -1], poses_obj[1, -1], poses_obj[2, -1])
         dist_from_center = sqrt(last_pose_obj.x**2 + last_pose_obj.y**2)
         if dist_from_center > 0.2:
             print("Warning: rotation test {} had big offset {}".format(in_which, dist_from_center))
 
+        # Calculate distances
         ret_dists.dist_along_rotation = abs(last_pose_obj.theta) / self.rotation_directions["Counterclockwise"]
-        ret_dists.end_target_index = self._narrow_target(last_pose_obj, target_poses)
+        ret_dists.end_target_index = self._narrow_target(last_pose_obj, target_path)
 
         ret_dists.dist_target = last_pose_obj.distance(target_pose)
 
@@ -265,7 +274,7 @@ class AsteriskTestMetrics2D:
             print("Warning: Closest pose was first pose")
             ret_dists.end_target_index += 1
 
-        ret_dists.dist_frechet, ret_dists.target_indices = self._frechet_dist(poses_obj, ret_dists.end_target_index, target_poses)
+        ret_dists.dist_frechet, ret_dists.target_indices = self._frechet_dist(poses_obj, ret_dists.end_target_index, target_path)
 
         self.test_results.append(ret_dists)
         return ret_dists
@@ -278,16 +287,20 @@ class AsteriskTestMetrics2D:
         :returns Percentage distance traveled, percentage error last pose, overall path score"""
 
         test_type = AsteriskTestResults.test_type[2]
-        target_poses = self.target_paths[test_type][in_which_rot][in_which_trans]
-        target_pose = target_poses[-1]
-        last_pose_obj = Pose2D(poses_obj[0, -1], poses_obj[1, -1], poses_obj[2, -1])
-        n_total = poses_obj.shape[1]
+        target_path = self.target_paths[test_type][in_which_rot][in_which_trans]
+        target_pose = target_path[-1]
+
+        # Setup test results
         ret_dists = AsteriskTestResults(name, test_type,
                                         in_translation_angle=dir_options_no_rot[in_which_trans],
                                         in_rotation_angle=type_options[in_which_rot+1])
+        ret_dists.target_path = target_path
         ret_dists.obj_poses = poses_obj.copy()
 
         # Check that we're in at least roughly the right ballpark for the end pose
+        last_pose_obj = Pose2D(poses_obj[0, -1], poses_obj[1, -1], poses_obj[2, -1])
+        n_total = poses_obj.shape[1]
+
         last_pose_angle = 180.0 * arctan2(last_pose_obj.y, last_pose_obj.x) / pi
         expected_angle = self.translation_angles[in_which_trans]
         if last_pose_angle - expected_angle > 180:
@@ -296,14 +309,14 @@ class AsteriskTestMetrics2D:
             last_pose_angle += 360
 
         if abs(last_pose_angle - expected_angle) > 65:
-            print("Warning: Translation {} detected bad last pose {}, expected {}".format(in_which_trans, last_angle,
+            print("Warning: Translation {} detected bad last pose {}, expected {}".format(in_which_trans, last_pose_angle,
                                                                                           self.translation_angles[
                                                                                               in_which_trans]))
 
         ret_dists.dist_along_translation = sqrt(max([poses_obj[0, i_p]**2 + poses_obj[1, i_p]**2 for i_p in range(0, n_total)]))
         ret_dists.dist_along_rotation = abs(last_pose_obj.theta) / self.rotation_directions["Counterclockwise"]
 
-        ret_dists.end_target_index = self._narrow_target(last_pose_obj, target_poses)
+        ret_dists.end_target_index = self._narrow_target(last_pose_obj, target_path)
 
         ret_dists.dist_target = last_pose_obj.distance(target_pose)
 
@@ -311,9 +324,18 @@ class AsteriskTestMetrics2D:
             print("Warning: Closest pose was first pose")
             ret_dists.end_target_index += 1
 
-        ret_dists.dist_frechet, ret_dists.target_indices = self._frechet_dist(poses_obj, ret_dists.end_target_index, target_poses)
+        ret_dists.dist_frechet, ret_dists.target_indices = self._frechet_dist(poses_obj, ret_dists.end_target_index, target_path)
+        ret_dists.target_paths = self.target_paths
+
         self.test_results.append(ret_dists)
         return ret_dists
+
+    def get_test_results(self, in_test_type: str)->[AsteriskTestResults]:
+        """Get all the tests of that type
+        :param str the type one of AsteriskTestResults test_type
+        :returns [AsteriskTestResults] """
+
+        return [res for res in self.test_results if res.test_type == in_test_type]
 
     def write_test_results(self, fname):
         """ Write the test results out to a csv file
