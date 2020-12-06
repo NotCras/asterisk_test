@@ -29,7 +29,7 @@ class AsteriskAverage(AsteriskTestTypes):
         # This is really clunky, but it's the easiest way to deal
         # with the problem that the arrays have different sizes...
         n_max = max([len(t.target_indices) for t in atrs])
-        self.pose_average = [Pose2D()] * n_max
+        self.pose_average = [Pose2D() for _ in range(0, n_max)]
         sd_dist = [0] * n_max
         sd_theta = [0] * n_max
         count = [0] * n_max
@@ -37,25 +37,27 @@ class AsteriskAverage(AsteriskTestTypes):
             self.names.append(t.test_name)
 
             for j, index in enumerate(t.target_indices):
+                print("{0} {1} {2}".format(index, t.obj_poses[0, index], t.obj_poses[1, index]))
                 self.pose_average[j].x += t.obj_poses[0, index]
                 self.pose_average[j].y += t.obj_poses[1, index]
                 self.pose_average[j].theta += t.obj_poses[2, index]
                 count[j] += 1
 
         # Average
-        for i, p in enumerate(self.pose_average):
-            self.pose_average[i].x /= count[i]
-            self.pose_average[i].y /= count[i]
-            self.pose_average[i].theta /= count[i]
+        for i, c in enumerate(count):
+            self.pose_average[i].x /= c
+            self.pose_average[i].y /= c
+            self.pose_average[i].theta /= c
             count[i] = 0
 
         # SD - do theta separately from distance to centerline
         for t in atrs:
             for j, index in enumerate(t.target_indices):
-                dx = self.pose_average[j].x - t.obj_poses[0, index]
-                dy = self.pose_average[j].y - t.obj_poses[1, index]
+                p = t.obj_poses[:, index]
+                dx = self.pose_average[j].x - p[0]
+                dy = self.pose_average[j].y - p[1]
                 dist = sqrt(dx * dx + dy * dy)
-                dt = abs(self.pose_average[j].theta - t.obj_poses[2, index])
+                dt = abs(self.pose_average[j].theta - p[2])
                 sd_theta[j] += dt
                 sd_dist[j] += dist
                 count[j] += 1

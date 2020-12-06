@@ -121,6 +121,7 @@ class AsteriskTestMetrics2D:
         self.test_results = []
         self._add_target_paths(n_samples)
         self.reset_test_results()
+        self.test_name = ""
 
     def reset_test_results(self):
         """Zero out the results"""
@@ -477,9 +478,11 @@ class AsteriskTestMetrics2D:
                     trial_number = int(fname_pieces[-1][0])-1
                     trial_type = fname_pieces[-2]
                     angle_name = fname_pieces[-3]
-                    name = subject_name + "_" + fname_pieces[-4] + "_" + "Trial{0}".format(trial_number)
+                    hand_name = fname_pieces[-4]
+                    name = subject_name + "_" + hand_name + "_" + "Trial{0}".format(trial_number)
                     while len(my_tests) <= trial_number:
                         my_tests.append(AsteriskTestMetrics2D())
+                    my_tests[trial_number].test_name = subject_name + "_" + hand_name
                     dists = my_tests[trial_number].process_file(name, trial_type, angle_name, obj_poses)
 
                     print("{0}".format(dists))
