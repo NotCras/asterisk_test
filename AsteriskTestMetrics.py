@@ -17,22 +17,23 @@ class Pose2D:
         self.y = in_y
         self.theta = in_theta
 
-    def distance(self, pose):
+    def distance(self, pose, scl_ratio=(0.5, 0.5)):
         """Difference between self and another pose
         :type pose: Pose2D
         :param pose another Pose2D
+        :param scl_ratio - how much to scale distance and rotation error by
         :returns a number"""
 
-        # Standard euclidean distance
-        dist_trans = sqrt((self.x - pose.x) ** 2 + (self.y - pose.y) ** 2)
+        # Standard euclidean distance, scaled by sin(45)
+        dist_trans = sqrt((self.x - pose.x) ** 2 + (self.y - pose.y) ** 2) / sin(pi/4)
         # set up 20 deg of error as approximately 1 unit of translation error
         ang_rot = abs(self.theta - pose.theta)
         if ang_rot > 180:
             ang_rot -= 180
-        dist_rot = 0.1 * (ang_rot / 45.0)
+        dist_rot = (ang_rot / 45.0)
 
         # return the average
-        return 0.5 * (dist_trans + dist_rot)
+        return scl_ratio[0] * dist_trans + scl_ratio[1] * dist_rot
 
     def lin_interp(self, pose, t):
         """ linearly interpolate the pose values
@@ -156,54 +157,103 @@ class AsteriskTestMetrics2D:
         self.target_paths["Twist_translation"] = target_rotation_translation_paths
 
     @staticmethod
-    def _narrow_target(obj_pose, target_poses):
+    def _narrow_target(obj_pose, target_poses, scl_ratio=(0.5, 0.5)) -> int:
         """ narrown down the closest point on the target poses
         :param obj_pose last object pose Pose2D
         :param target_poses [Pose2D;
+        :param scl_ratio - how much to scale distance and rotation error by
         :returns target_i the index of the best match """
 
-        dists_targets = [obj_pose.distance(p) for p in target_poses]
+        dists_targets = [obj_pose.distance(p, scl_ratio) for p in target_poses]
         i_target = dists_targets.index(min(dists_targets))
 
         return i_target
 
     @staticmethod
-    def _frechet_dist(poses_obj, i_target, target_poses):
+    def _frechet_dist(poses_obj, i_target, target_poses, scl_ratio=(0.5, 0.5)) ->(int, float):
         """ Implement Frechet distance
         :param poses_obj all the object poses np.array
         :param i_target the closest point in target_poses
         :param target_poses [Pose2D];
+        :param scl_ratio - how much to scale distance and rotation error by
         :returns max of the min distance between target_poses and obj_poses """
 
-        dist_frechet = []
+        # Length of target curve
+        n_target = min(i_target+1, len(target_poses))
+        # Length of object path
+        n_object_path = poses_obj.shape[1]
+
+        # Matrix to store data in as we calculate Frechet distance
+        # Entry i,j has the cost of pairing i with j, assuming best pairings up to that point
+        ca = np.zeros((n_target, n_object_path), dtype=np.float64)
+        ds = np.zeros((n_target, n_object_path), dtype=np.float64)
+        dsum = np.zeros((n_target, n_object_path), dtype=np.float64)
+        imatch = np.zeros((n_target, n_object_path), dtype=np.int)
+
+        print("Frechet debug: target {0}, n {1}".format(i_target, n_object_path))
+
+        # Top left corner
+        ca[0, 0] = target_poses[0].distance(Pose2D(poses_obj[0, 0], poses_obj[1, 0], poses_obj[2, 0]), scl_ratio)
+        ds[0, 0] = ca[0, 0]
+        dsum[0, 0] = ds[0, 0]
+        imatch[0, 0] = 0  # Match the first target pose to the first object pose
+        target_index = [i for i in range(0, n_target)]
+
+        # Fill in left column ...
+        for i_t in range(1, n_target):
+            ds[i_t, 0] = target_poses[i_t].distance(Pose2D(poses_obj[0, 0], poses_obj[1, 0], poses_obj[2, 0]), scl_ratio)
+            ca[i_t, 0] = max(ca[i_t-1, 0], ds[i_t, 0])
+            dsum[i_t, 0] = dsum[i_t - 1, 0] + ds[i_t, 0]
+            imatch[i_t, 0] = 0  # Match the ith target pose to the first object pose
+
+        # ... and top row
+        for i_p in range(1, n_object_path):
+            ds[0, i_p] = target_poses[0].distance(Pose2D(poses_obj[0, i_p], poses_obj[1, i_p], poses_obj[2, i_p]), scl_ratio)
+            ca[0, i_p] = max(ca[0, i_p - 1], ds[0, i_p])
+            if ds[0, i_p] < dsum[0, i_p - 1]:
+                imatch[0, i_p] = i_p  # Match the first target pose to this object pose
+                dsum[0, i_p] = ds[0, i_p]
+            else:
+                imatch[0, i_p] = imatch[0, i_p-1] # Match to an earlier pose
+                dsum[0, i_p] = dsum[0, i_p-1]
+
+        # Remaining matrix
+        for i_t in range(1, n_target):
+            tp = target_poses[i_t]
+            for i_p in range(1, n_object_path):
+                ds[i_t, i_p] = tp.distance(Pose2D(poses_obj[0, i_p], poses_obj[1, i_p], poses_obj[2, i_p]), scl_ratio)
+                ca[i_t, i_p] = max(min(ca[i_t - 1, i_p],
+                                       ca[i_t - 1, i_p - 1],
+                                       ca[i_t, i_p - 1]),
+                                   ds[i_t, i_p])
+                # Compare using this match with the best match upper row so far
+                # to best match found so far
+                if ds[i_t, i_p] + dsum[i_t-1, i_p] < dsum[i_t, i_p-1]:
+                    imatch[i_t, i_p] = i_p
+                    dsum[i_t, i_p] = ds[i_t, i_p] + dsum[i_t-1, i_p]
+                else:
+                    dsum[i_t, i_p] = dsum[i_t, i_p-1]    # Keep the old match
+                    imatch[i_t, i_p] = imatch[i_t, i_p-1]
+
+        # initialize with minimum value match - allows backtracking
         target_index = []
-        n_total = poses_obj.shape[1]
+        v_min = np.amin(ds, axis=1)
+        for r in range(0, n_target):
+            indx = np.where(ds[r, :] == v_min[r])
+            target_index.append(indx[0][0])
 
-        i_last_target = min(i_target+1, len(target_poses))
-        # Don't search the whole list, just a bracket around where you would expect the closest sample to be
-        i_start_search = 0
-        step_along = int(floor(1.5 * n_total / i_last_target)) + 1
-        for tp in target_poses[0:i_last_target]:
-            dist_found = 1e30
-            i_along_search = i_start_search
-            i_end_search = min(i_start_search + step_along, n_total)
-            for i_p in range(i_start_search, i_end_search):
-                p = poses_obj[:, i_p]
-                dist = tp.distance(Pose2D(p[0], p[1], p[2]))
-                if dist < dist_found:
-                    dist_found = dist
-                    i_along_search = i_p
+        b_is_ok = True
+        for i in range(0, n_target-1):
+            if target_index[i+1] < target_index[i]:
+                b_is_ok = False
+                print("Frechet: Found array not sorted")
 
-            if dist_found is 1e30:
-                dist_found = dist_frechet[-1]
-                i_along_search = n_total - 1
+        # Could just do this, but leaving be for a moment to ensure working
+        if b_is_ok == False:
+            for i_t in range(0, n_target):
+                target_index[i_t] = imatch[i_t, n_object_path-1]
 
-            print("{} {} {}".format(i_start_search, i_along_search, dist_found))
-            target_index.append(i_along_search)
-            i_start_search = i_along_search + 1
-            dist_frechet.append(dist_found)
-
-        return max(dist_frechet), target_index
+        return ca[n_target-1, n_object_path-1], target_index
 
     def add_translation_test(self, name, in_which, poses_obj):
         """Add the translation test
@@ -234,16 +284,21 @@ class AsteriskTestMetrics2D:
                                                                                           self.translation_angles[
                                                                                               in_which]))
 
+        # Use mostly translation for distance
+        scl_ratio = (1- 0.01, 0.01)
         ret_dists.dist_along_translation = sqrt(max([poses_obj[0, i_p]**2 + poses_obj[1, i_p]**2 for i_p in range(0, n_total)]))
-        ret_dists.end_target_index = self._narrow_target(last_pose_obj, target_path)
+        ret_dists.end_target_index = self._narrow_target(last_pose_obj, target_path, scl_ratio)
 
-        ret_dists.dist_target = last_pose_obj.distance(target_pose)
+        ret_dists.dist_target = last_pose_obj.distance(target_pose, scl_ratio)
 
         if ret_dists.end_target_index == 0:
             print("Warning: Closest pose was first pose")
             ret_dists.end_target_index += 1
 
-        ret_dists.dist_frechet, ret_dists.target_indices = self._frechet_dist(poses_obj, ret_dists.end_target_index, target_path)
+        ret_dists.dist_frechet, ret_dists.target_indices = self._frechet_dist(poses_obj,
+                                                                              ret_dists.end_target_index,
+                                                                              target_path,
+                                                                              scl_ratio)
         self.test_results.append(ret_dists)
         return ret_dists
 
@@ -266,9 +321,12 @@ class AsteriskTestMetrics2D:
         if dist_from_center > 0.2:
             print("Warning: rotation test {} had big offset {}".format(in_which, dist_from_center))
 
+        # Use mostly rotation error for distance
+        scl_ratio = (0.01, 1 - 0.01)
+
         # Calculate distances
         ret_dists.dist_along_rotation = abs(last_pose_obj.theta) / AsteriskTestTypes.rotation_directions["Counterclockwise"]
-        ret_dists.end_target_index = self._narrow_target(last_pose_obj, target_path)
+        ret_dists.end_target_index = self._narrow_target(last_pose_obj, target_path, scl_ratio)
 
         ret_dists.dist_target = last_pose_obj.distance(target_pose)
 
@@ -276,7 +334,10 @@ class AsteriskTestMetrics2D:
             print("Warning: Closest pose was first pose")
             ret_dists.end_target_index += 1
 
-        ret_dists.dist_frechet, ret_dists.target_indices = self._frechet_dist(poses_obj, ret_dists.end_target_index, target_path)
+        ret_dists.dist_frechet, ret_dists.target_indices = self._frechet_dist(poses_obj,
+                                                                              ret_dists.end_target_index,
+                                                                              target_path,
+                                                                              scl_ratio)
 
         self.test_results.append(ret_dists)
         return ret_dists
@@ -311,10 +372,13 @@ class AsteriskTestMetrics2D:
                                                                                           self.translation_angles[
                                                                                               in_which_trans]))
 
+        # Use mostly translation for distance
+        scl_ratio = (1 - 0.01, 0.01)
+
         ret_dists.dist_along_translation = sqrt(max([poses_obj[0, i_p]**2 + poses_obj[1, i_p]**2 for i_p in range(0, n_total)]))
         ret_dists.dist_along_rotation = abs(last_pose_obj.theta) / AsteriskTestTypes.twist_directions["Counterclockwise"]
 
-        ret_dists.end_target_index = self._narrow_target(last_pose_obj, target_path)
+        ret_dists.end_target_index = self._narrow_target(last_pose_obj, target_path, scl_ratio)
 
         ret_dists.dist_target = last_pose_obj.distance(target_pose)
 
@@ -322,7 +386,10 @@ class AsteriskTestMetrics2D:
             print("Warning: Closest pose was first pose")
             ret_dists.end_target_index += 1
 
-        ret_dists.dist_frechet, ret_dists.target_indices = self._frechet_dist(poses_obj, ret_dists.end_target_index, target_path)
+        ret_dists.dist_frechet, ret_dists.target_indices = self._frechet_dist(poses_obj,
+                                                                              ret_dists.end_target_index,
+                                                                              target_path,
+                                                                              scl_ratio)
         ret_dists.target_paths = self.target_paths
 
         self.test_results.append(ret_dists)
@@ -437,7 +504,6 @@ class AsteriskTestMetrics2D:
         :param obj_poses object poses
         :returns Distances"""
 
-        print("{0}\n x {1} y {2} t {3}".format(trial_type+ang_name, obj_poses[0,-1], obj_poses[1, -1], obj_poses[2, -1]))
         ang = ord(ang_name[0]) - ord('a')
         if trial_type == "minus15":
             dists = self.add_twist_translation_test(name, 1, ang, obj_poses)
@@ -485,7 +551,7 @@ class AsteriskTestMetrics2D:
                     my_tests[trial_number].test_name = subject_name + "_" + hand_name
                     dists = my_tests[trial_number].process_file(name, trial_type, angle_name, obj_poses)
 
-                    print("{0}".format(dists))
+                    print("{0}\n".format(dists))
             except FileNotFoundError:
                 print("File not found: {0}".format(fname))
 

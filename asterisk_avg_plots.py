@@ -85,6 +85,13 @@ def plot_average_translation(asterisk_avg: AsteriskAverage):
         pt = [a.x - v[0], a.y - v[1]]
         poly.append(pt)
 
+    # For debugging - plot the vx, vy
+    # for v, p in zip(vec_offset, asterisk_avg.pose_average):
+    #     plt.plot([p.x, p.x + v[0]], [p.y, p.y + v[1]], color='black', linestyle='-')
+    # Poses at dots
+    for p in asterisk_avg.pose_average:
+        plot_pose(p, scl=0.25)
+
     polyg = plt.Polygon(poly, color='green', alpha=0.5)
     #polyg = plt.Polygon([[0,0], [0,1], [1,0]])
     plt.gca().add_patch(polyg)
@@ -94,12 +101,6 @@ def plot_average_translation(asterisk_avg: AsteriskAverage):
              [p.y for p in asterisk_avg.pose_average],
              linestyle='-', color="black")
 
-    # For debugging - plot the vx, vy
-    for v, p in zip(vec_offset, asterisk_avg.pose_average):
-        plt.plot([p.x, p.x + v[0]], [p.y, p.y + v[1]], color='black', linestyle='-')
-    # Poses at dots
-    for p in asterisk_avg.pose_average:
-        plot_pose(p)
 
 
 if __name__ == '__main__':
