@@ -3,8 +3,10 @@
 import csv
 import numpy as np
 import pandas as pd
-from scipy import stats
 import matplotlib.pyplot as plt
+
+from scipy import stats
+
 
 
 class hand:
@@ -23,6 +25,7 @@ class hand:
         self.span = spans[name] #TODO: edit here when load measurements function is done
         self.depth = depths[name]
         self.num_fingers = fingers
+        #TODO: decide how to check if two hands are the same. Just go by name? Or check everything?
 
     def get_name(self):
         '''
@@ -52,6 +55,7 @@ class hand:
                 depths[hand_name] = hand_depth
         
         return spans, depths
+
 
 
 
@@ -111,6 +115,10 @@ class ast_trial:
 
         return df["x", "y", "rmag"]
 
+    def generate_name(self):
+        return self.hand.get_name() + "_" + self.subject_num + "_" + self.trial_type + \
+            "_" + self.direction + "_" + self.trial_num
+
     def generate_data_csv(self, file_name_overwrite=None):
         '''
         Saves pose data as a new csv file
@@ -118,7 +126,7 @@ class ast_trial:
         if(file_name_overwrite):
             new_file_name = file_name_overwrite
         else:
-            new_file_name = self.hand.get_name() + "_" + self.subject_num + "_" + self.trial_type + "_" + self.direction + "_" + self.trial_num + ".csv"
+            new_file_name = self.generate_name + ".csv"
 
         self.poses.to_csv(new_file_name, index=True, columns=[
                            "x", "y", "rmag"]) #TODO: Should I rename columns?
