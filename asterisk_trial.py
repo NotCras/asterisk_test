@@ -4,20 +4,36 @@ import csv
 import numpy as np
 import pandas as pd
 from scipy import stats
-
+import matplotlib.pyplot as plt
 
 
 class hand:
 
     def __init__(self, name, fingers):
+        '''
+        Class which stores relevant hand information.
+        hand_name - name of the hand
+        span - max span measurement, precision grasp
+        depth - max depth measurement, precision grasp
+        num_fingers - number of fingers on hand
+        '''
         spans, depths = self.load_measurements()
 
         self.hand_name = name
-        self.span = spans[name]
+        self.span = spans[name] #TODO: edit here when load measurements function is done
         self.depth = depths[name]
         self.num_fingers = fingers
 
+    def get_name(self):
+        '''
+        Getter for hand name
+        '''
+        return self.hand_name
+
     def load_measurements(self):
+        '''
+        Get hand span and depth measurements from file
+        '''
         #import hand span data
         spans = dict()
         depths = dict()
@@ -42,6 +58,26 @@ class hand:
 class ast_trial:
 
     def __init__(self, file_name):
+        '''
+        Class to represent a single asterisk test trial. Contains:
+        hand - hand object with info for hand involved in the trial (see above)
+        subject_num - integer value for subject number
+        direction - single lettered descriptor for which direction the object travels in for this trial
+        trial_type - indicates one-step or two-step trial as a string (None, Plus15, Minus15)
+        trial_num - integer number of the trial 
+
+        poses - pandas dataframe containing the object's trajectory (as floats)
+        filtered - boolean that indicates whether trial has been filtered or not
+        ideal_poses - pandas dataframe containing the 'perfect trial' line that we will compare our trial to using Frechet Distance. 
+        This 'perfect trial' line is a line that travels in the trial direction (with no deviations) to the max travel distance the 
+        trial got to in the respective direction. This is denoted as the projection of the object trajectory on the direction
+
+        total_distance - float value
+        frechet_distance - float value
+        dist_along_translation - float
+        dist_along_twist - float
+
+        '''
         #TODO: Check the order of the entries
         h, s, t, d, e = file_name.split("_")
         n, _ = e.split(".")
@@ -52,9 +88,7 @@ class ast_trial:
         self.trial_type = t
         self.trial_num = n
 
-        df_poses = self.read_file(file_name)
-
-        self.poses = df_poses["x", "y", "rmag"] #Data will not be filtered here
+        self.poses = self.read_file(file_name)  # Data will not be filtered here
         self.filtered = False
         self.ideal_poses = None
 
@@ -64,22 +98,39 @@ class ast_trial:
         self.dist_along_twist = None
 
     def read_file(self, file, folder=""):
-
+        '''
+        Function to read file and save relevant data in the object
+        '''
         total_path = folder + file
         try:
             df = pd.read_csv(total_path,
                 names=["roll", "pitch", "yaw", "x", "y", "z", "tmag", "rmag"])
 
         except:
-            self.ideal_poses = None
+            df = None
 
-    def generate_file(self):
-        new_file_name = " "
+        return df["x", "y", "rmag"]
+
+    def generate_data_csv(self, file_name_overwrite=None):
+        '''
+        Saves pose data as a new csv file
+        '''
+        if(file_name_overwrite):
+            new_file_name = file_name_overwrite
+        else:
+            new_file_name = self.hand.get_name() + "_" + self.subject_num + "_" + self.trial_type + "_" + self.direction + "_" + self.trial_num + ".csv"
 
         self.poses.to_csv(new_file_name, index=True, columns=[
                            "x", "y", "rmag"]) #TODO: Should I rename columns?
 
     def data_conditioning(self, data, window=15):
+        '''
+        Data conditioning procedure used to:
+        1) convert translational data from meters to mm
+        2) normalize translational data by hand span/depth
+        3) remove extreme outlier values in data
+        4) run a moving average on data
+        '''
         #convert m to mm in translational data
         df = data * [1., 1., 1., 1000., 1000., 1000., 1000., 1.]
         df = df.round(4)
@@ -99,10 +150,22 @@ class ast_trial:
         # TODO: Maybe I should do the translational data normalization after the filtering?
         filtered_df = self.moving_average(inlier_df, window_size=window)
 
-        return filtered_df
+        self.poses = filtered_df
+        self.filtered = True
+        print("Data has been conditioned.")
 
 
-self.ideal_poses = None
+    def remove_outliers(self, df_to_fix, columns):
+        '''
+        Removes extreme outliers from data, in 100% quartile. Occasionally this happens in the aruco analyzed data
+        '''
+
+        for col in columns:
+            #see: https://stackoverflow.com/questions/23199796/detect-and-exclude-outliers-in-pandas-data-frame
+            #q_low = df_to_fix[col].quantile(0.01)
+            q_hi = df_to_fix[col].quantile(0.99)
+
+            df_to_fix = df_to_fix[(df_to_fix[col] < q_hi)]
 
             #print(col)
             #print(f"q_low: {q_low}")
@@ -112,25 +175,78 @@ self.ideal_poses = None
         return df_to_fix
 
 
-    def moving_average(df_to_filter, window_size=15):
-        #TODO: fix errors below
+    def moving_average(self, df_to_filter, window_size=15):
+        '''
+        Runs a moving average on the pose data
+        '''
         df_to_filter["f_x"] = df_to_filter["x"].rolling(
             window=window_size, min_periods=1).mean()
         df_to_filter["f_y"] = df_to_filter["y"].rolling(
             window=window_size, min_periods=1).mean()
-        df_to_filter["f_rot_mag"] = df_to_filter["rmag"].rolling(
+        df_to_filter["f_rmag"] = df_to_filter["rmag"].rolling(
             window=window_size, min_periods=1).mean()
 
         df_rounded = df_to_filter.round(4)
         return df_rounded
 
-    def plot_trial():
+    def get_poses(self):
+        '''
+        Returns the poses for this trial, separately by axis.
+        '''
+        x = self.poses["x"]
+        y = self.poses["y"]
+        twist = self.poses["rmag"]
+        return x, y, twist
+
+    def plot_trial(self, file_name=None):
+        '''
+        Plot the poses in the trial, using marker size to denote the error in twist from the desired twist
+        '''
+        data_x, data_y, theta = self.get_poses()
+
+        plt.plot(data_x, data_y, color='tab:red', label='trajectory')
+
+        #plt.scatter(data_x, data_y, marker='o', color='red', alpha=0.5, s=5*theta)
+
+        #plot data points separately to show angle error with marker size
+        for n in range(len(data_x)):
+            #TODO: rn having difficulty doing marker size in a batch, so plotting each point separately
+            plt.plot(data_x[n], data_y[n], 'r.', alpha=0.5, markersize=5*theta[n])
+
+            max_x = max(data_x)
+            max_y = max(data_y)
+            min_x = min(data_x)
+
+            #print(f"max_x: {max_x}, min_x: {min_x}, y: {max_y}")
+
+            plt.xlabel('X')
+            plt.ylabel('Y')
+            plt.title('Path of Object')
+            #plt.grid()
+
+            plt.xticks(np.linspace(round_half_down(min_x, decimals=2),
+                                round_half_up(max_x, decimals=2), 10), rotation=30)
+            #plt.xticks(np.linspace(0, round_half_up(max_y, decimals=2), 10), rotation=30) #gives a realistic view of what the path looks like
+            plt.yticks(np.linspace(0, round_half_up(max_y, decimals=2), 10))
+
+            #plt.xlim(0., 0.5)
+            #plt.ylim(0., 0.5)
+
+        if(file_name):
+            plt.savefig("plot4_" + file_name + ".jpg", format='jpg')
+            plt.show()
+
+
+    def generate_ideal_line(self):
+        '''
+        Using object trajectory (self.poses), build a line to compare to for frechet distance
+        '''
         pass
 
-    def generate_ideal_line():
-        pass
-
-    def calculate_frechet_distance():
+    def calculate_frechet_distance(self):
+        '''
+        Calculate the frechet distance between self.poses and self.ideal_line
+        '''
         pass
 
 
