@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import csv
+import math as m
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -57,6 +58,23 @@ class hand:
         return spans, depths
 
 
+#TODO: where exactly should I put these functions?
+#from: https://realpython.com/python-rounding/
+def round_half_up(n, decimals=0):
+    multiplier = 10 ** decimals
+    return m.floor(n*multiplier + 0.5) / multiplier
+
+#from: https://realpython.com/python-rounding/
+def round_half_down(n, decimals=0):
+    multiplier = 10 ** decimals
+    return m.ceil(n*multiplier - 0.5) / multiplier
+
+def condition_df(df):
+    df_numeric = df.apply(pd.to_numeric)
+
+    df_numeric.columns = ["row", "x", "y", "rmag", "f_x", "f_y", "f_rot_mag"]
+
+    return df_numeric
 
 
 class ast_trial:
@@ -89,7 +107,7 @@ class ast_trial:
         self.hand = h
         self.subject_num = s
         self.direction = d
-        self.trial_type = t
+        self.trial_type = t #TODO: divide into translation type and rotation type
         self.trial_num = n
 
         self.poses = self.read_file(file_name)  # Data will not be filtered here
@@ -106,14 +124,38 @@ class ast_trial:
         Function to read file and save relevant data in the object
         '''
         total_path = folder + file
+
         try:
-            df = pd.read_csv(total_path,
-                names=["roll", "pitch", "yaw", "x", "y", "z", "tmag", "rmag"])
+            df_temp = pd.read_csv(total_path,
+                             #names=["x", "y", "rmag", "f_x", "f_y", "f_rot_mag"],
+                             skip_blank_lines=True
+                             )
+
+            df = self.condition_df(df_temp)
 
         except:
             df = None
 
         return df["x", "y", "rmag"]
+
+    #TODO: is there a better place to put these functions?
+    #from: https://realpython.com/python-rounding/
+    def round_half_up(self, n, decimals=0):
+        multiplier = 10 ** decimals
+        return m.floor(n*multiplier + 0.5) / multiplier
+
+    #from: https://realpython.com/python-rounding/
+
+    def round_half_down(self, n, decimals=0):
+        multiplier = 10 ** decimals
+        return m.ceil(n*multiplier - 0.5) / multiplier
+
+    def condition_df(self, df):
+        df_numeric = df.apply(pd.to_numeric)
+
+        df_numeric.columns = ["row", "x", "y", "rmag", "f_x", "f_y", "f_rot_mag"]
+
+        return df_numeric
 
     def generate_name(self):
         return self.hand.get_name() + "_" + self.subject_num + "_" + self.trial_type + \
@@ -232,8 +274,8 @@ class ast_trial:
             plt.title('Path of Object')
             #plt.grid()
 
-            plt.xticks(np.linspace(round_half_down(min_x, decimals=2),
-                                round_half_up(max_x, decimals=2), 10), rotation=30)
+            plt.xticks(np.linspace(self.round_half_down(min_x, decimals=2),
+                                self.round_half_up(max_x, decimals=2), 10), rotation=30)
             #plt.xticks(np.linspace(0, round_half_up(max_y, decimals=2), 10), rotation=30) #gives a realistic view of what the path looks like
             plt.yticks(np.linspace(0, round_half_up(max_y, decimals=2), 10))
 
