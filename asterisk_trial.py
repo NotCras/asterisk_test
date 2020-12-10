@@ -58,25 +58,6 @@ class hand:
         return spans, depths
 
 
-#TODO: where exactly should I put these functions?
-#from: https://realpython.com/python-rounding/
-def round_half_up(n, decimals=0):
-    multiplier = 10 ** decimals
-    return m.floor(n*multiplier + 0.5) / multiplier
-
-#from: https://realpython.com/python-rounding/
-def round_half_down(n, decimals=0):
-    multiplier = 10 ** decimals
-    return m.ceil(n*multiplier - 0.5) / multiplier
-
-def condition_df(df):
-    df_numeric = df.apply(pd.to_numeric)
-
-    df_numeric.columns = ["row", "x", "y", "rmag", "f_x", "f_y", "f_rot_mag"]
-
-    return df_numeric
-
-
 class ast_trial:
 
     def __init__(self, file_name):
@@ -141,19 +122,29 @@ class ast_trial:
     #TODO: is there a better place to put these functions?
     #from: https://realpython.com/python-rounding/
     def round_half_up(self, n, decimals=0):
+        '''
+        '''
         multiplier = 10 ** decimals
         return m.floor(n*multiplier + 0.5) / multiplier
 
     #from: https://realpython.com/python-rounding/
 
     def round_half_down(self, n, decimals=0):
+        '''
+        '''
         multiplier = 10 ** decimals
         return m.ceil(n*multiplier - 0.5) / multiplier
 
     def condition_df(self, df):
+        '''
+        Make columns of the dataframe numeric (they aren't by default)
+        Makes dataframe header after the fact to avoid errors with apply function
+        '''
         df_numeric = df.apply(pd.to_numeric)
 
-        df_numeric.columns = ["row", "x", "y", "rmag", "f_x", "f_y", "f_rot_mag"]
+        #saving for later: ["row", "x", "y", "rmag", "f_x", "f_y", "f_rot_mag"]
+        df_numeric.columns = ["roll", "pitch",
+                              "yaw", "x", "y", "z", "tmag",  "rmag"]
 
         return df_numeric
 
