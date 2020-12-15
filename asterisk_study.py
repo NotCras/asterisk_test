@@ -11,7 +11,6 @@ from asterisk_trial import hand, ast_trial
 
 
 class ast_study:
-
     def __init__(self):
         '''
         Class used to store all asterisk data. Contains functions to run high level analysis. 

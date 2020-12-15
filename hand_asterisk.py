@@ -11,7 +11,6 @@ from asterisk_trial import hand, ast_trial
 
 
 class hand_asterisk:
-
     def __init__(self, hand):
         '''
         Class used to store asterisk trials for a specific hand. 

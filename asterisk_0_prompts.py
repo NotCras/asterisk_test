@@ -1,13 +1,14 @@
-#------------------------------------
+# ------------------------------------
 subject_name_prompt = """
 ENTER SUBJECTS NAME
 (lowercase!)
 
 Possible options:
 """
+# TODO: change to subject numbers, to reflect study data not test data
 subject_name_options = ["john", "josh", "sage", "garth", "test"]
 
-#------------------------------------
+# ------------------------------------
 hand_prompt = """
 ENTER HAND YOU ARE USING FOR THIS TRIAL
 (lowercase!)
@@ -17,7 +18,7 @@ Possible options:
 hand_options = ["human", "basic",  "m2stiff", "m2active",
                 "2v2", "3v3", "2v3", "barrett", "modelvf"]  # "modelo", "modelk",
 
-#------------------------------------
+# ------------------------------------
 dir_prompt = """
 ENTER DIRECTION OF CURRENT TRIAL
 (lowercase!)
@@ -27,7 +28,7 @@ Possible options:
 dir_options = ["a", "b", "c", "d", "e", "f", "g", "h", "cw", "ccw"]
 dir_options_no_rot = ["a", "b", "c", "d", "e", "f", "g", "h"]
 
-#------------------------------------
+# ------------------------------------
 trial_prompt = """
 WHAT NUMBER TRIAL IS THIS
 (lowercase! ... :P)
@@ -36,7 +37,7 @@ Up to ...
 """
 trial_options = ["1", "2", "3", "4", "5"]  # , "6", "7", "8", "9", "10"]
 
-#------------------------------------
+# ------------------------------------
 type_prompt = """
 WHAT TYPE OF TRIAL IS THIS
 (lowercase!)
@@ -45,17 +46,19 @@ Options ...
 """
 type_options = ["none", "plus15", "minus15"]
 
-#------------------------------------
+# ------------------------------------
 check_prompt = "Are you happy with this data? : "
 check_options = ["yes", "no", "cancel"]
 
 temp_file_check = "Are you still doing"
 
-#------------------------------------
+# ------------------------------------
+
+
 def request_name_hand_simple(path):
-    #import csv file of data
-    #for now, just write it out each time
-    folder = path #TODO: make smarter
+    # import csv file of data
+    # for now, just write it out each time
+    folder = path  # TODO: make smarter
     sub = helper.collect_prompt_data(
         subject_name_prompt, subject_name_options)
     h = helper.collect_prompt_data(
@@ -65,11 +68,13 @@ def request_name_hand_simple(path):
 
     return folder, sub, h
 
-#------------------------------------
+# ------------------------------------
+
+
 def request_name_hand_num_simple(path):
-    #import csv file of data
-    #for now, just write it out each time
-    folder = path #TODO: make smarter
+    # import csv file of data
+    # for now, just write it out each time
+    folder = path  # TODO: make smarter
     sub = helper.collect_prompt_data(
         subject_name_prompt, subject_name_options)
     h = helper.collect_prompt_data(
@@ -81,15 +86,19 @@ def request_name_hand_num_simple(path):
 
     return folder, sub, h, num
 
-#------------------------------------
+# ------------------------------------
+
+
 class AsteriskTestTypes:
-    test_type_name = ["Translation", "Rotation", "Twist_translation", "undefined"]
+    test_type_name = ["Translation", "Rotation",
+                      "Twist_translation", "undefined"]
     translation_name = ["a", "b", "c", "d", "e", "f", "g", "h", "none"]
     rotation_name = ["cw", "ccw", "none"]
     twist_name = ["plus15", "minus15", "none"]
     translation_angles = range(90, 90-360, -45)
     twist_directions = {"Clockwise": -15, "Counterclockwise": 15}
     rotation_directions = {"Clockwise": -25, "Counterclockwise": 25}
+    # TODO: Need to include subject number
 
     def __init__(self):
         self.test_type_index = 3
@@ -98,9 +107,12 @@ class AsteriskTestTypes:
 
     def __str__(self):
         """Print results"""
-        ret_str = "Test: {0} ".format(self.test_type_name[self.test_type_index])
+        ret_str = "Test: {0} ".format(
+            self.test_type_name[self.test_type_index])
         if self.is_translation_test() or self.is_twist_translation_test():
-            ret_str = ret_str + "Trans {0} {1}".format(self.get_translation_name(), self.get_translation_angle())
+            ret_str = ret_str + \
+                "Trans {0} {1}".format(
+                    self.get_translation_name(), self.get_translation_angle())
         if self.is_rotation_test():
             ret_str = ret_str + "Rot {0}".format(self.get_rotation_name())
         if self.is_twist_translation_test():
@@ -214,7 +226,7 @@ class AsteriskTestTypes:
                 yield att
 
 
-#------------------------------------
+# ------------------------------------
 def generate_fname(folder_path, subject_name, hand):
     """Create the full pathname
     :param folder_path Directory where data is located
@@ -238,4 +250,3 @@ def generate_fname(folder_path, subject_name, hand):
 
                 total_path = folder_path + file_name
                 yield total_path
-

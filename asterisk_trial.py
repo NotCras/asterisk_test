@@ -9,24 +9,23 @@ import matplotlib.pyplot as plt
 from scipy import stats
 
 
-
 class hand:
-
     def __init__(self, name, fingers):
         '''
         Class which stores relevant hand information.
-        hand_name - name of the hand
-        span - max span measurement, precision grasp
-        depth - max depth measurement, precision grasp
-        num_fingers - number of fingers on hand
+        :param hand_name - name of the hand
+        :param span - max span measurement, precision grasp
+        :param depth - max depth measurement, precision grasp
+        :param num_fingers - number of fingers on hand
         '''
         spans, depths = self.load_measurements()
 
         self.hand_name = name
-        self.span = spans[name] #TODO: edit here when load measurements function is done
+        # TODO: edit here when load measurements function is done
+        self.span = spans[name]
         self.depth = depths[name]
         self.num_fingers = fingers
-        #TODO: decide how to check if two hands are the same. Just go by name? Or check everything?
+        # TODO: decide how to check if two hands are the same. Just go by name? Or check everything?
 
     def get_name(self):
         '''
@@ -38,60 +37,60 @@ class hand:
         '''
         Get hand span and depth measurements from file
         '''
-        #import hand span data
+        # import hand span data
         spans = dict()
         depths = dict()
 
         print("LOADING HAND MEASUREMENTS")
         with open(".hand_dimensions") as csv_file:
             csv_reader_hands = csv.reader(csv_file, delimiter=',')
-            #populating dictionaries with dimensions
+            # populating dictionaries with dimensions
             for row in csv_reader_hands:
-                #TODO: make it so that we just return the hand span and depth that we need
+                # TODO: make it so that we just return the hand span and depth that we need
                 hand_name = row[0]
                 hand_span = float(row[1])
                 hand_depth = float(row[2])
 
                 spans[hand_name] = hand_span
                 depths[hand_name] = hand_depth
-        
+
         return spans, depths
 
 
 class ast_trial:
-
     def __init__(self, file_name):
         '''
         Class to represent a single asterisk test trial. Contains:
-        hand - hand object with info for hand involved in the trial (see above)
-        subject_num - integer value for subject number
-        direction - single lettered descriptor for which direction the object travels in for this trial
-        trial_type - indicates one-step or two-step trial as a string (None, Plus15, Minus15)
-        trial_num - integer number of the trial 
+        :param hand - hand object with info for hand involved in the trial (see above)
+        :param subject_num - integer value for subject number
+        :param direction - single lettered descriptor for which direction the object travels in for this trial
+        :param trial_type - indicates one-step or two-step trial as a string (None, Plus15, Minus15)
+        :param trial_num - integer number of the trial 
 
-        poses - pandas dataframe containing the object's trajectory (as floats)
-        filtered - boolean that indicates whether trial has been filtered or not
-        ideal_poses - pandas dataframe containing the 'perfect trial' line that we will compare our trial to using Frechet Distance. 
+        :param poses - pandas dataframe containing the object's trajectory (as floats)
+        :param filtered - boolean that indicates whether trial has been filtered or not
+        :param ideal_poses - pandas dataframe containing the 'perfect trial' line that we will compare our trial to using Frechet Distance. 
         This 'perfect trial' line is a line that travels in the trial direction (with no deviations) to the max travel distance the 
         trial got to in the respective direction. This is denoted as the projection of the object trajectory on the direction
 
-        total_distance - float value
-        frechet_distance - float value
-        dist_along_translation - float
-        dist_along_twist - float
+        :param total_distance - float value
+        :param frechet_distance - float value
+        :param dist_along_translation - float
+        :param dist_along_twist - float
 
         '''
-        #TODO: Check the order of the entries
+        # TODO: Check the order of the entries
         h, s, t, d, e = file_name.split("_")
         n, _ = e.split(".")
 
         self.hand = h
         self.subject_num = s
         self.direction = d
-        self.trial_type = t #TODO: divide into translation type and rotation type
+        self.trial_type = t  # TODO: divide into translation type and rotation type
         self.trial_num = n
 
-        self.poses = self.read_file(file_name)  # Data will not be filtered here
+        # Data will not be filtered here
+        self.poses = self.read_file(file_name)
         self.filtered = False
         self.ideal_poses = None
 
@@ -108,9 +107,9 @@ class ast_trial:
 
         try:
             df_temp = pd.read_csv(total_path,
-                             #names=["x", "y", "rmag", "f_x", "f_y", "f_rot_mag"],
-                             skip_blank_lines=True
-                             )
+                                  #names=["x", "y", "rmag", "f_x", "f_y", "f_rot_mag"],
+                                  skip_blank_lines=True
+                                  )
 
             df = self.condition_df(df_temp)
 
@@ -119,18 +118,20 @@ class ast_trial:
 
         return df["x", "y", "rmag"]
 
-    #TODO: is there a better place to put these functions?
-    #from: https://realpython.com/python-rounding/
+    # TODO: is there a better place to put these functions?
+
     def round_half_up(self, n, decimals=0):
         '''
+
+        #from: https://realpython.com/python-rounding/
         '''
         multiplier = 10 ** decimals
         return m.floor(n*multiplier + 0.5) / multiplier
 
-    #from: https://realpython.com/python-rounding/
-
     def round_half_down(self, n, decimals=0):
         '''
+
+        #from: https://realpython.com/python-rounding/
         '''
         multiplier = 10 ** decimals
         return m.ceil(n*multiplier - 0.5) / multiplier
@@ -142,7 +143,7 @@ class ast_trial:
         '''
         df_numeric = df.apply(pd.to_numeric)
 
-        #saving for later: ["row", "x", "y", "rmag", "f_x", "f_y", "f_rot_mag"]
+        # saving for later: ["row", "x", "y", "rmag", "f_x", "f_y", "f_rot_mag"]
         df_numeric.columns = ["roll", "pitch",
                               "yaw", "x", "y", "z", "tmag",  "rmag"]
 
@@ -162,7 +163,7 @@ class ast_trial:
             new_file_name = self.generate_name + ".csv"
 
         self.poses.to_csv(new_file_name, index=True, columns=[
-                           "x", "y", "rmag"]) #TODO: Should I rename columns?
+            "x", "y", "rmag"])  # TODO: Should I rename columns?
 
     def data_conditioning(self, data, window=15):
         '''
@@ -172,11 +173,11 @@ class ast_trial:
         3) remove extreme outlier values in data
         4) run a moving average on data
         '''
-        #convert m to mm in translational data
+        # convert m to mm in translational data
         df = data * [1., 1., 1., 1000., 1000., 1000., 1000., 1.]
         df = df.round(4)
 
-        #normalize translational data by hand span
+        # normalize translational data by hand span
         df = df / [1., 1., 1.,  # orientation data
                    self.hand.span,  # x
                    self.hand.depth,  # y
@@ -195,26 +196,24 @@ class ast_trial:
         self.filtered = True
         print("Data has been conditioned.")
 
-
     def remove_outliers(self, df_to_fix, columns):
         '''
         Removes extreme outliers from data, in 100% quartile. Occasionally this happens in the aruco analyzed data
         '''
 
         for col in columns:
-            #see: https://stackoverflow.com/questions/23199796/detect-and-exclude-outliers-in-pandas-data-frame
+            # see: https://stackoverflow.com/questions/23199796/detect-and-exclude-outliers-in-pandas-data-frame
             #q_low = df_to_fix[col].quantile(0.01)
             q_hi = df_to_fix[col].quantile(0.99)
 
             df_to_fix = df_to_fix[(df_to_fix[col] < q_hi)]
 
-            #print(col)
+            # print(col)
             #print(f"q_low: {q_low}")
             #print(f"q_hi: {q_hi}")
             #print(" ")
 
         return df_to_fix
-
 
     def moving_average(self, df_to_filter, window_size=15):
         '''
@@ -249,10 +248,11 @@ class ast_trial:
 
         #plt.scatter(data_x, data_y, marker='o', color='red', alpha=0.5, s=5*theta)
 
-        #plot data points separately to show angle error with marker size
+        # plot data points separately to show angle error with marker size
         for n in range(len(data_x)):
-            #TODO: rn having difficulty doing marker size in a batch, so plotting each point separately
-            plt.plot(data_x[n], data_y[n], 'r.', alpha=0.5, markersize=5*theta[n])
+            # TODO: rn having difficulty doing marker size in a batch, so plotting each point separately
+            plt.plot(data_x[n], data_y[n], 'r.',
+                     alpha=0.5, markersize=5*theta[n])
 
             max_x = max(data_x)
             max_y = max(data_y)
@@ -263,11 +263,11 @@ class ast_trial:
             plt.xlabel('X')
             plt.ylabel('Y')
             plt.title('Path of Object')
-            #plt.grid()
+            # plt.grid()
 
             plt.xticks(np.linspace(self.round_half_down(min_x, decimals=2),
-                                self.round_half_up(max_x, decimals=2), 10), rotation=30)
-            #plt.xticks(np.linspace(0, round_half_up(max_y, decimals=2), 10), rotation=30) #gives a realistic view of what the path looks like
+                                   self.round_half_up(max_x, decimals=2), 10), rotation=30)
+            # plt.xticks(np.linspace(0, round_half_up(max_y, decimals=2), 10), rotation=30) #gives a realistic view of what the path looks like
             plt.yticks(np.linspace(0, round_half_up(max_y, decimals=2), 10))
 
             #plt.xlim(0., 0.5)
@@ -276,7 +276,6 @@ class ast_trial:
         if(file_name):
             plt.savefig("plot4_" + file_name + ".jpg", format='jpg')
             plt.show()
-
 
     def generate_ideal_line(self):
         '''
@@ -289,8 +288,3 @@ class ast_trial:
         Calculate the frechet distance between self.poses and self.ideal_line
         '''
         pass
-
-
-
-
-
