@@ -5,6 +5,7 @@ import math as m
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from AsteriskTestMetrics import Pose2D
 
 from asterisk_prompts import hand
 from scipy import stats
@@ -68,6 +69,7 @@ class ast_trial:
 
         except:
             df = None
+            print(f"{total_path} has failed to read csv")
 
         return df["x", "y", "rmag"]
 
@@ -103,6 +105,10 @@ class ast_trial:
         return df_numeric
 
     def generate_name(self):
+        '''
+        Generates the codified name of the trial
+        :return:
+        '''
         return self.hand.get_name() + "_" + self.subject_num + "_" + self.trial_type + \
             "_" + self.direction + "_" + self.trial_num
 
@@ -182,14 +188,21 @@ class ast_trial:
         df_rounded = df_to_filter.round(4)
         return df_rounded
 
-    def get_poses(self):
+    def get_pose2d(self):
         '''
         Returns the poses for this trial, separately by axis.
         '''
-        x = self.poses["x"]
-        y = self.poses["y"]
-        twist = self.poses["rmag"]
-        return x, y, twist
+        #x = self.poses["x"]
+        #y = self.poses["y"]
+        #twist = self.poses["rmag"]
+
+        poses = []
+
+        for p in self.poses.iterrows():
+            pose = Pose2D(p["x"], p["y"], p["rmag"])
+            poses.append(pose)
+
+        return poses #todo: test this out!
 
     def plot_trial(self, file_name=None):
         '''

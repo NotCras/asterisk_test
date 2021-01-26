@@ -74,8 +74,3 @@ h_m_vf = hand("modelvf", 2)
 
 h_barrett = hand("barrett", 3)
 
-
-class prompt_helper:
-
-    def __init__(self):
-        pass
