@@ -71,8 +71,8 @@ def average_the_lines(dfs, line_size):
 
     #resampled the paths so they are all the same length
     for df in dfs:
-        new_df = resample_paths(samples=line_size)
-        resampled_dfs.append(new_df)   
+        #new_df = resample_paths(samples=line_size) #TODO:not done here
+        #resampled_dfs.append(new_df)
 
     #interpolate the average between each point... also get the std at each point
     average_line = list()

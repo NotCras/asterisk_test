@@ -39,8 +39,10 @@ class ast_trial:
 
         self.hand = h
         self.subject_num = s
-        self.direction = d
-        self.trial_type = t  # TODO: divide into translation type and rotation type
+        self.direction = d #this is trial_translation?
+        #self.trial_type = t  # TODO: divide into translation type and rotation type
+        self.trial_translation = d
+        self.trial_rotation = t
         self.trial_num = n
 
         # Data will not be filtered here
@@ -234,7 +236,7 @@ class ast_trial:
             plt.xticks(np.linspace(self.round_half_down(min_x, decimals=2),
                                    self.round_half_up(max_x, decimals=2), 10), rotation=30)
             # plt.xticks(np.linspace(0, round_half_up(max_y, decimals=2), 10), rotation=30) #gives a realistic view of what the path looks like
-            plt.yticks(np.linspace(0, round_half_up(max_y, decimals=2), 10))
+            plt.yticks(np.linspace(0, self.round_half_up(max_y, decimals=2), 10))
 
             #plt.xlim(0., 0.5)
             #plt.ylim(0., 0.5)
