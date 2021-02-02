@@ -18,13 +18,12 @@ class ast_data():
         '''
         self.home = Path(__file__).parent.absolute()
 
-    def view_images(self, subject_name, hand, dir_label, trial_type, trial_num):
+    def view_images(self, subject_name, hand, translation, rotation, trial_num):
         os.chdir(self.home)
 
-        data_name = subject_name + "_" + hand + "_" + \
-            dir_label + "_" + trial_type + "_" + trial_num
+        data_name = f"{subject_name}_{hand}_{translation}_{rotation}_{trial_num}"
 
-        file_dir = "viz/" + data_name + "/"
+        file_dir = f"viz/{data_name}/"
         os.chdir(file_dir)
 
         files = [f for f in os.listdir('.') if f[-3:] == 'jpg']
@@ -45,18 +44,28 @@ class ast_data():
         repeat = input("Show again? [y/n]")
         if(repeat == "y"):
             #run again
-            self.view_images(subject_name, hand, dir_label,
-                             trial_type, trial_num)
+            self.view_images(subject_name, hand, translation,
+                             rotation, trial_num)
         else:
             #stop running
             #quit()
             pass
     
-    def single_extract(self):
+    def single_extract(self, subject_name, hand, translation, rotation, trial_num):
         '''
         Extract a single zip file.
         '''
-        pass
+        folders = f"asterisk_test_data/{subject_name}/{hand}/"
+        file_name = f"{subject_name}_{hand}_{translation}_{rotation}_{trial_num}"
+
+        extract_from = folders+file_name+".zip"
+
+        extract_to = f"viz/{file_name}"
+
+        with ZipFile(extract_from, 'r') as zip_ref:
+            zip_ref.extractall(extract_to)
+            print("Completed Extraction.")
+
 
     def batch_extract(self):
         '''
@@ -66,6 +75,7 @@ class ast_data():
 
 def yield_names():
     #subject, hand, type_trans, type_rot,
+    pass
 
 if __name__ == "__main__":
     '''

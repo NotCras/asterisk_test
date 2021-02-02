@@ -110,8 +110,7 @@ class ast_trial:
         Generates the codified name of the trial
         :return:
         '''
-        return self.hand.get_name() + "_" + self.subject_num + "_" + self.trial_type + \
-            "_" + self.direction + "_" + self.trial_num
+        return f"{self.hand.get_name()}_{self.subject_num}_{self.trial_translation}_{self.trial_rotation}_{self.trial_num}"
 
     def generate_data_csv(self, file_name_overwrite=None):
         '''
@@ -120,10 +119,16 @@ class ast_trial:
         if(file_name_overwrite):
             new_file_name = file_name_overwrite
         else:
-            new_file_name = self.generate_name + ".csv"
+            new_file_name = self.generate_name() + ".csv"
 
-        self.poses.to_csv(new_file_name, index=True, columns=[
-            "x", "y", "rmag"])  # TODO: Should I rename columns?
+        if(self.filtered):
+            self.poses.to_csv(new_file_name, index=True, columns=[
+                "x", "y", "rmag", "f_x", "f_y", "f_rmag"])
+        else:
+            self.poses.to_csv(new_file_name, index=True, columns=[
+                "x", "y", "rmag"])  # TODO: Should I rename columns?
+
+        print(f"CSV File generated with name: {new_file_name}")
 
     def data_conditioning(self, data, window=15):
         '''
@@ -179,7 +184,7 @@ class ast_trial:
 
     def moving_average(self, df_to_filter, window_size=15):
         '''
-        Runs a moving average on the pose data
+        Runs a moving average on the pose data. Saves moving average data into new columns with f_ prefix
         '''
         df_to_filter["f_x"] = df_to_filter["x"].rolling(
             window=window_size, min_periods=1).mean()
