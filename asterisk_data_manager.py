@@ -64,6 +64,8 @@ class ast_data():
         '''
         pass
 
+def yield_names():
+    #subject, hand, type_trans, type_rot,
 
 if __name__ == "__main__":
     '''

@@ -5,8 +5,7 @@ ENTER SUBJECTS NAME
 
 Possible options:
 """
-# TODO: change to subject numbers, to reflect study data not test data
-subject_name_options = ["john", "josh", "sage", "garth", "test"]
+subject_name_options = ["test", "sub1", "sub2", "sub3"]
 
 # ------------------------------------
 hand_prompt = """

@@ -33,20 +33,19 @@ class ast_trial:
         :param dist_along_twist - float
 
         '''
-        # TODO: Check the order of the entries
-        h, s, t, d, e = file_name.split("_")
+        s, h, d, r, e = file_name.split("_")
         n, _ = e.split(".")
 
         self.hand = h
         self.subject_num = s
-        self.direction = d #this is trial_translation?
-        #self.trial_type = t  # TODO: divide into translation type and rotation type
         self.trial_translation = d
-        self.trial_rotation = t
+        self.trial_rotation = r
         self.trial_num = n
 
         # Data will not be filtered here
         self.poses = self.read_file(file_name)
+        self.data_conditioning(self.poses) #condition it right away
+
         self.filtered = False
         self.ideal_poses = None
 
@@ -135,7 +134,8 @@ class ast_trial:
         4) run a moving average on data
         '''
         # convert m to mm in translational data
-        df = data * [1., 1., 1., 1000., 1000., 1000., 1000., 1.]
+        #df = data * [1., 1., 1., 1000., 1000., 1000., 1000., 1.]
+        df = data * [1000., 1000., 1.]
         df = df.round(4)
 
         # normalize translational data by hand span
@@ -151,11 +151,12 @@ class ast_trial:
         inlier_df = self.remove_outliers(df, ["x", "y", "rmag"])
 
         # TODO: Maybe I should do the translational data normalization after the filtering?
+        # TODO: Maybe I should cut out the moving average part of the data conditioning to be another step?
         filtered_df = self.moving_average(inlier_df, window_size=window)
 
         self.poses = filtered_df
         self.filtered = True
-        print("Data has been conditioned.")
+        #print("Data has been conditioned.")
 
     def remove_outliers(self, df_to_fix, columns):
         '''
