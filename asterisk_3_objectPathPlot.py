@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 import math as m
 from pathlib import Path
-from asterisk_0_dataHelper as helper
+import asterisk_0_dataHelper as helper
 import asterisk_0_prompts as prompts
 import asterisk_4_idealLine as id
 import matplotlib.pyplot as plt

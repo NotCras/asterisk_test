@@ -147,6 +147,7 @@ class AsteriskArucoVision:
             f.sort()
             break
 
+        # print statements for debugging
         # print(f)
         # print(" ")
         # print(dirpath)
@@ -197,9 +198,9 @@ class AsteriskArucoVision:
 
                 # print('Total: ' + str(total) +' Done '+ image_)
 
-            print("          ")
             print('Completed ' + data_file)
             print("Finished: " + str(analyzed_successfully) + "/" + str(total_counter))
+            print("          ")
             break
 
 
@@ -267,61 +268,3 @@ if __name__ == "__main__":
 
         print("Completed Batch Aruco Analysis!")
         print(files_covered)
-
-
-#     mtx = np.array(((617.0026849655,-0.153855356,315.5900337131),#fx, s,cx
-#                    (0,614.4461785395,243.0005874753), ##0,fy,cy
-#                    (0,0,1) ))
-#     dist = np.array((0.1611730644,-0.3392379107,0.0010744837,	0.000905697))
-#     # k1,k2,p1,p2 ie radial dist and tangential dist
-
-# #================ FILE PATH TO IMAGE FOLDER =====================
-
-#     subject_name = helper.collect_prompt_data(
-#         prompts.subject_name_prompt, prompts.subject_name_options)
-
-#     hand = helper.collect_prompt_data(
-#         prompts.hand_prompt, prompts.hand_options)
-
-#     folder_path = "asterisk_test_data/" + subject_name + "/" + hand
-
-#     files_covered = list()
-
-#     print("FOLDER PATH")
-#     print(folder_path)
-
-#     #construct all the zip file names
-
-#     if hand == "basic" or hand == "m2stiff" or hand == "modelvf":
-#         types = ["none"]
-#     else:
-#         types = prompts.type_options
-
-#     for t in types:
-#         if t == "none":
-#             directions = prompts.dir_options
-#         else:
-#             directions = prompts.dir_options_no_rot
-
-#         for d in directions:
-#             for num in prompts.trial_options:
-
-#                 zip_file = subject_name + "_" + hand + "_" + d + "_" + t + "_" + num
-
-#                 inner_path = "viz/" + subject_name + "_" + hand + "_" + d + "_" + t + "_" + num + "/"
-#                 os.chdir(home_directory)
-#                 #data_path = inner_path
-#                 print(inner_path)
-
-#                 try:
-#                     analyze_images(inner_path, subject_name, hand, d, t, num)
-#                     files_covered.append(zip_file)
-#                 except Exception as e: 
-#                     print(e)
-#                     files_covered.append(f"FAILED: {zip_file}")
-
-#     print("DONE!!")
-#     print(files_covered)
-    
-
-
