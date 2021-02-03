@@ -1,21 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-@author: kartik (original), john (edits, cleaning)
+@author: kartik (original), john (major edits, cleaning)
 """
 import numpy as np
 import sys
-import cv2, PIL
+import cv2
 from cv2 import aruco
 from pathlib import Path
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-import pandas as pd
-# %matplotlib nbagg
 import os
 import time
-import asterisk_0_prompts as prompts
-import asterisk_0_dataHelper as helper
 import asterisk_data_manager as datamanager
 
 if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
@@ -100,11 +94,11 @@ class AsteriskArucoVision:
     def angle_between(self, v1, v2):
         """ Returns the angle in radians between vectors 'v1' and 'v2'::
 
-                >>> angle_between((1, 0, 0), (0, 1, 0))
+                example 1) angle_between((1, 0, 0), (0, 1, 0))
                 1.5707963267948966
-                >>> angle_between((1, 0, 0), (1, 0, 0))
+                example 2) angle_between((1, 0, 0), (1, 0, 0))
                 0.0
-                >>> angle_between((1, 0, 0), (-1, 0, 0))
+                example 3) angle_between((1, 0, 0), (-1, 0, 0))
                 3.141592653589793
         """
         v1_u = self.unit_vector(v1)
@@ -118,7 +112,7 @@ class AsteriskArucoVision:
             frame, marker_side, mtx_val, dist_val)
         next_corners = next_corners[0].squeeze()
 
-        #p rint(f"calculating angle, {next_corners}")
+        # print(f"calculating angle, {next_corners}")
         rel_angle = self.angle_between(
             init_corners[0]-init_corners[2], next_corners[0]-next_corners[2])
         rel_rvec, rel_tvec = self.relative_position(
@@ -127,8 +121,8 @@ class AsteriskArucoVision:
         translation_val = np.round(np.linalg.norm(rel_tvec),4)
         rotation_val = rel_angle*180/np.pi
 
-        rotM = np.zeros(shape=(3,3))
-        cv2.Rodrigues(rel_rvec, rotM, jacobian = 0)
+        rotM = np.zeros(shape=(3, 3))
+        cv2.Rodrigues(rel_rvec, rotM, jacobian=0)
         ypr = cv2.RQDecomp3x3(rotM)
 
         return rel_rvec, rel_tvec, translation_val, rotation_val, ypr
@@ -136,17 +130,18 @@ class AsteriskArucoVision:
     # mtx = camera intrinsic matrix , dist =  distortion coefficients (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]])
 
     # ================================================================
-    def analyze_images(self, data_path, subject_name, hand, dir_label, trial_type, trial_num):  # TODO: fix the data reference here
+    def analyze_images(self, data_path, subject_name, hand_name, t_label, r_label, trial_number):
         frame = cv2.imread(os.path.join(data_path, 'left0000.jpg'))
         orig_rvec, orig_tvec, orig_corners = self.estimate_pose(
             frame, marker_side, self.mtx, self.dist)
         orig_corners = orig_corners[0].squeeze()
         # print("Tag found in initial image.")
 
-        total = 0
+        analyzed_successfully = 0
+        total_counter = 0
 
         f = []
-        counter = 0
+
         for (dirpath, dirnames, filenames) in os.walk(data_path):
             f.extend(filenames)
             f.sort()
@@ -157,8 +152,10 @@ class AsteriskArucoVision:
         # print(dirpath)
         # print(" ")
 
-        while(True):
+        data_file = f"{subject_name}_{hand_name}_{t_label}_{r_label}_{trial_number}.csv"
+        csv_loc = f"csv/{data_file}"
 
+        while True:
             for image_ in f:
                 # print(image_)
                 if '.ini' in image_:
@@ -166,7 +163,7 @@ class AsteriskArucoVision:
                     # camera configuration file, skip over
                     continue
 
-                if np.mod(counter, processing_freq) > 0:
+                if np.mod(total_counter, processing_freq) > 0:
                     continue
 
                 try:
@@ -175,18 +172,15 @@ class AsteriskArucoVision:
                     # print(f"Succeeded at image {counter}")
                     
                 except Exception as e: 
-                    print(f"Error with finding ARuco tag in image {counter}.")
+                    print(f"Error with finding ARuco tag in image {total_counter}.")
                     print(e)
-                    counter += 1
+                    total_counter += 1
                     continue
 
-                counter += 1
-                total += 1
+                total_counter += 1
+                analyzed_successfully += 1
 
                 rel_pose = np.concatenate((rel_rvec,rel_tvec))
-
-                data_file = subject_name + "_" + hand + "_" + dir_label + "_" + trial_type + "_" + trial_num + ".csv"
-                csv_loc = "csv/" + data_file
 
                 with open(csv_loc,'a') as fd:
                     for i in rel_pose:
@@ -205,7 +199,7 @@ class AsteriskArucoVision:
 
             print("          ")
             print('Completed ' + data_file)
-            print("Finished: " + str(total) + "/" + str(counter) )
+            print("Finished: " + str(analyzed_successfully) + "/" + str(total_counter))
             break
 
 
@@ -230,22 +224,49 @@ if __name__ == "__main__":
     subject = datamanager.smart_input("Enter subject name: ", "subjects")
     hand = datamanager.smart_input("Enter name of hand: ", "hands")
 
-    files_covered = list()
+    if ans == "1":
+        translation = datamanager.smart_input("Enter type of translation: ", "translations")
+        rotation = datamanager.smart_input("Enter type of rotation: ", "rotations")
+        trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
 
-    for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand):
-        file_name = f"{s}_{h}_{t}_{r}_{n}"
+        viewer = datamanager.AstData()
+        viewer.view_images(subject, hand, translation, rotation, trial_num)
 
+    elif ans == "2":
+        translation = datamanager.smart_input("Enter type of translation: ", "translations")
+        rotation = datamanager.smart_input("Enter type of rotation: ", "rotations")
+        trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
+
+        file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
         folder_path = f"viz/{file_name}/"
-        os.chdir(home_directory)
-        #data_path = inner_path
-        print(folder_path)
 
         try:
-            vision.analyze_images(folder_path, s, h, t, r, n)  # TODO: fix the data reference here, still on old system
-            files_covered.append(file_name)
+            vision.analyze_images(folder_path, subject, hand, translation, rotation, trial_num)
         except Exception as e:
             print(e)
-            files_covered.append(f"FAILED: {file_name}")
+
+        print(f"Completed Aruco Analysis for: {file_name}")
+
+    elif ans == "3":
+        files_covered = list()
+
+        for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand):
+            file_name = f"{s}_{h}_{t}_{r}_{n}"
+
+            folder_path = f"viz/{file_name}/"
+            os.chdir(home_directory)
+            # data_path = inner_path
+            print(folder_path)
+
+            try:
+                vision.analyze_images(folder_path, s, h, t, r, n)
+                files_covered.append(file_name)
+            except Exception as e:
+                print(e)
+                files_covered.append(f"FAILED: {file_name}")
+
+        print("Completed Batch Aruco Analysis!")
+        print(files_covered)
 
 
 #     mtx = np.array(((617.0026849655,-0.153855356,315.5900337131),#fx, s,cx
