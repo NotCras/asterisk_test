@@ -44,7 +44,6 @@ class ast_trial:
 
         # Data will not be filtered here
         self.poses = self.read_file(file_name)
-        self.data_conditioning(self.poses) #condition it right away
 
         self.filtered = False
         self.ideal_poses = None
@@ -74,28 +73,13 @@ class ast_trial:
 
         return df["x", "y", "rmag"]
 
-    # TODO: is there a better place to put these functions?
-
-    def round_half_up(self, n, decimals=0):
-        '''
-
-        #from: https://realpython.com/python-rounding/
-        '''
-        multiplier = 10 ** decimals
-        return m.floor(n*multiplier + 0.5) / multiplier
-
-    def round_half_down(self, n, decimals=0):
-        '''
-
-        #from: https://realpython.com/python-rounding/
-        '''
-        multiplier = 10 ** decimals
-        return m.ceil(n*multiplier - 0.5) / multiplier
-
     def condition_df(self, df):
         '''
-        Make columns of the dataframe numeric (they aren't by default)
-        Makes dataframe header after the fact to avoid errors with apply function
+        Data conditioning procedure used to:
+        0) Make columns of the dataframe numeric (they aren't by default), makes dataframe header after the fact to avoid errors with apply function
+        1) convert translational data from meters to mm
+        2) normalize translational data by hand span/depth
+        3) remove extreme outlier values in data
         '''
         df_numeric = df.apply(pd.to_numeric)
 
@@ -103,44 +87,9 @@ class ast_trial:
         df_numeric.columns = ["roll", "pitch",
                               "yaw", "x", "y", "z", "tmag",  "rmag"]
 
-        return df_numeric
-
-    def generate_name(self):
-        '''
-        Generates the codified name of the trial
-        :return:
-        '''
-        return f"{self.hand.get_name()}_{self.subject_num}_{self.trial_translation}_{self.trial_rotation}_{self.trial_num}"
-
-    def generate_data_csv(self, file_name_overwrite=None):
-        '''
-        Saves pose data as a new csv file
-        '''
-        if(file_name_overwrite):
-            new_file_name = file_name_overwrite
-        else:
-            new_file_name = self.generate_name() + ".csv"
-
-        if(self.filtered):
-            self.poses.to_csv(new_file_name, index=True, columns=[
-                "x", "y", "rmag", "f_x", "f_y", "f_rmag"])
-        else:
-            self.poses.to_csv(new_file_name, index=True, columns=[
-                "x", "y", "rmag"])  # TODO: Should I rename columns?
-
-        print(f"CSV File generated with name: {new_file_name}")
-
-    def data_conditioning(self, data, window=15):
-        '''
-        Data conditioning procedure used to:
-        1) convert translational data from meters to mm
-        2) normalize translational data by hand span/depth
-        3) remove extreme outlier values in data
-        4) run a moving average on data
-        '''
         # convert m to mm in translational data
-        #df = data * [1., 1., 1., 1000., 1000., 1000., 1000., 1.]
-        df = data * [1000., 1000., 1.]
+        df = df_numeric * [1., 1., 1., 1000., 1000., 1000., 1000., 1.]
+        #df = self.poses * [1000., 1000., 1.]
         df = df.round(4)
 
         # normalize translational data by hand span
@@ -149,23 +98,46 @@ class ast_trial:
                    self.hand.depth,  # y
                    1.,  # z - doesn't matter
                    1.,  # translational magnitude - don't use
-                   1.]
+                   1.] # rotation magnitude
         df = df.round(4)
 
         # occasionally get an outlier value (probably from vision algorithm), I filter them out here
         inlier_df = self.remove_outliers(df, ["x", "y", "rmag"])
 
         # TODO: Maybe I should do the translational data normalization after the filtering?
-        # TODO: Maybe I should cut out the moving average part of the data conditioning to be another step?
-        filtered_df = self.moving_average(inlier_df, window_size=window)
+        return inlier_df
 
-        self.poses = filtered_df
-        self.filtered = True
-        #print("Data has been conditioned.")
+    def generate_name(self):
+        '''
+        Generates the codified name of the trial
+        :return: string name of trial
+        '''
+        return f"{self.hand.get_name()}_{self.subject_num}_{self.trial_translation}_" \
+               f"{self.trial_rotation}_{self.trial_num}"
+
+    def generate_data_csv(self, file_name_overwrite=None):
+        '''
+        Saves pose data as a new csv file
+        '''
+        if file_name_overwrite:
+            new_file_name = file_name_overwrite
+        else:
+            new_file_name = self.generate_name() + ".csv"
+
+        #If data has been filtered, we also want to include that in csv generation, otherwise the filtered columns won't exist
+        if self.filtered:
+            self.poses.to_csv(new_file_name, index=True, columns=[
+                "x", "y", "rmag", "f_x", "f_y", "f_rmag"])
+        else:
+            self.poses.to_csv(new_file_name, index=True, columns=[
+                "x", "y", "rmag"])  # TODO: Should I rename columns?
+
+        print(f"CSV File generated with name: {new_file_name}")
 
     def remove_outliers(self, df_to_fix, columns):
         '''
-        Removes extreme outliers from data, in 100% quartile. Occasionally this happens in the aruco analyzed data
+        Removes extreme outliers from data, in 100% quartile.
+        Occasionally this happens in the aruco analyzed data and is a necessary function to run.
         '''
 
         for col in columns:
@@ -182,28 +154,26 @@ class ast_trial:
 
         return df_to_fix
 
-    def moving_average(self, df_to_filter, window_size=15):
+    def moving_average(self, window_size=15):
         '''
-        Runs a moving average on the pose data. Saves moving average data into new columns with f_ prefix
+        Runs a moving average on the pose data. Saves moving average data into new columns with f_ prefix.
+        Overwrites previous moving average calculations.
         '''
-        df_to_filter["f_x"] = df_to_filter["x"].rolling(
+        self.poses["f_x"] = self.poses["x"].rolling(
             window=window_size, min_periods=1).mean()
-        df_to_filter["f_y"] = df_to_filter["y"].rolling(
+        self.poses["f_y"] = self.poses["y"].rolling(
             window=window_size, min_periods=1).mean()
-        df_to_filter["f_rmag"] = df_to_filter["rmag"].rolling(
+        self.poses["f_rmag"] = self.poses["rmag"].rolling(
             window=window_size, min_periods=1).mean()
 
-        df_rounded = df_to_filter.round(4)
-        return df_rounded
+        self.poses.round(4)
+        self.filtered = True
+        print("Moving average completed.")
 
     def get_pose2d(self):
         '''
         Returns the poses for this trial, separately by axis.
         '''
-        #x = self.poses["x"]
-        #y = self.poses["y"]
-        #twist = self.poses["rmag"]
-
         poses = []
 
         for p in self.poses.iterrows():
@@ -212,7 +182,23 @@ class ast_trial:
 
         return poses #todo: test this out!
 
-    def plot_trial(self, file_name=None):
+    def get_poses(self, filt_flag=False):
+        '''
+        Separates poses into x, y, theta for easy plotting.
+        :param: filt_flag Gives option to return filtered or unfiltered data
+        '''
+        if self.filtered and filt_flag: #flag is there to default to get filtered data if there is filtered data
+            x = self.poses["f_x"]
+            y = self.poses["f_y"]
+            twist = self.poses["f_rmag"]
+        else:
+            x = self.poses["x"]
+            y = self.poses["y"]
+            twist = self.poses["rmag"]
+
+        return x, y, twist
+
+    def plot_trial(self, file_name=None): # TODO: make it so that we can choose filtered or unfiltered data
         '''
         Plot the poses in the trial, using marker size to denote the error in twist from the desired twist
         '''
@@ -248,8 +234,25 @@ class ast_trial:
             #plt.ylim(0., 0.5)
 
         if(file_name):
-            plt.savefig("plot4_" + file_name + ".jpg", format='jpg')
+            plt.savefig("plot_" + file_name + ".jpg", format='jpg')
             plt.show()
+
+    # TODO: is there a better place to put these functions?
+    def round_half_up(self, n, decimals=0):
+        '''
+        Used for plotting
+        #from: https://realpython.com/python-rounding/
+        '''
+        multiplier = 10 ** decimals
+        return m.floor(n*multiplier + 0.5) / multiplier
+
+    def round_half_down(self, n, decimals=0):
+        '''
+        Used for plotting
+        #from: https://realpython.com/python-rounding/
+        '''
+        multiplier = 10 ** decimals
+        return m.ceil(n*multiplier - 0.5) / multiplier
 
     def generate_ideal_line(self):
         '''
