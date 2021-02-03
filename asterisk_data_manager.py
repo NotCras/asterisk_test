@@ -1,27 +1,25 @@
 #!/usr/bin/env python3
 
 import os
-import csv
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 
 from pathlib import Path
 from zipfile import ZipFile
 
-class ast_data():
+
+class AstData:
 
     def __init__(self):
-        '''
+        """
         Class which contains helper functions for data wrangling - getting ready for asterisk data analysis
         home - home directory of git repo
-        '''
+        """
         self.home = Path(__file__).parent.absolute()
 
-    def view_images(self, subject_name, hand, translation, rotation, trial_num):
+    def view_images(self, subject_name, hand_name, translation_name, rotation_name, trial_number):
         os.chdir(self.home)
 
-        data_name = f"{subject_name}_{hand}_{translation}_{rotation}_{trial_num}"
+        data_name = f"{subject_name}_{hand_name}_{translation_name}_{rotation_name}_{trial_number}"
 
         file_dir = f"viz/{data_name}/"
         os.chdir(file_dir)
@@ -42,21 +40,20 @@ class ast_data():
             plt.draw()
 
         repeat = smart_input("Show again? [y/n]", "consent")
-        if(repeat == "y"):
-            #run again
-            self.view_images(subject_name, hand, translation,
-                             rotation, trial_num)
+        if repeat == "y":
+            # run again
+            self.view_images(subject_name, hand_name, translation_name,
+                             rotation_name, trial_number)
         else:
-            #stop running
-            #quit()
-            pass
+            # stop running
+            quit()
     
-    def single_extract(self, subject_name, hand, translation, rotation, trial_num):
-        '''
+    def single_extract(self, subject_name, hand_name, translation_name, rotation_name, trial_number):
+        """
         Extract a single zip file.
-        '''
-        folders = f"asterisk_test_data/{subject_name}/{hand}/"
-        file_name = f"{subject_name}_{hand}_{translation}_{rotation}_{trial_num}"
+        """
+        folders = f"asterisk_test_data/{subject_name}/{hand_name}/"
+        file_name = f"{subject_name}_{hand_name}_{translation_name}_{rotation_name}_{trial_number}"
 
         extract_from = folders+file_name+".zip"
 
@@ -66,33 +63,30 @@ class ast_data():
             zip_ref.extractall(extract_to)
             print(f"Completed Extraction: {extract_to}")
 
-
-    def batch_extract(self, subject, hand):
-        '''
+    def batch_extract(self, subject_name, hand_name):
+        """
         Extract a batch of zip files for a specific subject and hand
-        '''
-        pass
-
+        """
         translations = ["a", "b", "c", "d", "e", "f", "g", "h", "n"]
         n_trans_rot_opts = ["cw", "ccw"]
         rotations = ["n", "p15", "m15"]
-        num = ["1", "2", "3"]#, "4", "5"]
+        num = ["1", "2", "3"]  # , "4", "5"] #for now, since missing random trials 4 and 5 across the study
 
         for t in translations:
-            if t == "n": #necessary to divide rotations because cw and ccw only happen with no translation
-                if hand == "basic" or hand == "m2stiff" or hand == "modelvf":
+            if t == "n":  # necessary to divide rotations because cw and ccw only happen with no translation
+                if hand_name in ["basic", "m2stiff", "modelvf"]:
                     continue
                 else:
                     rot = n_trans_rot_opts
             else:
-                if hand == "basic" or hand == "m2stiff" or hand == "modelvf":
+                if hand_name in ["basic", "m2stiff", "modelvf"]:
                     rot = "n"
                 else:
                     rot = rotations
 
             for r in rot:
                 for n in num:
-                    self.single_extract(subject, hand, t, r, n)
+                    self.single_extract(subject_name, hand_name, t, r, n)
 
 
 def smart_input(prompt, option, valid_options=None):
@@ -110,12 +104,12 @@ def smart_input(prompt, option, valid_options=None):
         }
 
     print(option)
-    if option not in values.keys() and valid_options: # TODO: Do as try catch clause
+    if option not in values.keys() and valid_options:  # TODO: Do as try catch clause
         values[option] = valid_options
     elif option not in values.keys() and valid_options is None:
         print("Please provide the valid inputs for your custom option")
 
-    while(True):
+    while True:
         print(prompt)
         print(f"Valid options: {values[option]}")
         response = str(input())
@@ -129,13 +123,12 @@ def smart_input(prompt, option, valid_options=None):
 
 
 if __name__ == "__main__":
-    '''
+    """
     Run this file like a script and you can do everything you need to here.
-    '''
-    data_manager = ast_data()
+    """
+    data_manager = AstData()
 
     print("""
-    
         ========= ASTERISK TEST DATA MANAGER ==========
           I MANAGE YOUR DATA FOR THE ASTERISK STUDY
               AT NO COST, STRAIGHT TO YOUR DOOR!
@@ -145,7 +138,6 @@ if __name__ == "__main__":
         1 - view a set of images like a video
         2 - extract a single data zip file
         3 - extract a batch of zip files
-    
     """)
     ans = smart_input("Enter a function", "mode", ["1", "2", "3"])
     subject = smart_input("Enter subject name: ", "subjects")
@@ -171,5 +163,3 @@ if __name__ == "__main__":
     else:
         print("Invalid entry. Please try again.")
         quit()
-
-
