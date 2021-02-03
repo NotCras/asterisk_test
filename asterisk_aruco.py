@@ -5,32 +5,34 @@
 """
 import numpy as np
 import sys
-if  '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path : sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2, PIL
 from cv2 import aruco
 from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import pandas as pd
-#%matplotlib nbagg
+# %matplotlib nbagg
 import os
 import time
 import asterisk_0_prompts as prompts
 import asterisk_0_dataHelper as helper
+import asterisk_data_manager as datamanager
 
+if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
+    sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 
-## === IMPORTANT ATTRIBUTES ===
+# === IMPORTANT ATTRIBUTES ===
 marker_side = 0.03
-processing_freq = 1 #analyze every 1 image
+processing_freq = 1  # analyze every 1 image
+# ============================
 
-## ============================
 
-class ast_vision:
+class AsteriskArucoVision:
 
     def __init__(self, side_dims=0.03, freq=1):
-        '''
+        """
         Object for running aruco vision analysis on a trial of images
-        '''
+        """
         self.marker_side = side_dims
         self.processing_freq = freq
         self.home_directory = Path(__file__).parent.absolute()
@@ -41,21 +43,21 @@ class ast_vision:
         # k1,k2,p1,p2 ie radial dist and tangential dist
         self.dist = np.array((0.1611730644, -0.3392379107, 0.0010744837,	0.000905697))
 
-    def inversePerspective(self, rvec, tvec):
-        #print(rvec)
-        #print(np.matrix(rvec[0]).T) #TODO: Something wrong is going on here... need to look into the rodrigues function
+    def inverse_perspective(self, rvec, tvec):
+        # print(rvec)
+        # print(np.matrix(rvec[0]).T)  #TODO: Something wrong is going on here... need to look into the rodrigues function
         R, _ = cv2.Rodrigues(rvec)
         R = np.matrix(R).T
         invTvec = np.dot(-R, np.matrix(tvec))
         invRvec, _ = cv2.Rodrigues(R)
         return invRvec, invTvec
 
-    def relativePosition(self, rvec1, tvec1, rvec2, tvec2):
+    def relative_position(self, rvec1, tvec1, rvec2, tvec2):
         rvec1, tvec1 = np.expand_dims(rvec1.squeeze(),1), np.expand_dims(tvec1.squeeze(),1)
         rvec2, tvec2 = np.expand_dims(rvec2.squeeze(),1), np.expand_dims(tvec2.squeeze(),1)
-        invRvec, invTvec = self.inversePerspective(rvec2, tvec2)
+        invRvec, invTvec = self.inverse_perspective(rvec2, tvec2)
 
-        orgRvec, orgTvec = self.inversePerspective(invRvec, invTvec)
+        orgRvec, orgTvec = self.inverse_perspective(invRvec, invTvec)
 
         info = cv2.composeRT(rvec1, tvec1, invRvec, invTvec)
         composedRvec, composedTvec = info[0], info[1]
@@ -65,27 +67,29 @@ class ast_vision:
 
         return composedRvec, composedTvec
 
-    def estimatePose(self, frame, marker_side, mtx, dist):
+    def estimate_pose(self, frame, marker_side, mtx, dist):
 
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_250) # MAKE SURE YOU HAVE RIGHT ONE!!!!
         # detector parameters can be set here (List of detection parameters[3])
-        parameters =  aruco.DetectorParameters_create()
-        #parameters.adaptiveThreshConstant = 10
+        parameters = aruco.DetectorParameters_create()
+        # parameters.adaptiveThreshConstant = 10
 
         corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
 
-        #print(f"corners: {corners}, ids: {ids}")
+        # print(f"corners: {corners}, ids: {ids}")
 
         if np.all(ids != None):
-            #print("Found a tag.")
+            # print("Found a tag.")
             # estimate pose of each marker and return the values
             # rvet and tvec-different from camera coefficients
-            rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners[0], marker_side, mtx, dist) #TODO: quickfix is corners[0]... is there a more elegant way to fix?
+            rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners[0], marker_side, mtx, dist)
+            # TODO: quickfix is corners[0]... is there a more elegant way to fix?
 
         else:
             print("Could not find marker in frame.")
-            #quit()
+            # TODO: fix reference before assignment here
+            # quit()
 
         return rvec, tvec, corners
 
@@ -110,14 +114,14 @@ class ast_vision:
     def pose_estimation_process(self, folder, image_tag, mtx_val, dist_val, init_corners, init_rvec, init_tvec):
         frame = cv2.imread(os.path.join(folder, image_tag))
 
-        next_rvec, next_tvec, next_corners = self.estimatePose(
+        next_rvec, next_tvec, next_corners = self.estimate_pose(
             frame, marker_side, mtx_val, dist_val)
         next_corners = next_corners[0].squeeze()
 
-        #print(f"calculating angle, {next_corners}")
+        #p rint(f"calculating angle, {next_corners}")
         rel_angle = self.angle_between(
             init_corners[0]-init_corners[2], next_corners[0]-next_corners[2])
-        rel_rvec, rel_tvec = self.relativePosition(
+        rel_rvec, rel_tvec = self.relative_position(
             init_rvec, init_tvec, next_rvec, next_tvec)
 
         translation_val = np.round(np.linalg.norm(rel_tvec),4)
@@ -129,15 +133,15 @@ class ast_vision:
 
         return rel_rvec, rel_tvec, translation_val, rotation_val, ypr
 
-    #mtx = camera intrinsic matrix , dist =  distortion coefficients (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]])
+    # mtx = camera intrinsic matrix , dist =  distortion coefficients (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]])
 
-    #================================================================
-    def analyze_images(self, data_path, subject_name, hand, dir_label, trial_type, trial_num):
-        frame = cv2.imread(os.path.join(data_path,'left0000.jpg'))
-        orig_rvec, orig_tvec, orig_corners = self.estimatePose(
+    # ================================================================
+    def analyze_images(self, data_path, subject_name, hand, dir_label, trial_type, trial_num):  # TODO: fix the data reference here
+        frame = cv2.imread(os.path.join(data_path, 'left0000.jpg'))
+        orig_rvec, orig_tvec, orig_corners = self.estimate_pose(
             frame, marker_side, self.mtx, self.dist)
         orig_corners = orig_corners[0].squeeze()
-        #print("Tag found in initial image.")
+        # print("Tag found in initial image.")
 
         total = 0
 
@@ -148,15 +152,15 @@ class ast_vision:
             f.sort()
             break
 
-        #print(f)
-        #print(" ")
-        #print(dirpath)
-        #print(" ")
+        # print(f)
+        # print(" ")
+        # print(dirpath)
+        # print(" ")
 
         while(True):
 
             for image_ in f:
-                #print(image_)
+                # print(image_)
                 if '.ini' in image_:
                     # print("Configuration file found. Skipping over.")
                     # camera configuration file, skip over
@@ -168,7 +172,7 @@ class ast_vision:
                 try:
                     rel_rvec, rel_tvec, translation, rotation, ypr = self.pose_estimation_process(
                         data_path, image_, self.mtx, self.dist, orig_corners, orig_rvec, orig_tvec)
-                    #print(f"Succeeded at image {counter}")
+                    # print(f"Succeeded at image {counter}")
                     
                 except Exception as e: 
                     print(f"Error with finding ARuco tag in image {counter}.")
@@ -177,7 +181,7 @@ class ast_vision:
                     continue
 
                 counter += 1
-                total +=1
+                total += 1
 
                 rel_pose = np.concatenate((rel_rvec,rel_tvec))
 
@@ -186,7 +190,7 @@ class ast_vision:
 
                 with open(csv_loc,'a') as fd:
                     for i in rel_pose:
-    #                       for y in i:
+                        # for y in i:
                         fd.write(str(i[0]))
                         fd.write(',')
                         # print('here')
@@ -197,7 +201,7 @@ class ast_vision:
                     fd.write('\n')
     #                    print(rel_pose)
 
-                #print('Total: ' + str(total) +' Done '+ image_)
+                # print('Total: ' + str(total) +' Done '+ image_)
 
             print("          ")
             print('Completed ' + data_file)
@@ -205,13 +209,50 @@ class ast_vision:
             break
 
 
-# if __name__ == "__main__":
-#     home_directory = Path(__file__).parent.absolute()
+if __name__ == "__main__":
+    home_directory = Path(__file__).parent.absolute()
+
+    vision = AsteriskArucoVision()  # using defaults
+
+    print("""
+            ========= ASTERISK TEST ARUCO ANALYSIS ==========
+            I ANALYZE YOUR VISION DATA FOR THE ASTERISK STUDY
+                  AT NO COST, STRAIGHT TO YOUR DOOR!
+                               *****
+
+            What can I help you with?
+            1 - view a set of images like a video
+            2 - aruco analyze one specific set of data
+            3 - aruco analyze a batch of data
+        """)
+
+    ans = datamanager.smart_input("Enter a function", "mode", ["1", "2", "3"])
+    subject = datamanager.smart_input("Enter subject name: ", "subjects")
+    hand = datamanager.smart_input("Enter name of hand: ", "hands")
+
+    files_covered = list()
+
+    for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand):
+        file_name = f"{s}_{h}_{t}_{r}_{n}"
+
+        folder_path = f"viz/{file_name}/"
+        os.chdir(home_directory)
+        #data_path = inner_path
+        print(folder_path)
+
+        try:
+            vision.analyze_images(folder_path, s, h, t, r, n)  # TODO: fix the data reference here, still on old system
+            files_covered.append(file_name)
+        except Exception as e:
+            print(e)
+            files_covered.append(f"FAILED: {file_name}")
+
 
 #     mtx = np.array(((617.0026849655,-0.153855356,315.5900337131),#fx, s,cx
 #                    (0,614.4461785395,243.0005874753), ##0,fy,cy
 #                    (0,0,1) ))
-#     dist = np.array((0.1611730644,-0.3392379107,0.0010744837,	0.000905697)) #k1,k2,p1,p2 ie radial dist and tangential dist
+#     dist = np.array((0.1611730644,-0.3392379107,0.0010744837,	0.000905697))
+#     # k1,k2,p1,p2 ie radial dist and tangential dist
 
 # #================ FILE PATH TO IMAGE FOLDER =====================
 
