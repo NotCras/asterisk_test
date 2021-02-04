@@ -1,9 +1,6 @@
-#!/usr/bin/env python3
-
 import csv
 
-
-class handObj:
+class HandObj:
     def __init__(self, name, fingers=None):
         '''
         Class which stores relevant hand information.
@@ -12,7 +9,7 @@ class handObj:
         :param depth - max depth measurement, precision grasp
         :param num_fingers - number of fingers on hand
         '''
-        spans, depths = self.load_measurements()
+        spans, depths = self._load_measurements()
 
         self.hand_name = name
         # TODO: edit here when load measurements function is done
@@ -27,7 +24,7 @@ class handObj:
         '''
         return self.hand_name
 
-    def load_measurements(self):
+    def _load_measurements(self):
         '''
         Get hand span and depth measurements from file
         '''
@@ -50,25 +47,14 @@ class handObj:
 
         return spans, depths
 
-test_type_name = ["Translation", "Rotation",
-                    "Twist_translation", "undefined"]
-translation_name = ["a", "b", "c", "d", "e", "f", "g", "h", "none"]
-rotation_name = ["cw", "ccw", "none"]
-twist_name = ["plus15", "minus15", "none"]
-translation_angles = range(90, 90-360, -45)
-twist_directions = {"Clockwise": -15, "Counterclockwise": 15}
-rotation_directions = {"Clockwise": -25, "Counterclockwise": 25}
-subject_nums = [1, 2, 3, 4, 5]
 
+h_two_v_two = HandObj("2v2", 2)
+h_two_v_three = HandObj("2v3", 2)
+h_three_v_three = HandObj("3v3", 2)
 
-h_two_v_two = handObj("2v2", 2)
-h_two_v_three = handObj("2v3", 2)
-h_three_v_three = handObj("3v3", 2)
+h_basic = HandObj("basic", 2)
+h_m_stiff = HandObj("m2stiff", 2)
+h_m_active = HandObj("m2active", 2)
+h_m_vf = HandObj("modelvf", 2)
 
-h_basic = handObj("basic", 2)
-h_m_stiff = handObj("m2stiff", 2)
-h_m_active = handObj("m2active", 2)
-h_m_vf = handObj("modelvf", 2)
-
-h_barrett = handObj("barrett", 3)
-
+h_barrett = HandObj("barrett", 3)

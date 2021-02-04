@@ -8,7 +8,6 @@ from zipfile import ZipFile
 
 
 class AstData:
-
     def __init__(self):
         """
         Class which contains helper functions for data wrangling - getting ready for asterisk data analysis
@@ -72,11 +71,11 @@ class AstData:
             self.single_extract(s, h, t, r, n)
 
 
-def generate_names_with_s_h(subject_name, hand_name):
+# TODO: move following functions into a new asterisk_naming file, fits there better
+def generate_t_r_pairs(hand_name):
     translations = ["a", "b", "c", "d", "e", "f", "g", "h", "n"]
     n_trans_rot_opts = ["cw", "ccw"]
     rotations = ["n", "p15", "m15"]
-    num = ["1", "2", "3"]  # , "4", "5"] #for now, since missing random trials 4 and 5 across the study
 
     for t in translations:
         if t == "n":  # necessary to divide rotations because cw and ccw only happen with no translation
@@ -91,11 +90,19 @@ def generate_names_with_s_h(subject_name, hand_name):
                 rot = rotations
 
         for r in rot:
-            for n in num:
-                yield subject_name, hand_name, t, r, n
+            yield t, r
 
 
-def generate_all_names():  # TODO: make smart version so you can be picky with your options
+def generate_names_with_s_h(subject_name, hand_name):
+    num = ["1", "2", "3"]  # , "4", "5"] #for now, since missing random trials 4 and 5 across the study
+
+    for t, r in generate_t_r_pairs(hand_name):
+        for n in num:
+            yield subject_name, hand_name, t, r, n
+
+
+def generate_all_names():
+    # TODO: make smart version so you can be picky with your options... make the constant lists as default parameters
     subjects = ["sub1", "sub2", "sub3"]
     hands = ["human", "basic",  "m2stiff", "m2active",
              "2v2", "3v3", "2v3", "barrett", "modelvf"]

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from AsteriskTestMetrics import Pose2D
 import pdb
 
-from asterisk_hand import handObj
+from asterisk_hand import HandObj
 from scipy import stats
 
 
@@ -39,7 +39,7 @@ class AsteriskTrial:
         s, h, t, r, e = file_name.split("_")
         n, _ = e.split(".")
 
-        self.hand = handObj(h)
+        self.hand = HandObj(h)
         self.subject_num = s
         self.trial_translation = t
         self.trial_rotation = r
