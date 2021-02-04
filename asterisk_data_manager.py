@@ -177,5 +177,5 @@ if __name__ == "__main__":
         data_manager.batch_extract(subject, hand)
 
     else:
-        print("Invalid entry. Please try again.")
+        print("Invalid entry. ")
         quit()

@@ -6,15 +6,19 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from AsteriskTestMetrics import Pose2D
+import pdb
 
-from asterisk_prompts import hand
+from asterisk_hand import handObj
 from scipy import stats
 
 
 class AsteriskTrial:
     def __init__(self, file_name):
         """
-        Class to represent a single asterisk test trial. Contains:
+        Class to represent a single asterisk test trial.
+        :param file_name - name of the file that you want to import data from
+
+        Class contains:
         :attribute hand - hand object with info for hand involved in the trial (see above)
         :attribute subject_num - integer value for subject number
         :attribute direction - single lettered descriptor for which direction the object travels in for this trial
@@ -31,19 +35,19 @@ class AsteriskTrial:
         :attribute frechet_distance - float value
         :attribute dist_along_translation - float
         :attribute dist_along_twist - float
-
         """
-        s, h, d, r, e = file_name.split("_")
+        s, h, t, r, e = file_name.split("_")
         n, _ = e.split(".")
 
-        self.hand = h
+        self.hand = handObj(h)
         self.subject_num = s
-        self.trial_translation = d
+        self.trial_translation = t
         self.trial_rotation = r
         self.trial_num = n
 
         # Data will not be filtered here
-        self.poses = self.read_file(file_name)
+        data = self._read_file(file_name)
+        self.poses = data[["x", "y", "rmag"]]
 
         self.filtered = False
         self.ideal_poses = None
@@ -53,11 +57,11 @@ class AsteriskTrial:
         self.dist_along_translation = None
         self.dist_along_twist = None
 
-    def read_file(self, file, folder=""):
+    def _read_file(self, file_name, folder="csv/"):
         """
         Function to read file and save relevant data in the object
         """
-        total_path = folder + file
+        total_path = f"{folder}{file_name}"
 
         try:
             df_temp = pd.read_csv(total_path,
@@ -65,15 +69,15 @@ class AsteriskTrial:
                                   skip_blank_lines=True
                                   )
 
-            df = self.condition_df(df_temp)
+            df = self._condition_df(df_temp)
 
         except:  # TODO: add more specific except clauses
             df = None
             print(f"{total_path} has failed to read csv")
 
-        return df["x", "y", "rmag"]
+        return df
 
-    def condition_df(self, df):
+    def _condition_df(self, df):
         """
         Data conditioning procedure used to:
         0) Make columns of the dataframe numeric (they aren't by default), makes dataframe header after the fact to avoid errors with apply function
@@ -101,7 +105,7 @@ class AsteriskTrial:
         df = df.round(4)
 
         # occasionally get an outlier value (probably from vision algorithm), I filter them out here
-        inlier_df = self.remove_outliers(df, ["x", "y", "rmag"])
+        inlier_df = self._remove_outliers(df, ["x", "y", "rmag"])
 
         return inlier_df
 
@@ -110,7 +114,7 @@ class AsteriskTrial:
         Generates the codified name of the trial
         :return: string name of trial
         """
-        return f"{self.hand.get_name()}_{self.subject_num}_{self.trial_translation}_" \
+        return f"{self.subject_num}_{self.hand.get_name()}_{self.trial_translation}_" \
                f"{self.trial_rotation}_{self.trial_num}"
 
     def generate_data_csv(self, file_name_overwrite=None):
@@ -133,12 +137,11 @@ class AsteriskTrial:
 
         print(f"CSV File generated with name: {new_file_name}")
 
-    def remove_outliers(self, df_to_fix, columns):
+    def _remove_outliers(self, df_to_fix, columns):
         """
-        Removes extreme outliers from data, in 100% quartile.
+        Removes extreme outliers from data, in 99% quartile.
         Occasionally this happens in the aruco analyzed data and is a necessary function to run.
         """
-
         for col in columns:
             # see: https://stackoverflow.com/questions/23199796/detect-and-exclude-outliers-in-pandas-data-frame
             # q_low = df_to_fix[col].quantile(0.01)
@@ -174,14 +177,13 @@ class AsteriskTrial:
         Returns the poses for this trial, separately by axis.
         """
         poses = []
-
         for p in self.poses.iterrows():
             pose = Pose2D(p["x"], p["y"], p["rmag"])
             poses.append(pose)
 
         return poses # Todo: test this out!
 
-    def get_poses(self, filt_flag=False):
+    def get_poses(self, filt_flag=True):
         """
         Separates poses into x, y, theta for easy plotting.
         :param: filt_flag Gives option to return filtered or unfiltered data
@@ -208,34 +210,36 @@ class AsteriskTrial:
         # plt.scatter(data_x, data_y, marker='o', color='red', alpha=0.5, s=5*theta)
 
         # plot data points separately to show angle error with marker size
-        for n in range(len(data_x)):
-            # TODO: rn having difficulty doing marker size in a batch, so plotting each point separately
-            plt.plot(data_x[n], data_y[n], 'r.',
-                     alpha=0.5, markersize=5*theta[n])
+        # for n in range(len(data_x)):
+        #     # TODO: rn having difficulty doing marker size in a batch, so plotting each point separately
+        #     # TODO: also rn having difficulty getting this to work at all, commenting out right now
+        #     plt.plot(data_x[n], data_y[n], 'r.',
+        #              alpha=0.5, markersize=5*theta[n])
 
-            max_x = max(data_x)
-            max_y = max(data_y)
-            min_x = min(data_x)
+        max_x = max(data_x)
+        max_y = max(data_y)
+        min_x = min(data_x)
 
-            # print(f"max_x: {max_x}, min_x: {min_x}, y: {max_y}")
+        # print(f"max_x: {max_x}, min_x: {min_x}, y: {max_y}")
 
-            plt.xlabel('X')
-            plt.ylabel('Y')
-            plt.title('Path of Object')
-            # plt.grid()
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.title('Path of Object')
+        # plt.grid()
 
-            plt.xticks(np.linspace(self.round_half_down(min_x, decimals=2),
-                                   self.round_half_up(max_x, decimals=2), 10), rotation=30)
-            # gives a realistic view of what the path looks like
-            # plt.xticks(np.linspace(0, round_half_up(max_y, decimals=2), 10), rotation=30)
-            plt.yticks(np.linspace(0, self.round_half_up(max_y, decimals=2), 10))
+        plt.xticks(np.linspace(self.round_half_down(min_x, decimals=2),
+                               self.round_half_up(max_x, decimals=2), 10), rotation=30)
+        # gives a realistic view of what the path looks like
+        # plt.xticks(np.linspace(0, round_half_up(max_y, decimals=2), 10), rotation=30)
+        plt.yticks(np.linspace(0, self.round_half_up(max_y, decimals=2), 10))
 
-            # plt.xlim(0., 0.5)
-            # plt.ylim(0., 0.5)
+        # plt.xlim(0., 0.5)
+        # plt.ylim(0., 0.5)
 
         if file_name:
             plt.savefig(f"plot_{file_name}.jpg", format='jpg')
-            plt.show()
+
+        plt.show()
 
     # TODO: is there a better place to put these functions?
     def round_half_up(self, n, decimals=0):

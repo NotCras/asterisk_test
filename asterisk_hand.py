@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 
-#subject_nums
-#hands_nums
-#types
+import csv
 
 
-class hand:
-    def __init__(self, name, fingers):
+class handObj:
+    def __init__(self, name, fingers=None):
         '''
         Class which stores relevant hand information.
         :param hand_name - name of the hand
@@ -37,7 +35,7 @@ class hand:
         spans = dict()
         depths = dict()
 
-        print("LOADING HAND MEASUREMENTS")
+        #print("LOADING HAND MEASUREMENTS")
         with open(".hand_dimensions") as csv_file:
             csv_reader_hands = csv.reader(csv_file, delimiter=',')
             # populating dictionaries with dimensions
@@ -63,14 +61,14 @@ rotation_directions = {"Clockwise": -25, "Counterclockwise": 25}
 subject_nums = [1, 2, 3, 4, 5]
 
 
-h_two_v_two = hand("2v2", 2)
-h_two_v_three = hand("2v3", 2)
-h_three_v_three = hand("3v3", 2)
+h_two_v_two = handObj("2v2", 2)
+h_two_v_three = handObj("2v3", 2)
+h_three_v_three = handObj("3v3", 2)
 
-h_basic = hand("basic", 2)
-h_m_stiff = hand("m2stiff", 2)
-h_m_active = hand("m2active", 2)
-h_m_vf = hand("modelvf", 2)
+h_basic = handObj("basic", 2)
+h_m_stiff = handObj("m2stiff", 2)
+h_m_active = handObj("m2active", 2)
+h_m_vf = handObj("modelvf", 2)
 
-h_barrett = hand("barrett", 3)
+h_barrett = handObj("barrett", 3)
 
