@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import csv
 import asterisk_data_manager as datamanager
 import asterisk_trial as trial
 from asterisk_hand import HandObj
@@ -14,9 +13,9 @@ class AsteriskHandData:
         """
         self.hand = HandObj(hand_name)
         self.subjects_containing = subjects
-        self.data = self._organize_hand_data(subjects)
+        self.data = self._gather_hand_data(subjects)
 
-    def _organize_hand_data(self, subjects_to_get):
+    def _gather_hand_data(self, subjects_to_get):
         """
         Returns a dictionary with the data for the hand, sorted by task.
         Each key,value pair of dictionary is:
@@ -37,9 +36,13 @@ class AsteriskHandData:
         gathered_data = list()
         for s in subjects:  # TODO: subjects is a list, make a type recommendation
             for n in trials:
-                asterisk_trial_file = f"{s}_{self.hand.get_name()}_{translation_label}_{rotation_label}_{n}.csv"
-                trial_data = trial.AsteriskTrial(asterisk_trial_file)
-                gathered_data.append(trial_data)
+                try:
+                    asterisk_trial_file = f"{s}_{self.hand.get_name()}_{translation_label}_{rotation_label}_{n}.csv"
+                    trial_data = trial.AsteriskTrial(asterisk_trial_file)
+                    gathered_data.append(trial_data)
+                except:
+                    print("Skipping.")
+                    continue
 
         return gathered_data
 

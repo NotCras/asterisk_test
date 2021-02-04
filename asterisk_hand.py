@@ -1,5 +1,6 @@
 import csv
 
+
 class HandObj:
     def __init__(self, name, fingers=None):
         '''

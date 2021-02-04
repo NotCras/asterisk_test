@@ -72,6 +72,7 @@ class AstData:
 
 
 # TODO: move following functions into a new asterisk_naming file, fits there better
+# TODO: make functions that just return a list of hands, subjects, translations, rotations... yata yata
 def generate_t_r_pairs(hand_name):
     translations = ["a", "b", "c", "d", "e", "f", "g", "h", "n"]
     n_trans_rot_opts = ["cw", "ccw"]
