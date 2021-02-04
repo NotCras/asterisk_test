@@ -50,7 +50,7 @@ class AsteriskTrial:
         self.poses = data[["x", "y", "rmag"]]
 
         self.filtered = False
-        self.ideal_poses = None
+        self.window_size = None
 
         self.total_distance = None
         self.frechet_distance = None
@@ -129,11 +129,13 @@ class AsteriskTrial:
         # if data has been filtered, we also want to include that in csv generation,
         # otherwise the filtered columns won't exist
         if self.filtered:  # TODO: make it in a special folder?
-            self.poses.to_csv(new_file_name, index=True, columns=[
+            filtered_file_name = f"filtered/f{self.window_size}_{new_file_name}"
+
+            self.poses.to_csv(filtered_file_name, index=True, columns=[
                 "x", "y", "rmag", "f_x", "f_y", "f_rmag"])
         else:
             self.poses.to_csv(new_file_name, index=True, columns=[
-                "x", "y", "rmag"])  # TODO: Should I rename columns?
+                "x", "y", "rmag"])
 
         print(f"CSV File generated with name: {new_file_name}")
 
@@ -170,6 +172,7 @@ class AsteriskTrial:
 
         self.poses.round(4)
         self.filtered = True
+        self.window_size = window_size
         # print("Moving average completed.")
 
     def get_pose2d(self):

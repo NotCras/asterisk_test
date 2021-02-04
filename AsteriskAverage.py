@@ -18,6 +18,7 @@ class AsteriskAverage(AsteriskTestTypes):
         :returns array of average poses with += poses
         """
 
+        # initializing
         self.pose_average = []
         self.pose_sd = []
         try:
@@ -28,7 +29,7 @@ class AsteriskAverage(AsteriskTestTypes):
 
         # This is really clunky, but it's the easiest way to deal
         # with the problem that the arrays have different sizes...
-        n_max = max([len(t.target_indices) for t in atrs])
+        n_max = max([len(t.target_indices) for t in atrs]) # get max length of all data arrays for one trial
         self.pose_average = [Pose2D() for _ in range(0, n_max)]
         sd_dist = [0] * n_max
         sd_theta = [0] * n_max
