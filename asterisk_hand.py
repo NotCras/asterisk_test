@@ -3,13 +3,13 @@ import csv
 
 class HandObj:
     def __init__(self, name, fingers=None):
-        '''
+        """
         Class which stores relevant hand information.
         :param hand_name - name of the hand
         :param span - max span measurement, precision grasp
         :param depth - max depth measurement, precision grasp
         :param num_fingers - number of fingers on hand
-        '''
+        """
         spans, depths = self._load_measurements()
 
         self.hand_name = name
@@ -20,15 +20,15 @@ class HandObj:
         # TODO: decide how to check if two hands are the same. Just go by name? Or check everything?
 
     def get_name(self):
-        '''
+        """
         Getter for hand name
-        '''
+        """
         return self.hand_name
 
     def _load_measurements(self):
-        '''
+        """
         Get hand span and depth measurements from file
-        '''
+        """
         # import hand span data
         spans = dict()
         depths = dict()

@@ -117,7 +117,7 @@ class AsteriskTrial:
         return f"{self.subject_num}_{self.hand.get_name()}_{self.trial_translation}_" \
                f"{self.trial_rotation}_{self.trial_num}"
 
-    def generate_data_csv(self, file_name_overwrite=None):
+    def save_data(self, file_name_overwrite=None):
         """
         Saves pose data as a new csv file
         """
@@ -128,7 +128,7 @@ class AsteriskTrial:
 
         # if data has been filtered, we also want to include that in csv generation,
         # otherwise the filtered columns won't exist
-        if self.filtered:
+        if self.filtered:  # TODO: make it in a special folder?
             self.poses.to_csv(new_file_name, index=True, columns=[
                 "x", "y", "rmag", "f_x", "f_y", "f_rmag"])
         else:
@@ -170,7 +170,7 @@ class AsteriskTrial:
 
         self.poses.round(4)
         self.filtered = True
-        print("Moving average completed.")
+        # print("Moving average completed.")
 
     def get_pose2d(self):
         """
@@ -188,7 +188,7 @@ class AsteriskTrial:
         Separates poses into x, y, theta for easy plotting.
         :param: filt_flag Gives option to return filtered or unfiltered data
         """
-        if self.filtered and filt_flag: #flag is there to default to get filtered data if there is filtered data
+        if self.filtered and filt_flag:
             x = self.poses["f_x"]
             y = self.poses["f_y"]
             twist = self.poses["f_rmag"]
@@ -197,7 +197,11 @@ class AsteriskTrial:
             y = self.poses["y"]
             twist = self.poses["rmag"]
 
-        return x, y, twist
+        return_x = pd.Series.to_list(x)
+        return_y = pd.Series.to_list(y)
+        return_twist = pd.Series.to_list(twist)
+
+        return return_x, return_y, return_twist
 
     def plot_trial(self, file_name=None):  # TODO: make it so that we can choose filtered or unfiltered data
         """
@@ -210,11 +214,11 @@ class AsteriskTrial:
         # plt.scatter(data_x, data_y, marker='o', color='red', alpha=0.5, s=5*theta)
 
         # plot data points separately to show angle error with marker size
-        # for n in range(len(data_x)):
-        #     # TODO: rn having difficulty doing marker size in a batch, so plotting each point separately
-        #     # TODO: also rn having difficulty getting this to work at all, commenting out right now
-        #     plt.plot(data_x[n], data_y[n], 'r.',
-        #              alpha=0.5, markersize=5*theta[n])
+        for n in range(len(data_x)):
+            # TODO: rn having difficulty doing marker size in a batch, so plotting each point separately
+            # TODO: also rn having difficulty getting this to work at all, commenting out right now
+            plt.plot(data_x[n], data_y[n], 'r.',
+                     alpha=0.5, markersize=5*theta[n])
 
         max_x = max(data_x)
         max_y = max(data_y)

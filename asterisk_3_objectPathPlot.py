@@ -98,31 +98,32 @@ def plot_trial(df, file_name):
 
     plt.plot(data_x, data_y, color='tab:red', label='trajectory')
 
-    #plt.scatter(data_x, data_y, marker='o', color='red', alpha=0.5, s=5*theta)
-    #plot data points separately to show angle error with marker size
+    # plt.scatter(data_x, data_y, marker='o', color='red', alpha=0.5, s=5*theta)
+    # plot data points separately to show angle error with marker size
     for n in range(len(data_x)):
-        plt.plot(data_x[n], data_y[n], 'r.', alpha=0.5, markersize=5*theta[n]) #rn having difficulty doing marker size in a batch, so plotting each point separately 
+        plt.plot(data_x[n], data_y[n], 'r.', alpha=0.5, markersize=5*theta[n]) # rn having difficulty doing marker size in a batch, so plotting each point separately
     
     max_x = max(data_x)
     max_y = max(data_y)
     min_x = min(data_x)
 
-    #print(f"max_x: {max_x}, min_x: {min_x}, y: {max_y}")
+    # print(f"max_x: {max_x}, min_x: {min_x}, y: {max_y}")
 
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.title('Path of Object')
-    #plt.grid()
+    # plt.grid()
     
     plt.xticks(np.linspace(round_half_down(min_x, decimals=2), round_half_up(max_x, decimals=2), 10), rotation=30)
-    #plt.xticks(np.linspace(0, round_half_up(max_y, decimals=2), 10), rotation=30) #gives a realistic view of what the path looks like
+    # plt.xticks(np.linspace(0, round_half_up(max_y, decimals=2), 10), rotation=30) # gives a realistic view of what the path looks like
     plt.yticks(np.linspace(0, round_half_up(max_y, decimals=2), 10))
 
-    #plt.xlim(0., 0.5)
-    #plt.ylim(0., 0.5)
+    # plt.xlim(0., 0.5)
+    # plt.ylim(0., 0.5)
 
     plt.savefig("plot4_" + file_name + ".jpg", format='jpg')
     plt.show()
+
 
 def plot_all_ideal(order_of_colors):
     print("PLOTTING IDEAL LINES")
