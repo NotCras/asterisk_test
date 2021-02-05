@@ -29,16 +29,17 @@ class AsteriskAverage(AsteriskTestTypes):
 
         # This is really clunky, but it's the easiest way to deal
         # with the problem that the arrays have different sizes...
-        n_max = max([len(t.target_indices) for t in atrs]) # get max length of all data arrays for one trial
-        self.pose_average = [Pose2D() for _ in range(0, n_max)]
+        n_max = max([len(t.target_indices) for t in atrs]) # get how many trials there are
+        self.pose_average = [Pose2D() for _ in range(0, n_max)]  # make a bunch of empty Pose2D objects - this will be the average line
         sd_dist = [0] * n_max
         sd_theta = [0] * n_max
         count = [0] * n_max
         for t in atrs:
+            # keep track of which trials were averaged here
             self.names.append(t.test_name)
 
             for j, index in enumerate(t.target_indices):
-                print("{0} {1} {2}".format(index, t.obj_poses[0, index], t.obj_poses[1, index]))
+                print(f"{index} {t.obj_poses[0, index]} {t.obj_poses[1, index]}")
                 self.pose_average[j].x += t.obj_poses[0, index]
                 self.pose_average[j].y += t.obj_poses[1, index]
                 self.pose_average[j].theta += t.obj_poses[2, index]

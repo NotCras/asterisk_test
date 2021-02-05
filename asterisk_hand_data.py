@@ -12,6 +12,7 @@ from asterisk_hand import HandObj
 
 
 class AsteriskHandData:
+    # TODO: add ability to add trials after the fact
     def __init__(self, subjects, hand_name):
         """
         Class to hold all the data pertaining to a specific hand.
@@ -88,7 +89,7 @@ class AsteriskHandData:
         self.filtered = True
         self.window_size = window_size
 
-    def plot_data_subset(self, subject_to_run, trial_number, show_plot=True, save_plot=False):
+    def plot_data_subset(self, subject_to_run, trial_number="1", show_plot=True, save_plot=False):
         """
         Plots a subset of the data, as specified in parameters
         """
