@@ -55,9 +55,11 @@ class AsteriskHandData:
 
         return gathered_data
 
-    def _get_batch(self, subject_to_run, trial_number):
+    def _get_batch(self, subject_to_run, trial_number=None):  # TODO: rename this function
         """
-        Picks out the specified data
+        Picks out the specific subject and trial number from data.
+        :param subject_to_run specify the subject you want
+        :param trial_number specify the number trial you want, if None then it will return all trials for a specific subject
         """
         dfs = []
         translations = ["a", "b", "c", "d", "e", "f", "g", "h"]
@@ -69,19 +71,33 @@ class AsteriskHandData:
 
             trial_we_want = None
             for t in trials:
-                if (t.subject_num == subject_to_run) and (t.trial_num == trial_number):
-                    # TODO: make sure trial_number is a string
-                    trial_we_want = t
-                    break
-                # TODO: throw an exception in case there isn't the trial that we want
+                if trial_number:  # if we want a specific trial, look for it
+                    if (t.subject_num == subject_to_run) and (t.trial_num == trial_number):
+                        # TODO: make sure trial_number is a string
+                        dfs.append(trial_we_want)
+                        break
+                    # TODO: throw an exception in case there isn't the trial that we want
+
+                else:  # otherwise, grab trial as long as it has the right subject
+                    if t.subject_num == subject_to_run:
+                        dfs.append(t)
 
             # print("    ")
 
-            dfs.append(trial_we_want)
-
         return dfs
 
+    def _average_data(self, trials):
+        """
+        Averages a set of asterisk_trial paths. We run this on groups of paths of the same direction.
+        :param trials list of asterisk_trial objects to average
+        :return returns averaged path
+        """
+        pass
+
     def filter_data(self, window_size=15):
+        """
+        Runs moving average on data stored inside object
+        """
         for key in self.data.keys():
             for t in self.data[key]:
                 t.moving_average(window_size)
@@ -140,7 +156,7 @@ class AsteriskHandData:
 
     def plot_data(self):
         """
-        Plots all the data contained in object
+        Plots all the data contained in object, averaging data in each direction across all subjects
         """
         pass
 

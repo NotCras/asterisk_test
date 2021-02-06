@@ -5,7 +5,7 @@ import math as m
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from AsteriskTestMetrics import Pose2D
+from asterisk_calculations import Pose2D, AsteriskCalculations
 import pdb
 
 from asterisk_hand import HandObj
@@ -14,6 +14,7 @@ from scipy import stats
 
 class AsteriskTrial:
     def __init__(self, file_name):
+        # TODO: make it so that I can also make an empty AsteriskTrial object or from some data
         """
         Class to represent a single asterisk test trial.
         :param file_name - name of the file that you want to import data from
@@ -184,7 +185,16 @@ class AsteriskTrial:
             pose = Pose2D(p["x"], p["y"], p["rmag"])
             poses.append(pose)
 
-        return poses # Todo: test this out!
+        return poses  # Todo: test this out!
+
+    def _get_pose_array(self, get_filtered=True):
+        """
+        Returns the poses for this trial as np.array
+        """
+        if self.filtered and get_filtered:
+            return self.poses[["f_x", "f_y", "f_rmag"]].to_numpy()
+        else:
+            return self.poses[["x", "y", "rmag"]].to_numpy()
 
     def get_poses(self, filt_flag=True):
         """
@@ -269,10 +279,38 @@ class AsteriskTrial:
         """
         Using object trajectory (self.poses), build a line to compare to for frechet distance
         """
+        translation_angles = np.linspace(90, 90 - 360, 8, endpoint=False)
+
+        # check add_target_paths function from AsteriskTestMetrics
+
         pass
 
-    def calculate_frechet_distance(self):
+    def calculate_frechet_distance(self, target_poses):
         """
-        Calculate the frechet distance between self.poses and self.ideal_line
+        Calculate the frechet distance between self.poses and ideal line
+        Uses frechet distance calculation from asterisk_calculations object
         """
+        calc = AsteriskCalculations()
+
+        # get numpy array from self.poses
+        object_path = self._get_pose_array()
+
+        # get ideal path
+
+
+        # calculate % dist travelled, % error last pose, overall path score
+
+
+        # check that we are roughly in the ballpark of end pose
+
+
+        # get scl ratio (or do separately for translation and rotation)?
+
+
+        # set up end_target_index, dist_along_translation, dist_target
+
+
+        # then run FD using what I calculated
+
+
         pass
