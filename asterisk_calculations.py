@@ -51,5 +51,167 @@ class AsteriskCalculations:
         line averaging and frechet distance calculations.
         Deals primarily in Pose2D due to legacy code
         """
-
         pass
+
+    @staticmethod
+    def _narrow_target(obj_pose, target_poses, scl_ratio=(0.5, 0.5)) -> int:
+        """ narrown down the closest point on the target poses
+        :param obj_pose last object pose Pose2D
+        :param target_poses [Pose2D;
+        :param scl_ratio - how much to scale distance and rotation error by
+        :returns target_i the index of the best match """
+
+        dists_targets = [obj_pose.distance(p, scl_ratio) for p in target_poses]
+        i_target = dists_targets.index(min(dists_targets))
+
+        return i_target
+
+    @staticmethod
+    def _frechet_dist(poses_obj, i_target, target_poses, scl_ratio=(0.5, 0.5)) -> (int, float):
+        """ Implement Frechet distance
+        :param poses_obj all the object poses np.array
+        :param i_target the closest point in target_poses
+        :param target_poses [Pose2D];
+        :param scl_ratio - how much to scale distance and rotation error by
+        :returns max of the min distance between target_poses and obj_poses """
+
+        # Length of target curve
+        n_target = min(i_target + 1, len(target_poses))
+        # Length of object path
+        n_object_path = poses_obj.shape[1]
+
+        # Matrix to store data in as we calculate Frechet distance
+        # Entry i,j has the cost of pairing i with j, assuming best pairings up to that point
+        ca = np.zeros((n_target, n_object_path), dtype=np.float64)
+        ds = np.zeros((n_target, n_object_path), dtype=np.float64)
+        dsum = np.zeros((n_target, n_object_path), dtype=np.float64)
+        imatch = np.zeros((n_target, n_object_path), dtype=np.int)
+
+        print("Frechet debug: target {0}, n {1}".format(i_target, n_object_path))
+
+        # Top left corner
+        ca[0, 0] = target_poses[0].distance(Pose2D(poses_obj[0, 0], poses_obj[1, 0], poses_obj[2, 0]), scl_ratio)
+        ds[0, 0] = ca[0, 0]
+        dsum[0, 0] = ds[0, 0]
+        imatch[0, 0] = 0  # Match the first target pose to the first object pose
+        target_index = [i for i in range(0, n_target)]
+
+        # Fill in left column ...
+        for i_t in range(1, n_target):
+            ds[i_t, 0] = target_poses[i_t].distance(Pose2D(poses_obj[0, 0], poses_obj[1, 0], poses_obj[2, 0]),
+                                                    scl_ratio)
+            ca[i_t, 0] = max(ca[i_t - 1, 0], ds[i_t, 0])
+            dsum[i_t, 0] = dsum[i_t - 1, 0] + ds[i_t, 0]
+            imatch[i_t, 0] = 0  # Match the ith target pose to the first object pose
+
+        # ... and top row
+        for i_p in range(1, n_object_path):
+            ds[0, i_p] = target_poses[0].distance(Pose2D(poses_obj[0, i_p], poses_obj[1, i_p], poses_obj[2, i_p]),
+                                                  scl_ratio)
+            ca[0, i_p] = max(ca[0, i_p - 1], ds[0, i_p])
+            if ds[0, i_p] < dsum[0, i_p - 1]:
+                imatch[0, i_p] = i_p  # Match the first target pose to this object pose
+                dsum[0, i_p] = ds[0, i_p]
+            else:
+                imatch[0, i_p] = imatch[0, i_p - 1]  # Match to an earlier pose
+                dsum[0, i_p] = dsum[0, i_p - 1]
+
+        # Remaining matrix
+        for i_t in range(1, n_target):
+            tp = target_poses[i_t]
+            for i_p in range(1, n_object_path):
+                ds[i_t, i_p] = tp.distance(Pose2D(poses_obj[0, i_p], poses_obj[1, i_p], poses_obj[2, i_p]), scl_ratio)
+                ca[i_t, i_p] = max(min(ca[i_t - 1, i_p],
+                                       ca[i_t - 1, i_p - 1],
+                                       ca[i_t, i_p - 1]),
+                                   ds[i_t, i_p])
+                # Compare using this match with the best match upper row so far
+                # to best match found so far
+                if ds[i_t, i_p] + dsum[i_t - 1, i_p] < dsum[i_t, i_p - 1]:
+                    imatch[i_t, i_p] = i_p
+                    dsum[i_t, i_p] = ds[i_t, i_p] + dsum[i_t - 1, i_p]
+                else:
+                    dsum[i_t, i_p] = dsum[i_t, i_p - 1]  # Keep the old match
+                    imatch[i_t, i_p] = imatch[i_t, i_p - 1]
+
+        # initialize with minimum value match - allows backtracking
+        target_index = []
+        v_min = np.amin(ds, axis=1)
+        for r in range(0, n_target):
+            indx = np.where(ds[r, :] == v_min[r])
+            target_index.append(indx[0][0])
+
+        b_is_ok = True
+        for i in range(0, n_target - 1):
+            if target_index[i + 1] < target_index[i]:
+                b_is_ok = False
+                print("Frechet: Found array not sorted")
+
+        # Could just do this, but leaving be for a moment to ensure working
+        if b_is_ok == False:
+            for i_t in range(0, n_target):
+                target_index[i_t] = imatch[i_t, n_object_path - 1]
+
+        return ca[n_target - 1, n_object_path - 1], target_index
+
+
+    def set_average(self, atrs):
+        """ Average 2 or more trials for one test
+        :param atrs = array of AsteriskTestResults
+        :returns array of average poses with += poses
+        """
+
+        # initializing
+        self.pose_average = []
+        self.pose_sd = []
+        try:
+            # Sets type
+            self.set(atrs[0])
+        except IndexError:
+            pass
+
+        # This is really clunky, but it's the easiest way to deal
+        # with the problem that the arrays have different sizes...
+        n_max = max([len(t.target_indices) for t in atrs]) # get how many trials there are
+        self.pose_average = [Pose2D() for _ in range(0, n_max)]  # make a bunch of empty Pose2D objects - this will be the average line
+        sd_dist = [0] * n_max
+        sd_theta = [0] * n_max
+        count = [0] * n_max
+        for t in atrs:
+            # keep track of which trials were averaged here
+            self.names.append(t.test_name)
+
+            for j, index in enumerate(t.target_indices):
+                print(f"{index} {t.obj_poses[0, index]} {t.obj_poses[1, index]}")
+                self.pose_average[j].x += t.obj_poses[0, index]
+                self.pose_average[j].y += t.obj_poses[1, index]
+                self.pose_average[j].theta += t.obj_poses[2, index]
+                count[j] += 1
+
+        # Average
+        for i, c in enumerate(count):
+            self.pose_average[i].x /= c
+            self.pose_average[i].y /= c
+            self.pose_average[i].theta /= c
+            count[i] = 0
+
+        # SD - do theta separately from distance to centerline
+        for t in atrs:
+            for j, index in enumerate(t.target_indices):
+                p = t.obj_poses[:, index]
+                dx = self.pose_average[j].x - p[0]
+                dy = self.pose_average[j].y - p[1]
+                dist = sqrt(dx * dx + dy * dy)
+                dt = abs(self.pose_average[j].theta - p[2])
+                sd_theta[j] += dt
+                sd_dist[j] += dist
+                count[j] += 1
+
+        # Normalize SD
+        last_valid_i = 0
+        for i, p in enumerate(self.pose_average):
+            if count[i] > 1:
+                self.pose_sd.append((sd_dist[i] / (count[i] - 1), sd_theta[i] / (count[i] - 1)))
+                last_valid_i = i
+            else:
+                self.pose_sd.append(self.pose_sd[last_valid_i])
