@@ -73,6 +73,7 @@ def average_the_lines(dfs, line_size):
     for df in dfs:
         #new_df = resample_paths(samples=line_size) #TODO:not done here
         #resampled_dfs.append(new_df)
+        pass
 
     #interpolate the average between each point... also get the std at each point
     average_line = list()
@@ -98,6 +99,7 @@ def get_average_point(dfs, index):
 
 
     #get average theta at index
+    pass
 
 
 

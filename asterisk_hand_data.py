@@ -34,11 +34,11 @@ class AsteriskHandData:
         data_dictionary = dict()
         for t, r in datamanager.generate_t_r_pairs(self.hand.get_name()):
             key = f"{t}_{r}"
-            data_dictionary[key] = self._gather_trials(subjects_to_get, t, r, [1,2,3])
+            data_dictionary[key] = self._make_asterisk_trials(subjects_to_get, t, r, [1, 2, 3])
 
         return data_dictionary
 
-    def _gather_trials(self, subjects, translation_label, rotation_label, trials):
+    def _make_asterisk_trials(self, subjects, translation_label, rotation_label, trials):
         """
         Goes through data and compiles data with set attributes into an AsteriskTrial objects
         """
@@ -55,7 +55,7 @@ class AsteriskHandData:
 
         return gathered_data
 
-    def _get_batch(self, subject_to_run, trial_number=None):  # TODO: rename this function
+    def _get_batch(self, subject_to_run, trial_number=None):  # TODO: rename this function, be more specific
         """
         Picks out the specific subject and trial number from data.
         :param subject_to_run specify the subject you want
