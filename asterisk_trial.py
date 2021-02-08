@@ -47,17 +47,31 @@ class AsteriskTrialData:
         self.trial_rotation = r
         self.trial_num = n
 
-        # Data will not be filtered here
+        # Data will not be filtered in this step
         data = self._read_file(file_name)
         self.poses = data[["x", "y", "rmag"]]
 
+        self.target_line = None  # the straight path in the direction that this trial is
+        self.ast_line_rot = None  # the angle on the asterisk that corresponds to the direction label, 0 at straight up
+        self.generate_target_line()  # generates the above values
+
         self.filtered = False
-        self.window_size = None
+        self.window_size = 0
+
+        # frechet distance variables
+        self.translation_fd = None
+        self.translation_indices = None
+        self.translation_target_index = None
+
+        self.rotation_fd = None
+        self.rotation_indices = None
+        self.rotation_target_index = None
 
         self.total_distance = None
-        self.frechet_distance = None
         self.dist_along_translation = None
         self.dist_along_twist = None
+
+        self.calc_frechet_distance()  # all fd variables above are calculated here
 
     def _read_file(self, file_name, folder="csv/"):
         """
@@ -175,6 +189,7 @@ class AsteriskTrialData:
         self.poses.round(4)
         self.filtered = True
         self.window_size = window_size
+
         # print("Moving average completed.")
 
     def get_pose2d(self):
@@ -276,15 +291,67 @@ class AsteriskTrialData:
         multiplier = 10 ** decimals
         return m.ceil(n*multiplier - 0.5) / multiplier
 
-    def generate_target_line(self):
+    def generate_target_line(self, n_samples=50):
         """
-        Using object trajectory (self.poses), build a line to compare to for frechet distance
+        Using object trajectory (self.poses), build a line to compare to for frechet distance.
+        Updates this attribute on object.
         """
+        # is this the right one? Is the position of "a" calculated right? A goes straight up
         translation_angles = np.linspace(90, 90 - 360, 8, endpoint=False)
 
         # check add_target_paths function from AsteriskTestMetrics
+        target_line = []
+        divs = linspace(0, 1, n_samples, endpoint=True)
+        direction = ord(self.trial_translation) - ord('a')
 
-        pass
+        if self.trial_rotation == "n":
+            # translation only
+            trial_on_asterisk = translation_angles[direction]
+            x = cos(pi * trial_on_asterisk / 180)
+            y = sin(pi * trial_on_asterisk / 180)
+
+            for d in divs:
+                target_line.append(Pose2D(x * d, y * d, 0))
+
+        elif self.trial_rotation is "cw":
+            # rotation only options
+            trial_on_asterisk = self.poses  # TODO: get last item in rotation data
+
+            for d in divs:
+                target_line.append(Pose2D(0, 0, d * 15))
+
+        elif self.trial_rotation is "ccw":
+            trial_on_asterisk = self.poses  # TODO: get last item in rotation data
+            for d in divs:
+                target_line.append(Pose2D(0, 0, d * -15))
+
+        elif self.trial_rotation is "p15":
+            trial_on_asterisk = translation_angles[direction]
+            # next, options with both translation and rotation
+            x = cos(pi * trial_on_asterisk / 180)
+            y = sin(pi * trial_on_asterisk / 180)
+
+            for d in divs:
+                target_line.append(Pose2D(x * d, y * d, 15))
+                # TODO: should data collection start after rotation has been made? yes, need to make explicit
+
+        elif self.trial_rotation is "m15":
+            trial_on_asterisk = translation_angles[direction]
+            # next, options with both translation and rotation
+            x = cos(pi * trial_on_asterisk / 180)
+            y = sin(pi * trial_on_asterisk / 180)
+
+            for d in divs:
+                target_line.append(Pose2D(x * d, y * d, -15))
+
+        else:
+            print(f"Malformed AsteriskTrialData object => t: {self.trial_translation} | r: {self.trial_rotation}")
+            # TODO: throw exception
+
+        self.target_line = target_line
+        self.ast_line_rot = trial_on_asterisk
+
+        # return target_line, trial_on_asterisk
 
     def calc_frechet_distance(self, target_poses):
         """
@@ -296,50 +363,61 @@ class AsteriskTrialData:
         # get numpy array from self.poses
         object_path = self._get_pose_array()
 
-        # get ideal path, double check that data is ok
-        asterisk_ang = ord(self.trial_translation) - ord('a')
-        target_path = self.generate_target_line()
-        target_pose = target_path[-1]
-
-        # calculate % dist travelled, % error last pose, overall path score
-
+        # regenerate target path, double check that data is ok
+        self.generate_target_line()
+        target_pose = self.target_line[-1]
 
         # check that we are roughly in the ballpark of end pose
         last_pose_obj = Pose2D(object_path[0, -1], object_path[1, -1], object_path[2, -1])
-        n_total = object_path.shape[1]
         last_pose_angle = 180.0 * arctan2(last_pose_obj.y, last_pose_obj.x) / pi
-        expected_angle = self.translation_angles[in_which]
+        expected_angle = self.ast_line_rot
         if last_pose_angle - expected_angle > 180:
             last_pose_angle -= 360
         elif expected_angle - last_pose_angle > 180:
             last_pose_angle += 360
 
         if abs(last_pose_angle - expected_angle) > 65:
-            print("Warning: Translation {} detected bad last pose {}, expected {}".format(in_which, last_pose_angle,
-                                                                                          self.translation_angles[
-                                                                                              in_which]))
+            print(f"Warning: Translation {self.trial_translation} detected bad last pose {last_pose_angle}, "
+                  f"expected {self.ast_line_rot}")
 
         # get scl ratio (or do separately for translation and rotation)?
         translation_scl = (1., 0.)
         rotation_scl = (0., 1.)
 
         # set up end_target_index, dist_along_translation, dist_target
-        target_i_translation = AsteriskCalculations.narrow_target(last_pose_obj, target_path, translation_scl)
-        target_i_rotation = AsteriskCalculations.narrow_target(last_pose_obj, target_path, rotation_scl)
-
-        self.dist_along_translation = sqrt(
-            max([object_path[0, i_p] ** 2 + object_path[1, i_p] ** 2 for i_p in range(0, n_total)]))
-        self.end_target_index = self._narrow_target(last_pose_obj, target_path, scl_ratio)
-
-        self.dist_target = last_pose_obj.distance(target_pose, scl_ratio)
-
-        if self.end_target_index == 0:
+        target_i_translation = AsteriskCalculations.narrow_target(last_pose_obj, self.target_line, translation_scl)
+        if target_i_translation == 0:
             print("Warning: Closest pose was first pose")
-            self.end_target_index += 1
+            target_i_translation += 1
+
+        target_i_rotation = AsteriskCalculations.narrow_target(last_pose_obj, self.target_line, rotation_scl)
+        if target_i_rotation == 0:
+            print("Warning: Closest pose was first pose")
+            target_i_rotation += 1
+
+        n_total = object_path.shape[1]
+        self.dist_along_translation = sqrt(max([object_path[0, i_p] ** 2 + object_path[1, i_p] ** 2
+                                                for i_p in range(0, n_total)]))
+
+        self.total_distance = last_pose_obj.distance(target_pose, translation_scl)  # TODO: same as self.dist_target?
 
         # then run FD using what I calculated
-        ret_dists.dist_frechet, ret_dists.target_indices
-        translation_fd, translation_target_indices = AsteriskCalculations.frechet_dist(object_path, target_i_translation, target_path, translation_scl)
-        rotation_fd, rotation_target_indices = AsteriskCalculations.frechet_dist(object_path, target_i_rotation, target_path, rotation_scl)
+        translation_fd, translation_target_indices = AsteriskCalculations.frechet_dist(object_path,
+                                                                                       target_i_translation,
+                                                                                       self.target_line,
+                                                                                       translation_scl)
 
-        return translation_fd, translation_target_indices, rotation_fd, rotation_target_indices
+        rotation_fd, rotation_target_indices = AsteriskCalculations.frechet_dist(object_path,
+                                                                                 target_i_rotation,
+                                                                                 self.target_line,
+                                                                                 rotation_scl)
+
+        self.translation_fd = translation_fd
+        self.translation_indices = translation_target_indices
+        self.translation_target_index = target_i_translation
+
+        self.rotation_fd = rotation_fd
+        self.rotation_indices = rotation_target_indices
+        self.rotation_target_index = target_i_rotation
+
+        # return translation_fd, translation_target_indices, rotation_fd, rotation_target_indices
