@@ -54,7 +54,7 @@ class AsteriskCalculations:
         pass
 
     @staticmethod
-    def _narrow_target(obj_pose, target_poses, scl_ratio=(0.5, 0.5)) -> int:
+    def narrow_target(obj_pose, target_poses, scl_ratio=(0.5, 0.5)) -> int:
         """ narrown down the closest point on the target poses
         :param obj_pose last object pose Pose2D
         :param target_poses [Pose2D;
@@ -67,7 +67,7 @@ class AsteriskCalculations:
         return i_target
 
     @staticmethod
-    def _frechet_dist(poses_obj, i_target, target_poses, scl_ratio=(0.5, 0.5)) -> (int, float):
+    def frechet_dist(poses_obj, i_target, target_poses, scl_ratio=(0.5, 0.5)) -> (int, float):
         """ Implement Frechet distance
         :param poses_obj all the object poses np.array
         :param i_target the closest point in target_poses
@@ -156,7 +156,7 @@ class AsteriskCalculations:
 
 
     def set_average(self, atrs):
-        """ Average 2 or more trials for one test
+        """ Average the path of 2 or more trials
         :param atrs = array of AsteriskTestResults
         :returns array of average poses with += poses
         """

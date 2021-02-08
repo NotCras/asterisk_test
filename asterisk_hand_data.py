@@ -47,7 +47,7 @@ class AsteriskHandData:
             for n in trials:
                 try:
                     asterisk_trial_file = f"{s}_{self.hand.get_name()}_{translation_label}_{rotation_label}_{n}.csv"
-                    trial_data = trial.AsteriskTrial(asterisk_trial_file)
+                    trial_data = trial.AsteriskTrialData(asterisk_trial_file)
                     gathered_data.append(trial_data)
                 except:
                     print("Skipping.")

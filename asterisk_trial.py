@@ -3,6 +3,7 @@
 import csv
 import math as m
 import numpy as np
+from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan
 import pandas as pd
 import matplotlib.pyplot as plt
 from asterisk_calculations import Pose2D, AsteriskCalculations
@@ -12,7 +13,7 @@ from asterisk_hand import HandObj
 from scipy import stats
 
 
-class AsteriskTrial:
+class AsteriskTrialData:
     def __init__(self, file_name):
         # TODO: make it so that I can also make an empty AsteriskTrial object or from some data
         """
@@ -275,7 +276,7 @@ class AsteriskTrial:
         multiplier = 10 ** decimals
         return m.ceil(n*multiplier - 0.5) / multiplier
 
-    def generate_ideal_line(self):
+    def generate_target_line(self):
         """
         Using object trajectory (self.poses), build a line to compare to for frechet distance
         """
@@ -285,7 +286,7 @@ class AsteriskTrial:
 
         pass
 
-    def calculate_frechet_distance(self, target_poses):
+    def calc_frechet_distance(self, target_poses):
         """
         Calculate the frechet distance between self.poses and ideal line
         Uses frechet distance calculation from asterisk_calculations object
@@ -295,22 +296,50 @@ class AsteriskTrial:
         # get numpy array from self.poses
         object_path = self._get_pose_array()
 
-        # get ideal path
-
+        # get ideal path, double check that data is ok
+        asterisk_ang = ord(self.trial_translation) - ord('a')
+        target_path = self.generate_target_line()
+        target_pose = target_path[-1]
 
         # calculate % dist travelled, % error last pose, overall path score
 
 
         # check that we are roughly in the ballpark of end pose
+        last_pose_obj = Pose2D(object_path[0, -1], object_path[1, -1], object_path[2, -1])
+        n_total = object_path.shape[1]
+        last_pose_angle = 180.0 * arctan2(last_pose_obj.y, last_pose_obj.x) / pi
+        expected_angle = self.translation_angles[in_which]
+        if last_pose_angle - expected_angle > 180:
+            last_pose_angle -= 360
+        elif expected_angle - last_pose_angle > 180:
+            last_pose_angle += 360
 
+        if abs(last_pose_angle - expected_angle) > 65:
+            print("Warning: Translation {} detected bad last pose {}, expected {}".format(in_which, last_pose_angle,
+                                                                                          self.translation_angles[
+                                                                                              in_which]))
 
         # get scl ratio (or do separately for translation and rotation)?
-
+        translation_scl = (1., 0.)
+        rotation_scl = (0., 1.)
 
         # set up end_target_index, dist_along_translation, dist_target
+        target_i_translation = AsteriskCalculations.narrow_target(last_pose_obj, target_path, translation_scl)
+        target_i_rotation = AsteriskCalculations.narrow_target(last_pose_obj, target_path, rotation_scl)
 
+        self.dist_along_translation = sqrt(
+            max([object_path[0, i_p] ** 2 + object_path[1, i_p] ** 2 for i_p in range(0, n_total)]))
+        self.end_target_index = self._narrow_target(last_pose_obj, target_path, scl_ratio)
+
+        self.dist_target = last_pose_obj.distance(target_pose, scl_ratio)
+
+        if self.end_target_index == 0:
+            print("Warning: Closest pose was first pose")
+            self.end_target_index += 1
 
         # then run FD using what I calculated
+        ret_dists.dist_frechet, ret_dists.target_indices
+        translation_fd, translation_target_indices = AsteriskCalculations.frechet_dist(object_path, target_i_translation, target_path, translation_scl)
+        rotation_fd, rotation_target_indices = AsteriskCalculations.frechet_dist(object_path, target_i_rotation, target_path, rotation_scl)
 
-
-        pass
+        return translation_fd, translation_target_indices, rotation_fd, rotation_target_indices
