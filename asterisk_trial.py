@@ -203,13 +203,18 @@ class AsteriskTrialData:
 
         # print("Moving average completed.")
 
-    def get_pose2d(self):
+    def get_pose2d(self, filt_flag=True):
         """
         Returns the poses for this trial, separately by axis.
         """
         poses = []
+
         for p in self.poses.iterrows():
-            pose = Pose2D(p["x"], p["y"], p["rmag"])
+            if self.filtered and filt_flag:
+                pose = Pose2D(p[1]["f_x"], p[1]["f_y"], p[1]["f_rmag"])  # p[0] is the row num
+            else:
+                pose = Pose2D(p[1]["x"], p[1]["y"], p[1]["rmag"])
+
             poses.append(pose)
 
         return poses  # Todo: test this out!

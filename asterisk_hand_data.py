@@ -92,11 +92,12 @@ class AsteriskHandData:
         print(dfs)
         return dfs
 
-    def _get_ast_dir(self, direction_label, subject):
+    def _get_ast_dir(self, direction_label, subject, rotation_label="n"):
         """
         Get all of the trials for a specific direction. You can specify subject too
         """
-        direction_trials = self.data[direction_label]
+        dict_key = f"{direction_label}_{rotation_label}"
+        direction_trials = self.data[dict_key]
         dfs = []
 
         for t in direction_trials:
@@ -111,7 +112,6 @@ class AsteriskHandData:
         :param trials list of asterisk_trial objects to average
         :return returns averaged path
         """
-
         average = AveragedTrial()  # maybe this goes into a new AsteriskAverage class, just like Cindy
         average.average_lines(trials)
         return average
@@ -130,8 +130,6 @@ class AsteriskHandData:
     def _make_plot(self, dfs):
         colors = ["tab:blue", "tab:purple", "tab:red", "tab:olive",
                   "tab:cyan", "tab:green", "tab:pink", "tab:orange"]
-
-        print(dfs)
 
         # plot data
         for i, df in enumerate(dfs):
@@ -179,13 +177,13 @@ class AsteriskHandData:
         """
         dfs = []
         dfs_sd = []  # TODO: add standard deviation to plot later
-        for dir in self.data.keys():
+        for dir in ["a", "b", "c", "d", "e", "f", "g", "h"]:  # TODO: make more elegant later
             data = self._get_ast_dir(dir, subject_to_run)  # TODO: make this work for the hand data object
             avg = self._average_data(data)
             dfs.append(avg)
 
         plt = self._make_plot(dfs)
-        plt.title(f"Plot: {subject_to_run}_{self.hand.get_name()}")
+        plt.title(f"Plot: {subject_to_run}, {self.hand.get_name()}")
 
         if show_plot:
             plt.show()

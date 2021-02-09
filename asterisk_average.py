@@ -62,7 +62,8 @@ class AveragedTrial(AsteriskTrialData):
         self.pose_sd = []
 
         self.trial_translation = trials[0].trial_translation
-        self.trial_translation = trials[0].trial_rotation
+        self.trial_rotation = trials[0].trial_rotation
+        print(f"Averaging: {self.trial_translation}_{self.trial_rotation}")
 
         # This is really clunky, but it's the easiest way to deal
         # with the problem that the arrays have different sizes...
@@ -79,11 +80,14 @@ class AveragedTrial(AsteriskTrialData):
             self.names.append(t.generate_name())
             self.averaged_trials.append(t)
 
+            # obj_poses = t.get_pose2d()
+            obj_poses = t._get_pose_array()
+
             for j, index in enumerate(t.translation_indices):  # TODO: do we use rotation indices or don't care?
-                print(f"{index} {t.obj_poses[0, index]} {t.obj_poses[1, index]}")
-                self.pose_average[j].x += t.obj_poses[0, index]  # TODO: translate t.obj_poses to ... (what is it?)
-                self.pose_average[j].y += t.obj_poses[1, index]
-                self.pose_average[j].theta += t.obj_poses[2, index]
+                print(f"{index} {obj_poses[0, index]} {obj_poses[1, index]}")
+                self.pose_average[j].x += obj_poses[0, index]  # TODO: translate t.obj_poses to ... (what is it?)
+                self.pose_average[j].y += obj_poses[1, index]
+                self.pose_average[j].theta += obj_poses[2, index]
                 count[j] += 1
 
         # Average
@@ -95,8 +99,11 @@ class AveragedTrial(AsteriskTrialData):
 
         # SD - do theta separately from distance to centerline
         for t in trials:
-            for j, index in enumerate(t.target_indices):
-                p = t.obj_poses[:, index]
+            # obj_poses = t.get_pose2d()
+            obj_poses = t._get_pose_array()
+
+            for j, index in enumerate(t.translation_indices):
+                p = obj_poses[:, index]
                 dx = self.pose_average[j].x - p[0]  # TODO: translate t.obj_poses to ... (what is it?)
                 dy = self.pose_average[j].y - p[1]
                 dist = sqrt(dx * dx + dy * dy)
