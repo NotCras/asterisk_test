@@ -14,7 +14,7 @@ from scipy import stats
 
 
 class AsteriskTrialData:
-    def __init__(self, file_name):
+    def __init__(self, file_name=None, do_target=True, do_fd=True):
         # TODO: make it so that I can also make an empty AsteriskTrial object or from some data
         """
         Class to represent a single asterisk test trial.
@@ -38,22 +38,28 @@ class AsteriskTrialData:
         :attribute dist_along_translation - float
         :attribute dist_along_twist - float
         """
-        s, h, t, r, e = file_name.split("_")
-        n, _ = e.split(".")
+        print(file_name)
+        if file_name:
+            s, h, t, r, e = file_name.split("_")
+            n, _ = e.split(".")
+            self.hand = HandObj(h)
 
-        self.hand = HandObj(h)
+            # Data will not be filtered in this step
+            data = self._read_file(file_name)
+            self.poses = data[["x", "y", "rmag"]]
+        else:
+            s, t, r, n = None, None, None, None
+            self.hand = None
+
         self.subject_num = s
         self.trial_translation = t
         self.trial_rotation = r
         self.trial_num = n
 
-        # Data will not be filtered in this step
-        data = self._read_file(file_name)
-        self.poses = data[["x", "y", "rmag"]]
-
         self.target_line = None  # the straight path in the direction that this trial is
         self.ast_line_rot = None  # the angle on the asterisk that corresponds to the direction label, 0 at straight up
-        self.generate_target_line()  # generates the above values
+        if file_name and do_target:  # TODO: doesn't work for cw and ccw yet
+            self.generate_target_line()  # generates the above values
 
         self.filtered = False
         self.window_size = 0
@@ -71,14 +77,20 @@ class AsteriskTrialData:
         self.dist_along_translation = None
         self.dist_along_twist = None
 
-        self.calc_frechet_distance()  # all fd variables above are calculated here
+        if file_name and do_fd:  # TODO: doesn't work for cw and ccw yet
+            self.calc_frechet_distance()  # all fd variables above are calculated here
+
+    def add_hand(self, hand_name):
+        """
+        If you didn't make the object with a file_name, a function to set hand in painless manner
+        """
+        self.hand = HandObj(hand_name)
 
     def _read_file(self, file_name, folder="csv/"):
         """
         Function to read file and save relevant data in the object
         """
         total_path = f"{folder}{file_name}"
-
         try:
             df_temp = pd.read_csv(total_path,
                                   # names=["x", "y", "rmag", "f_x", "f_y", "f_rot_mag"],
@@ -87,10 +99,10 @@ class AsteriskTrialData:
 
             df = self._condition_df(df_temp)
 
-        except:  # TODO: add more specific except clauses
+        except Exception as e:  # TODO: add more specific except clauses
+            print(e)
             df = None
             print(f"{total_path} has failed to read csv")
-
         return df
 
     def _condition_df(self, df):
@@ -122,7 +134,6 @@ class AsteriskTrialData:
 
         # occasionally get an outlier value (probably from vision algorithm), I filter them out here
         inlier_df = self._remove_outliers(df, ["x", "y", "rmag"])
-
         return inlier_df
 
     def generate_name(self):
@@ -313,19 +324,19 @@ class AsteriskTrialData:
             for d in divs:
                 target_line.append(Pose2D(x * d, y * d, 0))
 
-        elif self.trial_rotation is "cw":
+        elif self.trial_rotation == "cw":
             # rotation only options
-            trial_on_asterisk = self.poses  # TODO: get last item in rotation data
+            trial_on_asterisk = self._get_pose_array()[-1][3]  # TODO: get last item in rotation data
 
             for d in divs:
-                target_line.append(Pose2D(0, 0, d * 15))
+                target_line.append(Pose2D(0, 0, d * trial_on_asterisk))
 
-        elif self.trial_rotation is "ccw":
-            trial_on_asterisk = self.poses  # TODO: get last item in rotation data
+        elif self.trial_rotation == "ccw":
+            trial_on_asterisk = self._get_pose_array()[-1][3]  # TODO: get last item in rotation data
             for d in divs:
-                target_line.append(Pose2D(0, 0, d * -15))
+                target_line.append(Pose2D(0, 0, d * -trial_on_asterisk))
 
-        elif self.trial_rotation is "p15":
+        elif self.trial_rotation == "p15":
             trial_on_asterisk = translation_angles[direction]
             # next, options with both translation and rotation
             x = cos(pi * trial_on_asterisk / 180)
@@ -335,7 +346,7 @@ class AsteriskTrialData:
                 target_line.append(Pose2D(x * d, y * d, 15))
                 # TODO: should data collection start after rotation has been made? yes, need to make explicit
 
-        elif self.trial_rotation is "m15":
+        elif self.trial_rotation == "m15":
             trial_on_asterisk = translation_angles[direction]
             # next, options with both translation and rotation
             x = cos(pi * trial_on_asterisk / 180)
@@ -353,12 +364,12 @@ class AsteriskTrialData:
 
         # return target_line, trial_on_asterisk
 
-    def calc_frechet_distance(self, target_poses):
+    def calc_frechet_distance(self):
         """
         Calculate the frechet distance between self.poses and ideal line
         Uses frechet distance calculation from asterisk_calculations object
         """
-        calc = AsteriskCalculations()
+        # calc = AsteriskCalculations()
 
         # get numpy array from self.poses
         object_path = self._get_pose_array()
@@ -387,12 +398,12 @@ class AsteriskTrialData:
         # set up end_target_index, dist_along_translation, dist_target
         target_i_translation = AsteriskCalculations.narrow_target(last_pose_obj, self.target_line, translation_scl)
         if target_i_translation == 0:
-            print("Warning: Closest pose was first pose")
+            print("Warning: Closest translation pose was first pose")
             target_i_translation += 1
 
         target_i_rotation = AsteriskCalculations.narrow_target(last_pose_obj, self.target_line, rotation_scl)
         if target_i_rotation == 0:
-            print("Warning: Closest pose was first pose")
+            print("Warning: Closest rotation pose was first pose")
             target_i_rotation += 1
 
         n_total = object_path.shape[1]

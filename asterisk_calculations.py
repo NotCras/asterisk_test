@@ -45,13 +45,12 @@ class Pose2D:
 
 class AsteriskCalculations:
 
-    def __init__(self):
+    def __init__(self, translation=None, rotation=None):
         """
         This object contains the calculations necessary for
         line averaging and frechet distance calculations.
         Deals primarily in Pose2D due to legacy code
         """
-        pass
 
     @staticmethod
     def narrow_target(obj_pose, target_poses, scl_ratio=(0.5, 0.5)) -> int:
@@ -153,65 +152,3 @@ class AsteriskCalculations:
                 target_index[i_t] = imatch[i_t, n_object_path - 1]
 
         return ca[n_target - 1, n_object_path - 1], target_index
-
-
-    def set_average(self, atrs):
-        """ Average the path of 2 or more trials
-        :param atrs = array of AsteriskTestResults
-        :returns array of average poses with += poses
-        """
-
-        # initializing
-        self.pose_average = []
-        self.pose_sd = []
-        try:
-            # Sets type
-            self.set(atrs[0])
-        except IndexError:
-            pass
-
-        # This is really clunky, but it's the easiest way to deal
-        # with the problem that the arrays have different sizes...
-        n_max = max([len(t.target_indices) for t in atrs]) # get how many trials there are
-        self.pose_average = [Pose2D() for _ in range(0, n_max)]  # make a bunch of empty Pose2D objects - this will be the average line
-        sd_dist = [0] * n_max
-        sd_theta = [0] * n_max
-        count = [0] * n_max
-        for t in atrs:
-            # keep track of which trials were averaged here
-            self.names.append(t.test_name)
-
-            for j, index in enumerate(t.target_indices):
-                print(f"{index} {t.obj_poses[0, index]} {t.obj_poses[1, index]}")
-                self.pose_average[j].x += t.obj_poses[0, index]
-                self.pose_average[j].y += t.obj_poses[1, index]
-                self.pose_average[j].theta += t.obj_poses[2, index]
-                count[j] += 1
-
-        # Average
-        for i, c in enumerate(count):
-            self.pose_average[i].x /= c
-            self.pose_average[i].y /= c
-            self.pose_average[i].theta /= c
-            count[i] = 0
-
-        # SD - do theta separately from distance to centerline
-        for t in atrs:
-            for j, index in enumerate(t.target_indices):
-                p = t.obj_poses[:, index]
-                dx = self.pose_average[j].x - p[0]
-                dy = self.pose_average[j].y - p[1]
-                dist = sqrt(dx * dx + dy * dy)
-                dt = abs(self.pose_average[j].theta - p[2])
-                sd_theta[j] += dt
-                sd_dist[j] += dist
-                count[j] += 1
-
-        # Normalize SD
-        last_valid_i = 0
-        for i, p in enumerate(self.pose_average):
-            if count[i] > 1:
-                self.pose_sd.append((sd_dist[i] / (count[i] - 1), sd_theta[i] / (count[i] - 1)))
-                last_valid_i = i
-            else:
-                self.pose_sd.append(self.pose_sd[last_valid_i])

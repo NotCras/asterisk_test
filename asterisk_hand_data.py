@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import asterisk_data_manager as datamanager
 import asterisk_trial as trial
 from asterisk_hand import HandObj
+from asterisk_average import AveragedTrial
 
 
 class AsteriskHandData:
@@ -47,15 +48,19 @@ class AsteriskHandData:
             for n in trials:
                 try:
                     asterisk_trial_file = f"{s}_{self.hand.get_name()}_{translation_label}_{rotation_label}_{n}.csv"
-                    trial_data = trial.AsteriskTrialData(asterisk_trial_file)
+                    if rotation_label in ["cw", "ccw"]:
+                        trial_data = trial.AsteriskTrialData(asterisk_trial_file, False, False)
+                    else:
+                        trial_data = trial.AsteriskTrialData(asterisk_trial_file)
                     gathered_data.append(trial_data)
+
                 except:
                     print("Skipping.")
                     continue
 
         return gathered_data
 
-    def _get_batch(self, subject_to_run, trial_number=None):  # TODO: rename this function, be more specific
+    def _get_ast_batch(self, subject_to_run, trial_number=None):  # TODO: rename this function, be more specific
         """
         Picks out the specific subject and trial number from data.
         :param subject_to_run specify the subject you want
@@ -67,14 +72,14 @@ class AsteriskHandData:
         for dir in translations:
             dict_key = f"{dir}_n"
             trials = self.data[dict_key]
-            # print(f"For {subject_to_run} and {trial_number}: {dir}")
+            print(f"For {subject_to_run} and {trial_number}: {dir}")
 
-            trial_we_want = None
             for t in trials:
+                print(t.generate_name())
                 if trial_number:  # if we want a specific trial, look for it
                     if (t.subject_num == subject_to_run) and (t.trial_num == trial_number):
-                        # TODO: make sure trial_number is a string
-                        dfs.append(trial_we_want)
+                        dfs.append(t)
+                        print(" ")
                         break
                     # TODO: throw an exception in case there isn't the trial that we want
 
@@ -84,6 +89,20 @@ class AsteriskHandData:
 
             # print("    ")
 
+        print(dfs)
+        return dfs
+
+    def _get_ast_dir(self, direction_label, subject):
+        """
+        Get all of the trials for a specific direction. You can specify subject too
+        """
+        direction_trials = self.data[direction_label]
+        dfs = []
+
+        for t in direction_trials:
+            if t.subject_num == subject or t.subject_num in subject:
+                dfs.append(t)
+
         return dfs
 
     def _average_data(self, trials):
@@ -92,7 +111,10 @@ class AsteriskHandData:
         :param trials list of asterisk_trial objects to average
         :return returns averaged path
         """
-        pass
+
+        average = AveragedTrial()  # maybe this goes into a new AsteriskAverage class, just like Cindy
+        average.average_lines(trials)
+        return average
 
     def filter_data(self, window_size=15):
         """
@@ -105,14 +127,11 @@ class AsteriskHandData:
         self.filtered = True
         self.window_size = window_size
 
-    def plot_data_subset(self, subject_to_run, trial_number="1", show_plot=True, save_plot=False):
-        """
-        Plots a subset of the data, as specified in parameters
-        """
+    def _make_plot(self, dfs):
         colors = ["tab:blue", "tab:purple", "tab:red", "tab:olive",
                   "tab:cyan", "tab:green", "tab:pink", "tab:orange"]
 
-        dfs = self._get_batch(subject_to_run, trial_number)  # TODO: make this work for the hand data object
+        print(dfs)
 
         # plot data
         for i, df in enumerate(dfs):
@@ -128,16 +147,22 @@ class AsteriskHandData:
             for n in range(len(data_x)):
                 plt.plot(data_x[n], data_y[n], color=colors[i], alpha=0.5, markersize=10 * theta[n])
 
-        # plot ideal lines
-        self.plot_all_ideal(colors)
-
+        # plot target lines as dotted lines
+        self.plot_all_target_lines(colors)
         plt.xticks(np.linspace(-0.5, 0.5, 11), rotation=30)
         plt.yticks(np.linspace(-0.5, 0.5, 11))
 
-        plt.title(f"Plot: {subject_to_run}_{self.hand.get_name()}, set #{trial_number}")
+        return plt
 
-        # saving figure
-        # plt.savefig(f"fullplot4_{sub}_{hand}_{num}.jpg", format='jpg')  # name -> tuple: subj, hand  names
+    def plot_data_subset(self, subject_to_run, trial_number="1", show_plot=True, save_plot=False):
+        """
+        Plots a subset of the data, as specified in parameters
+        """
+
+        dfs = self._get_ast_batch(subject_to_run, trial_number)  # TODO: make this work for the hand data object
+
+        plt = self._make_plot(dfs)
+        plt.title(f"Plot: {subject_to_run}_{self.hand.get_name()}, set #{trial_number}")
 
         if show_plot:
             plt.show()
@@ -148,20 +173,55 @@ class AsteriskHandData:
             print("Figure saved.")
             print(" ")
 
-    def plot_data_1subject(self, subject_to_run):
+    def plot_data_1subject(self, subject_to_run, show_plot=True, save_plot=False):
         """
         Plots the data from one subject, averaging all of the data in each direction
         """
-        pass
+        dfs = []
+        dfs_sd = []  # TODO: add standard deviation to plot later
+        for dir in self.data.keys():
+            data = self._get_ast_dir(dir, subject_to_run)  # TODO: make this work for the hand data object
+            avg = self._average_data(data)
+            dfs.append(avg)
 
-    def plot_data(self):
+        plt = self._make_plot(dfs)
+        plt.title(f"Plot: {subject_to_run}_{self.hand.get_name()}")
+
+        if show_plot:
+            plt.show()
+
+        if save_plot:
+            plt.savefig(f"pics/avgplot4_{subject_to_run}_{self.hand.get_name()}.jpg", format='jpg')
+            # name -> tuple: subj, hand  names
+            print("Figure saved.")
+            print(" ")
+
+    def plot_data(self, show_plot=True, save_plot=False):
         """
         Plots all the data contained in object, averaging data in each direction across all subjects
         """
-        pass
 
-    def plot_all_ideal(self, order_of_colors):
-        x_a, y_a = self.get_a()
+        dfs = []
+        # for each direction, average all the data
+        for trials in self.data.values():
+            avg = self._average_data(trials)
+            dfs.append(avg)  # TODO: appending AsteriskCalculations object, not AsteriskTrialData object, need to fix
+
+        plt = self._make_plot(dfs)
+
+        plt.title(f"Plot: Averaged {self.hand.get_name()} data")
+
+        if show_plot:
+            plt.show()
+
+        if save_plot:
+            plt.savefig(f"pics/avgplot4_{self.hand.get_name()}.jpg", format='jpg')
+            # name -> tuple: subj, hand  names
+            print("Figure saved.")
+            print(" ")
+
+    def plot_all_target_lines(self, order_of_colors):
+        x_a, y_a = self.get_a()  # TODO: move the following functions somewhere else?
         x_b, y_b = self.get_b()
         x_c, y_c = self.get_c()
         x_d, y_d = self.get_d()
@@ -176,6 +236,7 @@ class AsteriskHandData:
         for i in range(8):
             plt.plot(ideal_xs[i], ideal_ys[i], color=order_of_colors[i], label='ideal', linestyle='--')
 
+    # TODO: move the following functions somewhere else?
     # well, what I can do is do a linspace for both x and y...
     # its straightforward because these are perfect lines we are drawing
     def straight(self, num_points=11, mod=1):
