@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 
 from AsteriskTestMetrics import Pose2D, AsteriskTestMetrics2D, AsteriskTestResults
 from AsteriskAverage import AsteriskAverage
-from asterisk_0_prompts import AsteriskTestTypes
+from AsteriskTestTypes import AsteriskTestTypes
+from pathlib import Path
+import os
 
 
 def plot_pose(pose: Pose2D, rgb=(0.5, 0.5, 0.5), scl=1.0) -> None:
@@ -102,12 +104,14 @@ def plot_average_translation(asterisk_avg: AsteriskAverage):
              linestyle='-', color="black")
 
 
-
 if __name__ == '__main__':
-    dir_name_process = "/Users/grimmc/Downloads/filtered/"
-    subject_name_process = "filt_josh"
+    home_directory = Path(__file__).parent.absolute()
+    file_dir = f"filtered/"
+    os.chdir(file_dir)
+
+    subject_name_process = "f15_sub1"
     hand_process = "2v3"
-    my_test_results = AsteriskTestMetrics2D.process_files(dir_name_process, subject_name_process, hand_process)
+    my_test_results = AsteriskTestMetrics2D.process_files(subject_name_process, hand_process)
 
     fig, axs = plt.subplots(2, len(my_test_results))
 

@@ -203,6 +203,7 @@ class AsteriskTrialData:
 
         # print("Moving average completed.")
 
+
     def get_pose2d(self, filt_flag=True):
         """
         Returns the poses for this trial, separately by axis.

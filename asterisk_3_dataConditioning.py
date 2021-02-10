@@ -11,7 +11,7 @@ This file will...
 import csv
 import pandas as pd
 import numpy as np
-import asterisk_0_prompts as prompts
+import AsteriskTestTypes as prompts
 import asterisk_0_dataHelper as helper
 
 from scipy import stats

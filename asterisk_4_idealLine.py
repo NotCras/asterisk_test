@@ -7,7 +7,7 @@ This file will...
 import csv
 import pandas as pd
 import numpy as np
-import asterisk_0_prompts as prompts
+import AsteriskTestTypes as prompts
 
 #well, what I can do is do a linspace for both x and y... its straightforward because these are perfect lines we are drawing
 

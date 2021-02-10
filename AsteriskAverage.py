@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 from AsteriskTestMetrics import AsteriskTestResults, Pose2D, AsteriskTestMetrics2D
-from asterisk_0_prompts import AsteriskTestTypes
+from AsteriskTestTypes import AsteriskTestTypes
 from math import sqrt
+from pathlib import Path
+import os
 
 class AsteriskAverage(AsteriskTestTypes):
     def __init__(self, ):
@@ -75,10 +77,16 @@ class AsteriskAverage(AsteriskTestTypes):
 
 
 if __name__ == '__main__':
-    dir_name_process = "/Users/grimmc/Downloads/filtered/"
-    subject_name_process = "filt_josh"
+
+    home_directory = Path(__file__).parent.absolute()
+    file_dir = f"filtered/"
+    os.chdir(file_dir)
+
+    subject_name_process = "f15_sub1"
     hand_process = "2v3"
-    my_test_results = AsteriskTestMetrics2D.process_files(dir_name_process, subject_name_process, hand_process)
+    my_test_results = AsteriskTestMetrics2D.process_files(subject_name_process, hand_process)
+
+    os.chdir(home_directory)
 
     at_avgs = []
     for tt in AsteriskTestTypes.generate_translation():

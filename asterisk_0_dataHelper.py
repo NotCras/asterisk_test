@@ -18,7 +18,7 @@ e) compress the data into a zip file
 import os, shutil, keyboard, subprocess 
 from curtsies import Input 
 from pathlib import Path 
-import asterisk_0_prompts as prompts 
+import AsteriskTestTypes as prompts
 
 #------------------------------------
 

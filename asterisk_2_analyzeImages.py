@@ -15,7 +15,7 @@ import pandas as pd
 #%matplotlib nbagg
 import os
 import time
-import asterisk_0_prompts as prompts
+import AsteriskTestTypes as prompts
 import asterisk_0_dataHelper as helper
 
 

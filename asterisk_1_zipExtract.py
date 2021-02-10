@@ -1,6 +1,6 @@
 from zipfile import ZipFile
 from pathlib import Path
-import asterisk_0_prompts as prompts
+import AsteriskTestTypes as prompts
 import asterisk_0_dataHelper as helper
 
 def extract_file(folder, filename):

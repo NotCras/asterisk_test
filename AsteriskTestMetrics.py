@@ -3,7 +3,10 @@
 import numpy as np
 from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan
 import csv
-from asterisk_0_prompts import generate_fname, AsteriskTestTypes
+from pathlib import Path
+import os
+
+from AsteriskTestTypes import generate_fname, AsteriskTestTypes
 
 
 class Pose2D:
@@ -177,6 +180,7 @@ class AsteriskTestMetrics2D:
         :param target_poses [Pose2D];
         :param scl_ratio - how much to scale distance and rotation error by
         :returns max of the min distance between target_poses and obj_poses """
+        # https://towardsdatascience.com/fast-discrete-fr%C3%A9chet-distance-d6b422a8fb77
 
         # Length of target curve
         n_target = min(i_target+1, len(target_poses))
@@ -519,7 +523,7 @@ class AsteriskTestMetrics2D:
         return dists
 
     @staticmethod
-    def process_files(dir_name, subject_name, hand):
+    def process_files(subject_name, hand):
         """Read the files, compute the metrics
         !param dir_name input file name
         :param subject_name name of subject to process
@@ -527,7 +531,7 @@ class AsteriskTestMetrics2D:
         :return my_tests Array of AsteriskTestMetrics with tests"""
 
         my_tests = []
-        for fname in generate_fname(dir_name, subject_name, hand):
+        for fname in generate_fname(subject_name, hand):
             fname_pieces = fname.split("_")
             try:
                 with open(fname, "r") as csvfile:
@@ -560,11 +564,15 @@ class AsteriskTestMetrics2D:
 if __name__ == '__main__':
     #AsteriskTestMetrics2D.run_tests()
 
-    #dir_name_process = "/Users/grimmc/Box/Grasping/asterisk_test_data/filtered_data/"
-    dir_name_process = "/Users/grimmc/Downloads/filtered/"
-    subject_name_process = "filt_josh"
+    home_directory = Path(__file__).parent.absolute()
+    file_dir = f"filtered/"
+    os.chdir(file_dir)
+
+    subject_name_process = "f15_sub1"
     hand_process = "2v3"
-    my_test_results = AsteriskTestMetrics2D.process_files(dir_name_process, subject_name_process, hand_process)
+    my_test_results = AsteriskTestMetrics2D.process_files(subject_name_process, hand_process)
+
+    os.chdir(home_directory)
 
     for i, t in enumerate(my_test_results):
-        t.write_test_results("check_res{0}.csv".format(i))
+        t.write_test_results(f"check_res{i}.csv")
