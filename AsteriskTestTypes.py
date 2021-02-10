@@ -94,15 +94,18 @@ class AsteriskTestTypes:
          :param trial is which trial (if any)
          returns: String, no Trial appended if trial is -1"""
         trial_str = ""
-        if trial is not -1:
-            trial_str = "_{0}".format(trial)
+        if trial != -1:
+            trial_str = f"_{trial}"
 
         if self.is_translation_test():
-            return self.get_translation_name() + "_none" + trial_str
+            return f"{self.get_translation_name()}_n_{trial_str}"
+
         if self.is_rotation_test():
-            return self.get_rotation_name() + "_none" + trial_str
+            return f"n_{self.get_rotation_name()}_{trial_str}"
+
         if self.is_twist_translation_test():
-            return self.get_twist_name() + "_" + self.get_translation_name() + trial_str
+            return f"{self.get_translation_name()}_{self.get_twist_name()}_{trial_str}"
+
         return "NotValid"
 
     def is_type(self, in_att) -> bool:
@@ -143,7 +146,7 @@ class AsteriskTestTypes:
 # ------------------------------------
 def generate_fname(subject_name, hand):
     """Create the full pathname
-    :param folder_path Directory where data is located -> currently not used
+    # :param folder_path Directory where data is located -> currently not used
     :param subject_name Name of subject
     :param hand Name of hand"""
 
