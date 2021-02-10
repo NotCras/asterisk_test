@@ -127,6 +127,15 @@ class AsteriskHandData:
         self.filtered = True
         self.window_size = window_size
 
+    def save_data(self):
+        """
+        Saves each AsteriskTrialObject
+        """
+        for key in self.data.keys():
+            for t in self.data[key]:
+                t.save_data()
+                # print(f"Saved: {t.generate_name()}")
+
     def _make_plot(self, dfs):
         colors = ["tab:blue", "tab:purple", "tab:red", "tab:olive",
                   "tab:cyan", "tab:green", "tab:pink", "tab:orange"]
