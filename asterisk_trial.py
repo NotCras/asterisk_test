@@ -203,7 +203,6 @@ class AsteriskTrialData:
 
         # print("Moving average completed.")
 
-
     def get_pose2d(self, filt_flag=True):
         """
         Returns the poses for this trial, separately by axis.
@@ -376,6 +375,7 @@ class AsteriskTrialData:
         Uses frechet distance calculation from asterisk_calculations object
         """
         # calc = AsteriskCalculations()
+        # TODO: we are going to revamp this using external frechet distance packages
 
         # get numpy array from self.poses
         object_path = self._get_pose_array()
