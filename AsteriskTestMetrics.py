@@ -544,12 +544,13 @@ class AsteriskTestMetrics2D:
                             pass
 
                     obj_poses = np.transpose(np.array(obj_poses))
-                    print("{0}\n x {1} y {2} t {3}".format(fname, obj_poses[0,-1], obj_poses[1, -1], obj_poses[2, -1]))
+                    print(f"{fname}\n x {obj_poses[0,-1]} y {obj_poses[1, -1]} t {obj_poses[2, -1]}")
                     trial_number = int(fname_pieces[-1][0])-1
                     trial_type = fname_pieces[-2]
                     angle_name = fname_pieces[-3]
                     hand_name = fname_pieces[-4]
-                    name = subject_name + "_" + hand_name + "_" + "Trial{0}".format(trial_number)
+                    name = f"{subject_name}_{hand_name}_Trial{trial_number}"
+
                     while len(my_tests) <= trial_number:
                         my_tests.append(AsteriskTestMetrics2D())
                     my_tests[trial_number].test_name = subject_name + "_" + hand_name
