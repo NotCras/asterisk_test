@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 import csv
-import math as m
 import numpy as np
 from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan
 import pandas as pd
 import matplotlib.pyplot as plt
 from asterisk_calculations import Pose2D, AsteriskCalculations
 import similaritymeasures as sm
+import asterisk_plotting as AstPlot
 import pdb
 
 from asterisk_hand import HandObj
@@ -277,11 +277,11 @@ class AsteriskTrialData:
         plt.title('Path of Object')
         # plt.grid()
 
-        plt.xticks(np.linspace(self.round_half_down(min_x, decimals=2),
-                               self.round_half_up(max_x, decimals=2), 10), rotation=30)
+        plt.xticks(np.linspace(AstPlot.round_half_down(min_x, decimals=2),
+                               AstPlot.round_half_up(max_x, decimals=2), 10), rotation=30)
         # gives a realistic view of what the path looks like
-        # plt.xticks(np.linspace(0, round_half_up(max_y, decimals=2), 10), rotation=30)
-        plt.yticks(np.linspace(0, self.round_half_up(max_y, decimals=2), 10))
+        # plt.xticks(np.linspace(0, AstPlot.round_half_up(max_y, decimals=2), 10), rotation=30)
+        plt.yticks(np.linspace(0, AstPlot.round_half_up(max_y, decimals=2), 10))
 
         # plt.xlim(0., 0.5)
         # plt.ylim(0., 0.5)
@@ -290,23 +290,6 @@ class AsteriskTrialData:
             plt.savefig(f"plot_{file_name}.jpg", format='jpg')
 
         plt.show()
-
-    # TODO: is there a better place to put these functions?
-    def round_half_up(self, n, decimals=0):
-        """
-        Used for plotting
-        # from: https://realpython.com/python-rounding/
-        """
-        multiplier = 10 ** decimals
-        return m.floor(n*multiplier + 0.5) / multiplier
-
-    def round_half_down(self, n, decimals=0):
-        """
-        Used for plotting
-        # from: https://realpython.com/python-rounding/
-        """
-        multiplier = 10 ** decimals
-        return m.ceil(n*multiplier - 0.5) / multiplier
 
     def generate_target_line(self, n_samples=50):
         """

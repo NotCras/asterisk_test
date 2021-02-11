@@ -10,6 +10,7 @@ import asterisk_data_manager as datamanager
 import asterisk_trial as trial
 from asterisk_hand import HandObj
 from asterisk_average import AveragedTrial
+from asterisk_plotting import AsteriskPlotting as aplt
 
 
 class AsteriskHandData:
@@ -228,67 +229,17 @@ class AsteriskHandData:
             print(" ")
 
     def plot_all_target_lines(self, order_of_colors):
-        x_a, y_a = self.get_a()  # TODO: move the following functions somewhere else?
-        x_b, y_b = self.get_b()
-        x_c, y_c = self.get_c()
-        x_d, y_d = self.get_d()
-        x_e, y_e = self.get_e()
-        x_f, y_f = self.get_f()
-        x_g, y_g = self.get_g()
-        x_h, y_h = self.get_h()
+        x_a, y_a = aplt.get_a()
+        x_b, y_b = aplt.get_b()
+        x_c, y_c = aplt.get_c()
+        x_d, y_d = aplt.get_d()
+        x_e, y_e = aplt.get_e()
+        x_f, y_f = aplt.get_f()
+        x_g, y_g = aplt.get_g()
+        x_h, y_h = aplt.get_h()
 
         ideal_xs = [x_a, x_b, x_c, x_d, x_e, x_f, x_g, x_h]
         ideal_ys = [y_a, y_b, y_c, y_d, y_e, y_f, y_g, y_h]
 
         for i in range(8):
             plt.plot(ideal_xs[i], ideal_ys[i], color=order_of_colors[i], label='ideal', linestyle='--')
-
-    # TODO: move the following functions somewhere else?
-    # well, what I can do is do a linspace for both x and y...
-    # its straightforward because these are perfect lines we are drawing
-    def straight(self, num_points=11, mod=1):
-        vals = np.linspace(0, 0.5, num_points)
-        z = [0.] * num_points
-
-        set1 = mod * vals
-        return set1, z
-
-    def diagonal(self, num_points=11, mod1=1, mod2=1):
-        coords = np.linspace(0, 0.5, num_points)
-
-        set1 = mod1 * coords
-        set2 = mod2 * coords
-
-        return set1, set2
-
-    def get_a(self, num_points=11):
-        y_coords, x_coords = self.straight(num_points)
-        return x_coords, y_coords
-
-    def get_b(self, num_points=11):
-        x_coords, y_coords = self.diagonal(num_points)
-        return x_coords, y_coords
-
-    def get_c(self, num_points=11):
-        x_coords, y_coords = self.straight(num_points)
-        return x_coords, y_coords
-
-    def get_d(self, num_points=11):
-        x_coords, y_coords = self.diagonal(num_points=num_points, mod1=1, mod2=-1)
-        return x_coords, y_coords
-
-    def get_e(self, num_points=11):
-        y_coords, x_coords = self.straight(num_points, mod=-1)
-        return x_coords, y_coords
-
-    def get_f(self, num_points=11):
-        x_coords, y_coords = self.diagonal(num_points=num_points, mod1=-1, mod2=-1)
-        return x_coords, y_coords
-
-    def get_g(self, num_points=11):
-        x_coords, y_coords = self.straight(num_points, mod=-1)
-        return x_coords, y_coords
-
-    def get_h(self, num_points=11):
-        x_coords, y_coords = self.diagonal(num_points, mod1=-1)
-        return x_coords, y_coords
