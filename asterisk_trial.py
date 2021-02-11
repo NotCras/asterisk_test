@@ -7,6 +7,7 @@ from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan
 import pandas as pd
 import matplotlib.pyplot as plt
 from asterisk_calculations import Pose2D, AsteriskCalculations
+import similaritymeasures as sm
 import pdb
 
 from asterisk_hand import HandObj
@@ -311,6 +312,7 @@ class AsteriskTrialData:
         """
         Using object trajectory (self.poses), build a line to compare to for frechet distance.
         Updates this attribute on object.
+        TODO: now obsolete? Or maybe redo this function to better fit with frechet distance function
         """
         # is this the right one? Is the position of "a" calculated right? A goes straight up
         translation_angles = np.linspace(90, 90 - 360, 8, endpoint=False)
@@ -369,72 +371,14 @@ class AsteriskTrialData:
 
         # return target_line, trial_on_asterisk
 
-    def calc_frechet_distance(self):
+    def calc_frechet_distance(self, target_path):
         """
-        Calculate the frechet distance between self.poses and ideal line
+        Calculate the frechet distance between self.poses and a target path
         Uses frechet distance calculation from asterisk_calculations object
         """
-        # calc = AsteriskCalculations()
-        # TODO: we are going to revamp this using external frechet distance packages
+        o_path_x, o_path_y, o_path_ang = self.get_poses()
+        object_path = [o_path_x, o_path_y, o_path_ang]
 
-        # get numpy array from self.poses
-        object_path = self._get_pose_array()
-
-        # regenerate target path, double check that data is ok
-        self.generate_target_line()
-        target_pose = self.target_line[-1]
-
-        # check that we are roughly in the ballpark of end pose
-        last_pose_obj = Pose2D(object_path[0, -1], object_path[1, -1], object_path[2, -1])
-        last_pose_angle = 180.0 * arctan2(last_pose_obj.y, last_pose_obj.x) / pi
-        expected_angle = self.ast_line_rot
-        if last_pose_angle - expected_angle > 180:
-            last_pose_angle -= 360
-        elif expected_angle - last_pose_angle > 180:
-            last_pose_angle += 360
-
-        if abs(last_pose_angle - expected_angle) > 65:
-            print(f"Warning: Translation {self.trial_translation} detected bad last pose {last_pose_angle}, "
-                  f"expected {self.ast_line_rot}")
-
-        # get scl ratio (or do separately for translation and rotation)?
-        translation_scl = (1., 0.)
-        rotation_scl = (0., 1.)
-
-        # set up end_target_index, dist_along_translation, dist_target
-        target_i_translation = AsteriskCalculations.narrow_target(last_pose_obj, self.target_line, translation_scl)
-        if target_i_translation == 0:
-            print("Warning: Closest translation pose was first pose")
-            target_i_translation += 1
-
-        target_i_rotation = AsteriskCalculations.narrow_target(last_pose_obj, self.target_line, rotation_scl)
-        if target_i_rotation == 0:
-            print("Warning: Closest rotation pose was first pose")
-            target_i_rotation += 1
-
-        n_total = object_path.shape[1]
-        self.dist_along_translation = sqrt(max([object_path[0, i_p] ** 2 + object_path[1, i_p] ** 2
-                                                for i_p in range(0, n_total)]))
-
-        self.total_distance = last_pose_obj.distance(target_pose, translation_scl)  # TODO: same as self.dist_target?
-
-        # then run FD using what I calculated
-        translation_fd, translation_target_indices = AsteriskCalculations.frechet_dist(object_path,
-                                                                                       target_i_translation,
-                                                                                       self.target_line,
-                                                                                       translation_scl)
-
-        rotation_fd, rotation_target_indices = AsteriskCalculations.frechet_dist(object_path,
-                                                                                 target_i_rotation,
-                                                                                 self.target_line,
-                                                                                 rotation_scl)
-
-        self.translation_fd = translation_fd
-        self.translation_indices = translation_target_indices
-        self.translation_target_index = target_i_translation
-
-        self.rotation_fd = rotation_fd
-        self.rotation_indices = rotation_target_indices
-        self.rotation_target_index = target_i_rotation
-
-        # return translation_fd, translation_target_indices, rotation_fd, rotation_target_indices
+        self.translation_fd = sm.frechet_dist(object_path, target_path)
+        return self.translation_fd
+        # TODO: we will need to reverse engineer the target indices from the frechet distance val

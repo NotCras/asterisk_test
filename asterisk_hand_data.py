@@ -292,16 +292,3 @@ class AsteriskHandData:
     def get_h(self, num_points=11):
         x_coords, y_coords = self.diagonal(num_points, mod1=-1)
         return x_coords, y_coords
-
-
-test_type_name = ["Translation", "Rotation",
-                  "Twist_translation", "undefined"]
-translation_name = ["a", "b", "c", "d", "e", "f", "g", "h", "none"]
-rotation_name = ["cw", "ccw", "none"]
-twist_name = ["plus15", "minus15", "none"]
-translation_angles = range(90, 90-360, -45)
-twist_directions = {"Clockwise": -15, "Counterclockwise": 15}
-rotation_directions = {"Clockwise": -25, "Counterclockwise": 25}
-subject_nums = [1, 2, 3, 4, 5]
-
-
