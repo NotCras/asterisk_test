@@ -57,12 +57,14 @@ class AsteriskTrialData:
         self.trial_rotation = r
         self.trial_num = n
 
-        self.target_line = None  # the straight path in the direction that this trial is
-        if file_name and do_target:  # TODO: doesn't work for cw and ccw yet
-            self.target_line = self.generate_target_line()  # generates the above values
-
         self.filtered = False
         self.window_size = 0
+
+        self.target_line = None  # the straight path in the direction that this trial is
+        self.target_rotation = None
+        if file_name and do_target:  # TODO: doesn't work for cw and ccw yet
+            self.target_line = self.generate_target_line()  # generates the above values
+            self.target_rotation = self.generate_target_rot()
 
         # frechet distance variables
         self.translation_fd = None
@@ -100,7 +102,6 @@ class AsteriskTrialData:
                                   # names=["x", "y", "rmag", "f_x", "f_y", "f_rot_mag"],
                                   skip_blank_lines=True
                                   )
-
             df = self._condition_df(df_temp)
 
         except Exception as e:  # TODO: add more specific except clauses
@@ -120,12 +121,11 @@ class AsteriskTrialData:
         df_numeric = df.apply(pd.to_numeric)
 
         # saving for later: ["row", "x", "y", "rmag", "f_x", "f_y", "f_rot_mag"]
-        df_numeric.columns = ["roll", "pitch",
-                              "yaw", "x", "y", "z", "tmag",  "rmag"]
+        df_numeric.columns = ["roll", "pitch", "yaw", "x", "y", "z", "tmag",  "rmag"]
 
         # convert m to mm in translational data
         df = df_numeric * [1., 1., 1., 1000., 1000., 1000., 1000., 1.]
-        df = df.round(4)
+        df.round(4)
 
         # normalize translational data by hand span
         df = df / [1., 1., 1.,  # orientation data
@@ -134,7 +134,7 @@ class AsteriskTrialData:
                    1.,  # z - doesn't matter
                    1.,  # translational magnitude - don't use
                    1.]  # rotation magnitude
-        df = df.round(4)
+        df.round(4)
 
         # occasionally get an outlier value (probably from vision algorithm), I filter them out here
         inlier_df = self._remove_outliers(df, ["x", "y", "rmag"])
@@ -174,13 +174,14 @@ class AsteriskTrialData:
         """
         Removes extreme outliers from data, in 99% quartile.
         Occasionally this happens in the aruco analyzed data and is a necessary function to run.
+        These values completely mess up the moving average filter unless they are dealt with earlier.
         """
         for col in columns:
             # see: https://stackoverflow.com/questions/23199796/detect-and-exclude-outliers-in-pandas-data-frame
             # q_low = df_to_fix[col].quantile(0.01)
             q_hi = df_to_fix[col].quantile(0.99)
 
-            df_to_fix = df_to_fix[(df_to_fix[col] < q_hi)]
+            df_to_fix = df_to_fix[(df_to_fix[col] < q_hi)]  # this has got to be the problem line
 
             # print(col)
             # print(f"q_low: {q_low}")
@@ -298,11 +299,10 @@ class AsteriskTrialData:
         """
         Using object trajectory (self.poses), build a line to compare to for frechet distance.
         Updates this attribute on object.
-        TODO: now obsolete? Or maybe redo this function to better fit with frechet distance function
         """
         x_vals, y_vals = 0, 0
 
-        if self.trial_translation == "a": # TODO: add consideration for p15 and m15?
+        if self.trial_translation == "a":
             x_vals, y_vals = aplt.get_a()
         elif self.trial_translation == "b":
             x_vals, y_vals = aplt.get_b()
@@ -322,34 +322,66 @@ class AsteriskTrialData:
             x_vals, y_vals = 0, 0  # want to rotate around center point
 
         target_line = np.column_stack((x_vals, y_vals))
-        # TODO: its just translation right now, need rotation (we do that with a np array of zeros or 15 or -15s)
 
         # get last object pose and use it for determining how far target line should go
         last_obj_pose = self.poses.tail(1).to_numpy()[0]
 
         target_line_length = AsteriskCalculations.narrow_target(last_obj_pose, target_line)
 
-        final_target = target_line[:target_line_length]
+        pdb.set_trace()
+        if target_line_length:
+            final_target_ln = target_line[:target_line_length]
+        else:
+            final_target_ln = target_line[:1]
 
-        return final_target
+        return final_target_ln
+
+    def generate_target_rot(self, n_samples=50):
+        """
+        get target rotation to compare to with fd
+        """
+        if self.trial_rotation in ["cw", "ccw"]:
+            # TODO: we compute rotation magnitude, so no neg values... need to fix
+            if self.filtered:
+                last_rot = self.poses.tail["f_rmag"]
+            else:
+                last_rot = self.poses.tail["rmag"]
+
+            target_rot = np.array([last_rot])
+
+        # elif self.trial_rotation == "ccw":
+        #     last_rot = self.poses.tail["rmag"]
+        #     target_rot = np.array([-last_rot])
+
+        elif self.trial_rotation in ["p15", "m15"]:
+            target_rot = np.array([15])
+
+        # elif self.trial_rotation == "m15":
+        #     target_rot = np.array([-15])
+
+        else:
+            target_rot = np.zeros(1)
+
+        return target_rot
 
     def calc_frechet_distance(self):
         """
         Calculate the frechet distance between self.poses and a target path
         Uses frechet distance calculation from asterisk_calculations object
         """
-        o_path = self._get_pose_array()
+        o_path = self._get_pose_array()  # TODO: add a consideration for filtered data
         o_path_t = o_path[:, [0, 1]]  # just want first and second columns for translation
+        o_path_ang = o_path[:, [2]]
 
-        #pdb.set_trace()
         t_fd = sm.frechet_dist(o_path_t, self.target_line)
-        # r_fd = sm.frechet_dist(o_path_ang, target_path)  # TODO: get rotational target path
+        r_fd = sm.frechet_dist(o_path_ang, self.target_rotation)  # TODO: get rotational target path
         r_fd = 0
 
+        pdb.set_trace()
         return t_fd, r_fd
         # TODO: we will need to reverse engineer the target indices from the frechet distance val
 
-    def target_indices(self):
+    def get_target_indices(self):
         """
         Get the points that each data point was associated with in the frechet distance calculations
         using the frechet distance values

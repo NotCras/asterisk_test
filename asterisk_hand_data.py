@@ -56,7 +56,8 @@ class AsteriskHandData:
 
                     gathered_data.append(trial_data)
 
-                except:
+                except Exception as e:
+                    print(e)
                     print("Skipping.")
                     continue
 
