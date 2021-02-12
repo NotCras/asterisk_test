@@ -7,7 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from asterisk_calculations import Pose2D, AsteriskCalculations
 import similaritymeasures as sm
-import asterisk_plotting as AstPlot
+from asterisk_plotting import AsteriskPlotting as aplt
 import pdb
 
 from asterisk_hand import HandObj
@@ -58,9 +58,8 @@ class AsteriskTrialData:
         self.trial_num = n
 
         self.target_line = None  # the straight path in the direction that this trial is
-        self.ast_line_rot = None  # the angle on the asterisk that corresponds to the direction label, 0 at straight up
         if file_name and do_target:  # TODO: doesn't work for cw and ccw yet
-            self.generate_target_line()  # generates the above values
+            self.target_line = self.generate_target_line()  # generates the above values
 
         self.filtered = False
         self.window_size = 0
@@ -78,8 +77,12 @@ class AsteriskTrialData:
         self.dist_along_translation = None
         self.dist_along_twist = None
 
-        if file_name and do_fd:  # TODO: doesn't work for cw and ccw yet
-            self.calc_frechet_distance()  # all fd variables above are calculated here
+        if file_name and do_fd and do_target:  # TODO: doesn't work for cw and ccw yet
+            self.translation_fd, self.rotation_fd = self.calc_frechet_distance()
+
+            # then we reverse engineer target indices
+
+            pass
 
     def add_hand(self, hand_name):
         """
@@ -277,11 +280,11 @@ class AsteriskTrialData:
         plt.title('Path of Object')
         # plt.grid()
 
-        plt.xticks(np.linspace(AstPlot.round_half_down(min_x, decimals=2),
-                               AstPlot.round_half_up(max_x, decimals=2), 10), rotation=30)
+        plt.xticks(np.linspace(aplt.round_half_down(min_x, decimals=2),
+                               aplt.round_half_up(max_x, decimals=2), 10), rotation=30)
         # gives a realistic view of what the path looks like
-        # plt.xticks(np.linspace(0, AstPlot.round_half_up(max_y, decimals=2), 10), rotation=30)
-        plt.yticks(np.linspace(0, AstPlot.round_half_up(max_y, decimals=2), 10))
+        # plt.xticks(np.linspace(0, aplt.round_half_up(max_y, decimals=2), 10), rotation=30)
+        plt.yticks(np.linspace(0, aplt.round_half_up(max_y, decimals=2), 10))
 
         # plt.xlim(0., 0.5)
         # plt.ylim(0., 0.5)
@@ -297,71 +300,58 @@ class AsteriskTrialData:
         Updates this attribute on object.
         TODO: now obsolete? Or maybe redo this function to better fit with frechet distance function
         """
-        # is this the right one? Is the position of "a" calculated right? A goes straight up
-        translation_angles = np.linspace(90, 90 - 360, 8, endpoint=False)
+        x_vals, y_vals = 0, 0
 
-        # check add_target_paths function from AsteriskTestMetrics
-        target_line = []
-        divs = linspace(0, 1, n_samples, endpoint=True)
-        direction = ord(self.trial_translation) - ord('a')
+        if self.trial_translation == "a": # TODO: add consideration for p15 and m15?
+            x_vals, y_vals = aplt.get_a()
+        elif self.trial_translation == "b":
+            x_vals, y_vals = aplt.get_b()
+        elif self.trial_translation == "c":
+            x_vals, y_vals = aplt.get_c()
+        elif self.trial_translation == "d":
+            x_vals, y_vals = aplt.get_d()
+        elif self.trial_translation == "e":
+            x_vals, y_vals = aplt.get_e()
+        elif self.trial_translation == "f":
+            x_vals, y_vals = aplt.get_f()
+        elif self.trial_translation == "g":
+            x_vals, y_vals = aplt.get_g()
+        elif self.trial_translation == "h":
+            x_vals, y_vals = aplt.get_h()
+        elif self.trial_translation == "n":
+            x_vals, y_vals = 0, 0  # want to rotate around center point
 
-        if self.trial_rotation == "n":
-            # translation only
-            trial_on_asterisk = translation_angles[direction]
-            x = cos(pi * trial_on_asterisk / 180)
-            y = sin(pi * trial_on_asterisk / 180)
+        target_line = np.column_stack((x_vals, y_vals))
+        # TODO: its just translation right now, need rotation (we do that with a np array of zeros or 15 or -15s)
 
-            for d in divs:
-                target_line.append(Pose2D(x * d, y * d, 0))
+        # get last object pose and use it for determining how far target line should go
+        last_obj_pose = self.poses.tail(1).to_numpy()[0]
 
-        elif self.trial_rotation == "cw":
-            # rotation only options
-            trial_on_asterisk = self._get_pose_array()[-1][3]  # TODO: get last item in rotation data
+        target_line_length = AsteriskCalculations.narrow_target(last_obj_pose, target_line)
 
-            for d in divs:
-                target_line.append(Pose2D(0, 0, d * trial_on_asterisk))
+        final_target = target_line[:target_line_length]
 
-        elif self.trial_rotation == "ccw":
-            trial_on_asterisk = self._get_pose_array()[-1][3]  # TODO: get last item in rotation data
-            for d in divs:
-                target_line.append(Pose2D(0, 0, d * -trial_on_asterisk))
+        return final_target
 
-        elif self.trial_rotation == "p15":
-            trial_on_asterisk = translation_angles[direction]
-            # next, options with both translation and rotation
-            x = cos(pi * trial_on_asterisk / 180)
-            y = sin(pi * trial_on_asterisk / 180)
-
-            for d in divs:
-                target_line.append(Pose2D(x * d, y * d, 15))
-                # TODO: should data collection start after rotation has been made? yes, need to make explicit
-
-        elif self.trial_rotation == "m15":
-            trial_on_asterisk = translation_angles[direction]
-            # next, options with both translation and rotation
-            x = cos(pi * trial_on_asterisk / 180)
-            y = sin(pi * trial_on_asterisk / 180)
-
-            for d in divs:
-                target_line.append(Pose2D(x * d, y * d, -15))
-
-        else:
-            print(f"Malformed AsteriskTrialData object => t: {self.trial_translation} | r: {self.trial_rotation}")
-            # TODO: throw exception
-
-        self.target_line = target_line
-        self.ast_line_rot = trial_on_asterisk
-
-        # return target_line, trial_on_asterisk
-
-    def calc_frechet_distance(self, target_path):
+    def calc_frechet_distance(self):
         """
         Calculate the frechet distance between self.poses and a target path
         Uses frechet distance calculation from asterisk_calculations object
         """
-        o_path_x, o_path_y, o_path_ang = self.get_poses()
-        object_path = [o_path_x, o_path_y, o_path_ang]
+        o_path = self._get_pose_array()
+        o_path_t = o_path[:, [0, 1]]  # just want first and second columns for translation
 
-        self.translation_fd = sm.frechet_dist(object_path, target_path)
-        return self.translation_fd
+        #pdb.set_trace()
+        t_fd = sm.frechet_dist(o_path_t, self.target_line)
+        # r_fd = sm.frechet_dist(o_path_ang, target_path)  # TODO: get rotational target path
+        r_fd = 0
+
+        return t_fd, r_fd
         # TODO: we will need to reverse engineer the target indices from the frechet distance val
+
+    def target_indices(self):
+        """
+        Get the points that each data point was associated with in the frechet distance calculations
+        using the frechet distance values
+        """
+        pass

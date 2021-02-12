@@ -53,6 +53,7 @@ class AsteriskHandData:
                         trial_data = trial.AsteriskTrialData(asterisk_trial_file, False, False)
                     else:
                         trial_data = trial.AsteriskTrialData(asterisk_trial_file)
+
                     gathered_data.append(trial_data)
 
                 except:
