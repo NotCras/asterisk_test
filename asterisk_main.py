@@ -20,6 +20,8 @@ def run():
     failed_files = []
     for h in hand_names:
         print(f"Running: {h}, {subjects}")
+        input("Please press <ENTER> to continue")  # added this for debugging by hand
+
         data = AsteriskHandData(subjects, h)
         data.filter_data()
         data.save_data()
