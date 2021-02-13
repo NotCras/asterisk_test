@@ -62,9 +62,9 @@ class AsteriskTrialData:
 
         self.target_line = None  # the straight path in the direction that this trial is
         self.target_rotation = None
-        if file_name and do_target:  # TODO: doesn't work for cw and ccw yet
+        if file_name and do_target:
             self.target_line = self.generate_target_line()  # generates the above values
-            self.target_rotation = self.generate_target_rot()
+            self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
         # frechet distance variables
         self.translation_fd = None
@@ -79,11 +79,11 @@ class AsteriskTrialData:
         self.dist_along_translation = None
         self.dist_along_twist = None
 
-        if file_name and do_fd and do_target:  # TODO: doesn't work for cw and ccw yet
+        if file_name and do_fd and do_target:
             self.translation_fd, self.rotation_fd = self.calc_frechet_distance()
 
             # then we reverse engineer target indices
-
+            # self.translation_target_index = self.get_target_indices()  # TODO: implement this
             pass
 
     def add_hand(self, hand_name):
@@ -328,7 +328,7 @@ class AsteriskTrialData:
 
         target_line_length = AsteriskCalculations.narrow_target(last_obj_pose, target_line)
 
-        pdb.set_trace()
+        # pdb.set_trace()
         if target_line_length:
             final_target_ln = target_line[:target_line_length]
         else:
@@ -343,11 +343,11 @@ class AsteriskTrialData:
         if self.trial_rotation in ["cw", "ccw"]:
             # TODO: we compute rotation magnitude, so no neg values... need to fix
             if self.filtered:
-                last_rot = self.poses.tail["f_rmag"]
+                last_rot = self.poses.tail(1)["f_rmag"]
             else:
-                last_rot = self.poses.tail["rmag"]
+                last_rot = self.poses.tail(1)["rmag"]
 
-            target_rot = np.array([last_rot])
+            target_rot = pd.Series.to_list(last_rot)
 
         # elif self.trial_rotation == "ccw":
         #     last_rot = self.poses.tail["rmag"]
@@ -374,10 +374,10 @@ class AsteriskTrialData:
         o_path_ang = o_path[:, [2]]
 
         t_fd = sm.frechet_dist(o_path_t, self.target_line)
-        r_fd = sm.frechet_dist(o_path_ang, self.target_rotation)  # TODO: get rotational target path
-        r_fd = 0
+        r_fd = sm.frechet_dist(o_path_ang, self.target_rotation)  # just max error right now
+        # r_fd = 0
 
-        pdb.set_trace()
+        # pdb.set_trace()
         return t_fd, r_fd
         # TODO: we will need to reverse engineer the target indices from the frechet distance val
 

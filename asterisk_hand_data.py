@@ -49,10 +49,8 @@ class AsteriskHandData:
             for n in trials:
                 try:
                     asterisk_trial_file = f"{s}_{self.hand.get_name()}_{translation_label}_{rotation_label}_{n}.csv"
-                    if rotation_label in ["cw", "ccw"]:
-                        trial_data = trial.AsteriskTrialData(asterisk_trial_file, False, False)
-                    else:
-                        trial_data = trial.AsteriskTrialData(asterisk_trial_file)
+
+                    trial_data = trial.AsteriskTrialData(asterisk_trial_file)
 
                     gathered_data.append(trial_data)
 
@@ -109,7 +107,7 @@ class AsteriskHandData:
 
         return dfs
 
-    def _average_data(self, trials):
+    def _average_data(self, trials):  # TODO: still need to get this working
         """
         Averages a set of asterisk_trial paths. We run this on groups of paths of the same direction.
         :param trials list of asterisk_trial objects to average

@@ -31,6 +31,12 @@ class AsteriskStudy:
 
         return data_dictionary
 
+    def filter_data(self):
+        pass
+
+    def save_data(self):
+        pass
+
     def plot_hand(self, hand_name):
         """
         Plot data for a specific hand, with averages
