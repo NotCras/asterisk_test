@@ -17,13 +17,16 @@ def run():
     subjects = ["sub1", "sub2"]
     hand_names = ["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
 
-    failed_files = []
+    # failed_files = []  # TODO: for later?
     for h in hand_names:
         print(f"Running: {h}, {subjects}")
         input("Please press <ENTER> to continue")  # added this for debugging by hand
 
         data = AsteriskHandData(subjects, h)
         data.filter_data()
+        print("   ")
+
+        print("Generating CSVs")
         data.save_data()
         print("   ")
 
@@ -31,4 +34,5 @@ def run():
 if __name__ == '__main__':
 
     home_directory = Path(__file__).parent.absolute()
+
     run()

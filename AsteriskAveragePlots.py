@@ -109,8 +109,10 @@ if __name__ == '__main__':
     file_dir = f"filtered/"
     os.chdir(file_dir)
 
-    subject_name_process = "f15_sub1"
-    hand_process = "2v3"
+    hand_names = ["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
+
+    subject_name_process = "f15_sub2"
+    hand_process = "modelvf"
     my_test_results = AsteriskTestMetrics2D.process_files(subject_name_process, hand_process)
 
     fig, axs = plt.subplots(2, len(my_test_results))

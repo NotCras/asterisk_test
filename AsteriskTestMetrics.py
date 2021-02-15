@@ -109,7 +109,7 @@ class AsteriskTestResults(AsteriskTestTypes):
         row_data.append(self.dist_frechet)
         row_data.append(self.end_target_index)
         for i in self.target_indices:
-            row_data.append("{}".format(i))
+            row_data.append(f"{i}")
 
         f.writerow(row_data)
 
@@ -573,15 +573,23 @@ class AsteriskTestMetrics2D:
 if __name__ == '__main__':
     #AsteriskTestMetrics2D.run_tests()
 
+    subjects = ["sub1", "sub2"]
+    hand_names = ["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
+
     home_directory = Path(__file__).parent.absolute()
-    file_dir = f"filtered/"
-    os.chdir(file_dir)
+    file_dir = "filtered/"
 
-    subject_name_process = "f15_sub1"
-    hand_process = "2v3"
-    my_test_results = AsteriskTestMetrics2D.process_files(subject_name_process, hand_process)
+    for h in hand_names:
+        for s in subjects:
+            os.chdir(file_dir)
+            subject_name_process = f"f15_{s}"
+            hand_process = h
+            my_test_results = AsteriskTestMetrics2D.process_files(subject_name_process, hand_process)
 
-    os.chdir(home_directory)
+            os.chdir(home_directory)
 
-    for i, t in enumerate(my_test_results):
-        t.write_test_results(f"check_res{i}.csv")
+            try:
+                for i, t in enumerate(my_test_results):
+                    t.write_test_results(f"check_res_{t.test_name}_{i}.csv")
+            except Exception as e:
+                print(f"{t.test_name}, {e}")
