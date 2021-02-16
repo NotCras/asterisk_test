@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from asterisk_calculations import Pose2D, AsteriskCalculations
+from asterisk_calculations import AsteriskCalculations
 import similaritymeasures as sm
 from asterisk_plotting import AsteriskPlotting as aplt
 import pdb
@@ -81,7 +81,6 @@ class AsteriskTrialData:
 
             # then we reverse engineer target indices
             self.translation_indices = self.get_target_indices()  # TODO: implement this
-
 
     def add_hand(self, hand_name):
         """
@@ -205,22 +204,6 @@ class AsteriskTrialData:
 
         # print("Moving average completed.")
 
-    def get_pose2d(self, filt_flag=True):
-        """
-        Returns the poses for this trial, separately by axis.
-        """
-        poses = []
-
-        for p in self.poses.iterrows():
-            if self.filtered and filt_flag:
-                pose = Pose2D(p[1]["f_x"], p[1]["f_y"], p[1]["f_rmag"])  # p[0] is the row num
-            else:
-                pose = Pose2D(p[1]["x"], p[1]["y"], p[1]["rmag"])
-
-            poses.append(pose)
-
-        return poses  # Todo: test this out!
-
     def _get_pose_array(self, get_filtered=True):
         """
         Returns the poses for this trial as np.array
@@ -252,7 +235,7 @@ class AsteriskTrialData:
 
     def get_translations_array(self, filt_flag=True):
         """
-
+        an attempt to get non-scientific notation in data. This is something from numpy.
         """
         arr = np.zeros([self.poses.shape[0], 2])
 
@@ -273,7 +256,6 @@ class AsteriskTrialData:
             # print("    ")
 
         return arr
-
 
     def plot_trial(self, file_name=None):  # TODO: make it so that we can choose filtered or unfiltered data
         """
