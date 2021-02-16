@@ -31,8 +31,8 @@ class AsteriskAverage(AsteriskTestTypes):
 
         # This is really clunky, but it's the easiest way to deal
         # with the problem that the arrays have different sizes...
-        n_max = max([len(t.target_indices) for t in atrs]) # get how many trials there are
-        self.pose_average = [Pose2D() for _ in range(0, n_max)]  # make a bunch of empty Pose2D objects - this will be the average line
+        n_max = max([len(t.target_indices) for t in atrs])
+        self.pose_average = [Pose2D() for _ in range(0, n_max)]
         sd_dist = [0] * n_max
         sd_theta = [0] * n_max
         count = [0] * n_max

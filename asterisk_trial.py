@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 
-import csv
 import numpy as np
-from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan
 import pandas as pd
 import matplotlib.pyplot as plt
 from asterisk_calculations import Pose2D, AsteriskCalculations
 import similaritymeasures as sm
 from asterisk_plotting import AsteriskPlotting as aplt
 import pdb
-
 from asterisk_hand import HandObj
 from scipy import stats
 
@@ -83,8 +80,8 @@ class AsteriskTrialData:
             self.translation_fd, self.rotation_fd = self.calc_frechet_distance()
 
             # then we reverse engineer target indices
-            # self.translation_target_index = self.get_target_indices()  # TODO: implement this
-            pass
+            self.translation_indices = self.get_target_indices()  # TODO: implement this
+
 
     def add_hand(self, hand_name):
         """
@@ -138,7 +135,7 @@ class AsteriskTrialData:
 
         # occasionally get an outlier value (probably from vision algorithm), I filter them out here
         inlier_df = self._remove_outliers(df, ["x", "y", "rmag"])
-        return inlier_df
+        return inlier_df.round(4)
 
     def generate_name(self):
         """
@@ -229,7 +226,7 @@ class AsteriskTrialData:
         Returns the poses for this trial as np.array
         """
         if self.filtered and get_filtered:
-            return self.poses[["f_x", "f_y", "f_rmag"]].to_numpy()
+            return self.poses[["f_x", "f_y", "f_rmag"]].to_numpy()  # TODO: causes weird decimals, need a workaround
         else:
             return self.poses[["x", "y", "rmag"]].to_numpy()
 
@@ -252,6 +249,31 @@ class AsteriskTrialData:
         return_twist = pd.Series.to_list(twist)
 
         return return_x, return_y, return_twist
+
+    def get_translations_array(self, filt_flag=True):
+        """
+
+        """
+        arr = np.zeros([self.poses.shape[0], 2])
+
+        for i, p in enumerate(self.poses.iterrows()):
+            if self.filtered and filt_flag:
+                x_val = p[1]["f_x"]
+                y_val = p[1]["f_y"]
+            else:
+                x_val = p[1]["x"]
+                y_val = p[1]["y"]
+
+            # print(f"{i}:: {x_val} and {y_val}")
+
+            # arr.append([x_val, y_val])
+            arr[i][0] = x_val
+            arr[i][1] = y_val
+            # print(f"{arr[i]}")
+            # print("    ")
+
+        return arr
+
 
     def plot_trial(self, file_name=None):  # TODO: make it so that we can choose filtered or unfiltered data
         """
@@ -375,15 +397,35 @@ class AsteriskTrialData:
 
         t_fd = sm.frechet_dist(o_path_t, self.target_line)
         r_fd = sm.frechet_dist(o_path_ang, self.target_rotation)  # just max error right now
-        # r_fd = 0
 
-        # pdb.set_trace()
         return t_fd, r_fd
-        # TODO: we will need to reverse engineer the target indices from the frechet distance val
 
     def get_target_indices(self):
         """
         Get the points that each data point was associated with in the frechet distance calculations
         using the frechet distance values
         """
-        pass
+
+        target_indices = []
+        # print(self.translation_fd)
+
+        for p in self._get_pose_array():
+            associated_target_index = None
+            prev_d = 1000  # arbitrarily high number
+
+            for i, t in enumerate(self.target_line):
+                # print(f"pose: {p[0]},{p[1]} | target: {t[0]},{t[1]}")
+
+                # get euclidean distance
+                d = np.sqrt((t[0]-p[0])**2 + (t[1]-p[1])**2)
+                # print(f"dist: {d}, fd: {self.translation_fd}, best d: {prev_d}")
+
+                if d < self.translation_fd and d < prev_d:
+                    # print(f"better dist: {d} vs {prev_d}")
+                    associated_target_index = i
+                    prev_d = d
+
+            target_indices.append(associated_target_index)
+
+        # TODO: for now just implementing translation, do I need rotation too?
+        return target_indices
