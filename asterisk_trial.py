@@ -12,7 +12,7 @@ from scipy import stats
 
 
 class AsteriskTrialData:
-    def __init__(self, file_name=None, do_target=True, do_fd=True):
+    def __init__(self, file_name=None, do_fd=True):
         # TODO: make it so that I can also make an empty AsteriskTrial object or from some data
         """
         Class to represent a single asterisk test trial.
@@ -49,7 +49,7 @@ class AsteriskTrialData:
             s, t, r, n = None, None, None, None
             self.hand = None
 
-        self.subject_num = s
+        self.subject = s
         self.trial_translation = t
         self.trial_rotation = r
         self.trial_num = n
@@ -59,7 +59,8 @@ class AsteriskTrialData:
 
         self.target_line = None  # the straight path in the direction that this trial is
         self.target_rotation = None
-        if file_name and do_target:
+
+        if file_name:
             self.target_line = self.generate_target_line()  # generates the above values
             self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
@@ -76,11 +77,11 @@ class AsteriskTrialData:
         self.dist_along_translation = None
         self.dist_along_twist = None
 
-        if file_name and do_fd and do_target:
+        if file_name and do_fd:
             self.translation_fd, self.rotation_fd = self.calc_frechet_distance()
 
             # then we reverse engineer target indices
-            self.translation_indices = self.get_target_indices()  # TODO: implement this
+            self.translation_indices = self.get_target_indices()
 
     def add_hand(self, hand_name):
         """
@@ -141,7 +142,7 @@ class AsteriskTrialData:
         Generates the codified name of the trial
         :return: string name of trial
         """
-        return f"{self.subject_num}_{self.hand.get_name()}_{self.trial_translation}_" \
+        return f"{self.subject}_{self.hand.get_name()}_{self.trial_translation}_" \
                f"{self.trial_rotation}_{self.trial_num}"
 
     def save_data(self, file_name_overwrite=None):
@@ -236,6 +237,8 @@ class AsteriskTrialData:
     def get_translations_array(self, filt_flag=True):
         """
         an attempt to get non-scientific notation in data. This is something from numpy.
+        About issue, and actual fixes ::
+        https://stackoverflow.com/questions/9777783/suppress-scientific-notation-in-numpy-when-creating-array-from-nested-list
         """
         arr = np.zeros([self.poses.shape[0], 2])
 
@@ -330,6 +333,7 @@ class AsteriskTrialData:
         # get last object pose and use it for determining how far target line should go
         last_obj_pose = self.poses.tail(1).to_numpy()[0]
 
+        # TODO: investigate, if trial intersects x axis and keeps going, trial line will stop there
         target_line_length = AsteriskCalculations.narrow_target(last_obj_pose, target_line)
 
         # pdb.set_trace()

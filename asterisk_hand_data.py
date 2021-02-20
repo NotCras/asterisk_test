@@ -78,14 +78,14 @@ class AsteriskHandData:
             for t in trials:
                 print(t.generate_name())
                 if trial_number:  # if we want a specific trial, look for it
-                    if (t.subject_num == subject_to_run) and (t.trial_num == trial_number):
+                    if (t.subject == subject_to_run) and (t.trial_num == trial_number):
                         dfs.append(t)
                         print(" ")
                         break
                     # TODO: throw an exception in case there isn't the trial that we want
 
                 else:  # otherwise, grab trial as long as it has the right subject
-                    if t.subject_num == subject_to_run:
+                    if t.subject == subject_to_run:
                         dfs.append(t)
 
             # print("    ")
@@ -102,7 +102,7 @@ class AsteriskHandData:
         dfs = []
 
         for t in direction_trials:
-            if t.subject_num == subject or t.subject_num in subject:
+            if t.subject == subject or t.subject in subject:
                 dfs.append(t)
 
         return dfs

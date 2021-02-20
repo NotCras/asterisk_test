@@ -5,34 +5,35 @@ import csv
 import pandas as pd
 from asterisk_trial import AsteriskTrialData
 from asterisk_calculations import Pose2D
+import pdb
 
 
 class AveragedTrial(AsteriskTrialData):
 
     def __init__(self):
-        super(AveragedTrial, self).__init__()
+        super(AveragedTrial, self).__init__()  # makes an empty AsteriskTrialData object
 
         self.names = []  # names of trials averaged
         self.averaged_trials = []  # actual AsteriskTrialData objects that were averaged
-        self.pose_average = []
+        # self.pose_average = []  # maybe just use poses
         self.pose_sd = []
 
-    def get_poses(self):
-        """
-        Separates poses into x, y, theta for easy plotting.
-        :param: filt_flag Gives option to return filtered or unfiltered data
-        """
-        # get the poses
-        x_data = []
-        y_data = []
-        theta_data = []
-
-        for pose in self.pose_average:
-            x_data.append(pose.x)
-            y_data.append(pose.y)
-            theta_data.append(pose.theta)
-
-        return x_data, y_data, theta_data
+    # def get_poses(self):
+    #     """
+    #     Separates poses into x, y, theta for easy plotting.
+    #     :param: filt_flag Gives option to return filtered or unfiltered data
+    #     """
+    #     # get the poses
+    #     x_data = []
+    #     y_data = []
+    #     theta_data = []
+    #
+    #     for pose in self.poses:
+    #         x_data.append(pose.x)
+    #         y_data.append(pose.y)
+    #         theta_data.append(pose.theta)
+    #
+    #     return x_data, y_data, theta_data
 
     def get_poses_sd(self):
         """
@@ -51,74 +52,89 @@ class AveragedTrial(AsteriskTrialData):
 
         return x_data, y_data, theta_data
 
-    def average_lines(self, trials: [AsteriskTrialData]):
-        """ Average the path of 2 or more trials
-        :param trials = array of AsteriskTestData objects for one specific trial
-        :returns array of average poses with += poses
+    def get_points(self, x_val, bounds):
+        """
+        Function which gets all the points that fall in a specific value range
+        """
+        data_points = pd.DataFrame()  # makes an empty dataframe
+        hi_val = x_val + bounds
+        lo_val = x_val - bounds
+
+        print(f"t_pose: {x_val} +/- {bounds}")
+
+        for t in self.averaged_trials:
+            data_points = data_points.append(t.poses)
+
+        points_in_bounds = data_points[(data_points['x'] > lo_val) & (data_points['x'] < hi_val)]
+
+        # print("selected datapoints")
+        # print(points_in_bounds)
+        # print("   ")
+
+        return points_in_bounds
+
+    def make_average_line(self, trials):
+        """
+        Average the path of 2 or more AsteriskTrialObjects
         """
 
-        # initializing
-        self.pose_average = []
-        self.pose_sd = []
+        # collect the asterisktrialdata objects
+        self.names = []  # if rerunning an average with same object, make sure these lists are empty
+        self.averaged_trials = []
+        for t_n in trials:
+            self.names.append(t_n.generate_name())
+            self.averaged_trials.append(t_n)
 
-        self.trial_translation = trials[0].trial_translation
-        self.trial_rotation = trials[0].trial_rotation
-        print(f"Averaging: {self.trial_translation}_{self.trial_rotation}")
+        # first take attributes of first asterisktrialdata object and take its attributes
+        trial = self.averaged_trials[0]
+        self.subject = trial.subject  # TODO: add more subjects, make this a list?
+        self.trial_translation = trial.trial_translation
+        self.trial_rotation = trial.trial_rotation
+        self.trial_num = trial.trial_num
 
-        # This is really clunky, but it's the easiest way to deal
-        # with the problem that the arrays have different sizes...
-        # n_max = max([len(t.target_indices) for t in trials])
-        n_max = max([len(t.translation_indices) for t in trials])
+        # TODO: investigate, if trial intersects x axis, trial line will stop there
+        self.target_line = trial.target_line
 
-        # make a bunch of empty Pose2D objects - this will be the average line
-        self.pose_average = [Pose2D() for _ in range(0, n_max)]
-        sd_dist = [0] * n_max
-        sd_theta = [0] * n_max
-        count = [0] * n_max
-        for t in trials:
-            # keep track of which trials were averaged here
-            self.names.append(t.generate_name())
-            self.averaged_trials.append(t)
+        # TODO: rotate the line so we can do everything based on the x axis?
+        # TODO: right now, will just focus on c direction, then expand to the rest. ONLY WORKS FOR C DIRECTION TESTS!!!
 
-            # obj_poses = t.get_pose2d()
-            obj_poses = t._get_pose_array()
+        avg_line = pd.DataFrame()
+        avg_std = pd.DataFrame()
 
-            for j, index in enumerate(t.translation_indices):  # TODO: do we use rotation indices or don't care?
-                print(f"{index} {obj_poses[0, index]} {obj_poses[1, index]}")
-                self.pose_average[j].x += obj_poses[0, index]  # TODO: translate t.obj_poses to ... (what is it?)
-                self.pose_average[j].y += obj_poses[1, index]
-                self.pose_average[j].theta += obj_poses[2, index]
-                count[j] += 1
+        # now we go through averaging
+        for t in self.target_line:
+            t_x = t[0]
+            points = self.get_points(t_x, 0.1)
+            averaged_point = points.mean(axis=0)  # averages each column in DataFrame
+            std_point = points.std(axis=0)
+            avg_line = avg_line.append(averaged_point, ignore_index=True)
+            avg_std = avg_std.append(std_point, ignore_index=True)
 
-        # Average
-        for i, c in enumerate(count):
-            self.pose_average[i].x /= c
-            self.pose_average[i].y /= c
-            self.pose_average[i].theta /= c
-            count[i] = 0
+        self.poses = avg_line
+        self.pose_sd = avg_std
 
-        # SD - do theta separately from distance to centerline
-        for t in trials:
-            # obj_poses = t.get_pose2d()
-            obj_poses = t._get_pose_array()
+        # now filter and run fd
+        self.moving_average()
+        # self.translation_fd, self.rotation_fd = self.calc_frechet_distance()  # TODO: broken, investigate!
 
-            for j, index in enumerate(t.translation_indices):
-                p = obj_poses[:, index]
-                dx = self.pose_average[j].x - p[0]  # TODO: translate t.obj_poses to ... (what is it?)
-                dy = self.pose_average[j].y - p[1]
-                dist = sqrt(dx * dx + dy * dy)
-                dt = abs(self.pose_average[j].theta - p[2])
-                sd_theta[j] += dt
-                sd_dist[j] += dist
-                count[j] += 1
+        return avg_line
 
-        # Normalize SD
-        last_valid_i = 0
-        for i, p in enumerate(self.pose_average):
-            if count[i] > 1:
-                self.pose_sd.append((sd_dist[i] / (count[i] - 1), sd_theta[i] / (count[i] - 1)))
-                last_valid_i = i
-            else:
-                self.pose_sd.append(self.pose_sd[last_valid_i])
 
-        # no return, just use the object itself
+test1 = AsteriskTrialData('sub1_2v2_c_n_1.csv')
+test2 = AsteriskTrialData('sub1_2v2_c_n_2.csv')
+test3 = AsteriskTrialData('sub1_2v2_c_n_3.csv')
+
+lines = [test1, test2, test3]
+
+avgln = AveragedTrial()
+avgln.make_average_line(lines)
+
+# make a comparison plot!
+import matplotlib.pyplot as plt
+plt.plot(test1.poses['x'], test1.poses['y'], label="test1")
+plt.plot(test2.poses['x'], test2.poses['y'], label="test2")
+plt.plot(test3.poses['x'], test3.poses['y'], label="test3")
+plt.plot(avgln.poses['x'], avgln.poses['y'], label="avg")
+plt.plot(avgln.poses['f_x'], avgln.poses['f_y'], label="f_avg")
+plt.legend()
+plt.show()
