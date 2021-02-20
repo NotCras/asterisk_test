@@ -60,22 +60,19 @@ class AsteriskTrialData:
         self.target_line = None  # the straight path in the direction that this trial is
         self.target_rotation = None
 
+        self.total_distance = None
+        self.dist_along_translation = None
+        self.dist_along_twist = None
+
         if file_name:
-            self.target_line = self.generate_target_line()  # generates the above values
+            self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
             self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
         # frechet distance variables
         self.translation_fd = None
-        self.translation_indices = None
-        self.translation_target_index = None
-
         self.rotation_fd = None
-        self.rotation_indices = None
-        self.rotation_target_index = None
 
-        self.total_distance = None
-        self.dist_along_translation = None
-        self.dist_along_twist = None
+        self.translation_indices = None
 
         if file_name and do_fd:
             self.translation_fd, self.rotation_fd = self.calc_frechet_distance()
@@ -310,21 +307,21 @@ class AsteriskTrialData:
         x_vals, y_vals = 0, 0
 
         if self.trial_translation == "a":
-            x_vals, y_vals = aplt.get_a()
+            x_vals, y_vals = aplt.get_a(n_samples)
         elif self.trial_translation == "b":
-            x_vals, y_vals = aplt.get_b()
+            x_vals, y_vals = aplt.get_b(n_samples)
         elif self.trial_translation == "c":
-            x_vals, y_vals = aplt.get_c()
+            x_vals, y_vals = aplt.get_c(n_samples)
         elif self.trial_translation == "d":
-            x_vals, y_vals = aplt.get_d()
+            x_vals, y_vals = aplt.get_d(n_samples)
         elif self.trial_translation == "e":
-            x_vals, y_vals = aplt.get_e()
+            x_vals, y_vals = aplt.get_e(n_samples)
         elif self.trial_translation == "f":
-            x_vals, y_vals = aplt.get_f()
+            x_vals, y_vals = aplt.get_f(n_samples)
         elif self.trial_translation == "g":
-            x_vals, y_vals = aplt.get_g()
+            x_vals, y_vals = aplt.get_g(n_samples)
         elif self.trial_translation == "h":
-            x_vals, y_vals = aplt.get_h()
+            x_vals, y_vals = aplt.get_h(n_samples)
         elif self.trial_translation == "n":
             x_vals, y_vals = 0, 0  # want to rotate around center point
 
@@ -333,16 +330,17 @@ class AsteriskTrialData:
         # get last object pose and use it for determining how far target line should go
         last_obj_pose = self.poses.tail(1).to_numpy()[0]
 
-        # TODO: investigate, if trial intersects x axis and keeps going, trial line will stop there
         target_line_length = AsteriskCalculations.narrow_target(last_obj_pose, target_line)
 
-        # pdb.set_trace()
         if target_line_length:
+            distance_travelled = target_line[target_line_length+1]
             final_target_ln = target_line[:target_line_length]
         else:
+            # TODO: ends up registering a small translation for no translation tasks...
+            distance_travelled = target_line[1]
             final_target_ln = target_line[:1]
 
-        return final_target_ln
+        return final_target_ln, distance_travelled[0]
 
     def generate_target_rot(self, n_samples=50):
         """
