@@ -45,7 +45,7 @@ class AsteriskHandData:
         Goes through data and compiles data with set attributes into an AsteriskTrial objects
         """
         gathered_data = list()
-        for s in subjects:  # TODO: subjects is a list, make a type recommendation
+        for s in subjects:  # TODO: subjects is a list, make a type recommendation?
             for n in trials:
                 try:
                     asterisk_trial_file = f"{s}_{self.hand.get_name()}_{translation_label}_{rotation_label}_{n}.csv"
@@ -64,7 +64,7 @@ class AsteriskHandData:
     def _get_ast_batch(self, subject_to_run, trial_number=None):  # TODO: rename this function, be more specific
         """
         Picks out the specific subject and trial number from data.
-        :param subject_to_run specify the subject you want
+        :param subject_to_run specify the subject you want, in list form! Doesn't matter if only one
         :param trial_number specify the number trial you want, if None then it will return all trials for a specific subject
         """
         dfs = []
@@ -85,7 +85,7 @@ class AsteriskHandData:
                     # TODO: throw an exception in case there isn't the trial that we want
 
                 else:  # otherwise, grab trial as long as it has the right subject
-                    if t.subject == subject_to_run:
+                    if t.subject == subject_to_run or t.subject in subject_to_run:
                         dfs.append(t)
 
             # print("    ")
@@ -107,14 +107,20 @@ class AsteriskHandData:
 
         return dfs
 
-    def _average_data(self, trials):  # TODO: still need to get this working
+    def _average_dir(self, t, r, subject=None):  # TODO: still need to get this working
         """
         Averages a set of asterisk_trial paths. We run this on groups of paths of the same direction.
-        :param trials list of asterisk_trial objects to average
+        :param t, r indicate which you want to
         :return returns averaged path
         """
+        # get batches of data by trial type
+        if subject:
+            trials = self._get_ast_dir(t, subject, r)
+        else: # if no subjects given, defaults to all subjects
+            trials = self._get_ast_dir(t, self.subjects_containing, r)
+
         average = AveragedTrial()  # maybe this goes into a new AsteriskAverage class, just like Cindy
-        average.average_lines(trials)
+        average.make_average_line(trials)
         return average
 
     def filter_data(self, window_size=15):
@@ -137,23 +143,21 @@ class AsteriskHandData:
                 t.save_data()
                 # print(f"Saved: {t.generate_name()}")
 
-    def _make_plot(self, dfs):
+    def _make_plot(self, dfs, filtered=True, stds=False):
         colors = ["tab:blue", "tab:purple", "tab:red", "tab:olive",
                   "tab:cyan", "tab:green", "tab:pink", "tab:orange"]
 
         # plot data
         for i, df in enumerate(dfs):
-            data_x, data_y, theta = df.get_poses()
-
-            # data_x = pd.Series.to_list(df["f_x"])  # saving for reference, just in case for later
-            # data_y = pd.Series.to_list(df["f_y"])
-            # theta = pd.Series.to_list(df["f_rot_mag"])
-
+            data_x, data_y, theta = df.get_poses(filtered)
             plt.plot(data_x, data_y, color=colors[i], label='trajectory')
 
-            # plot data points separately to show angle error with marker size
-            for n in range(len(data_x)):
-                plt.plot(data_x[n], data_y[n], color=colors[i], alpha=0.5, markersize=10 * theta[n])
+            if stds:
+                self._plot_sds(df)
+
+            # # plot data points separately to show angle error with marker size # TODO: doesn't work
+            # for n in range(len(data_x)):
+            #     plt.plot(data_x[n], data_y[n], color=colors[i], alpha=0.5, markersize=10 * theta[n])
 
         # plot target lines as dotted lines
         self.plot_all_target_lines(colors)
@@ -162,12 +166,53 @@ class AsteriskHandData:
 
         return plt
 
+    def _plot_sds(self, avg_trial, filtered=False):
+        """
+        plot the standard deviations as a confidence interval around the averaged line
+        """
+        data_x, data_y, data_t = avg_trial.get_poses(filtered)  # TODO: a bunch of nan's at the end of the arrays?
+        sd_x, sd_y, sd_t = avg_trial.get_poses_sd()
+
+        # it depends on what direction it is
+        if avg_trial.trial_translation in ["a", "e"]:
+            # up and down
+            # ty to https://stackoverflow.com/questions/14050824/add-sum-of-values-of-two-lists-into-new-list
+            conf_up = [x + y for x, y in zip(data_x, sd_x)]
+            conf_down = [x - y for x, y in zip(data_x, sd_x)]
+
+            # TODO: figure out correct setup later, it has something to do with the funky confidence intervals
+            plt.fill_between(data_x,
+                             conf_up,
+                             conf_down,
+                             alpha=0.5)
+
+        elif avg_trial.trial_translation in ["c", "g"]:
+            # right and left
+            conf_up = [x + y for x, y in zip(data_y, sd_y)]  # know this is correct
+            conf_down = [x - y for x, y in zip(data_y, sd_y)]
+
+            plt.fill_between(data_x,
+                             conf_up,
+                             conf_down,
+                             alpha=0.5)
+
+        else:
+            # its a diagonal
+            # TODO: figure out correct setup later, it has something to do with the funky confidence intervals
+            conf_up = [x + y for x, y in zip(data_y, sd_y)]
+            conf_down = [x - y for x, y in zip(data_y, sd_y)]
+
+            plt.fill_between(data_x,
+                             conf_up,
+                             conf_down,
+                             alpha=0.5)
+
     def plot_data_subset(self, subject_to_run, trial_number="1", show_plot=True, save_plot=False):
         """
         Plots a subset of the data, as specified in parameters
         """
 
-        dfs = self._get_ast_batch(subject_to_run, trial_number)  # TODO: make this work for the hand data object
+        dfs = self._get_ast_batch([subject_to_run], trial_number)  # TODO: make this work for the hand data object
 
         plt = self._make_plot(dfs)
         plt.title(f"Plot: {subject_to_run}_{self.hand.get_name()}, set #{trial_number}")
@@ -181,49 +226,30 @@ class AsteriskHandData:
             print("Figure saved.")
             print(" ")
 
-    def plot_data_1subject(self, subject_to_run, show_plot=True, save_plot=False):
+    def plot_avg_data(self, subjects_to_run=None, r="n", show_plot=True, save_plot=False):
         """
         Plots the data from one subject, averaging all of the data in each direction
         """
         dfs = []
         dfs_sd = []  # TODO: add standard deviation to plot later
-        for dir in ["a", "b", "c", "d", "e", "f", "g", "h"]:  # TODO: make more elegant later
-            data = self._get_ast_dir(dir, subject_to_run)  # TODO: make this work for the hand data object
-            avg = self._average_data(data)
+        for t in ["a", "b", "c", "d", "e", "f", "g", "h"]:
+            avg = self._average_dir(t, r, subjects_to_run)
             dfs.append(avg)
 
-        plt = self._make_plot(dfs)
-        plt.title(f"Plot: {subject_to_run}, {self.hand.get_name()}")
+        plt = self._make_plot(dfs, filtered=False, stds=True)
+        if subjects_to_run:
+            plt.title(f"{subjects_to_run}, {self.hand.get_name()}")
+        else:
+            plt.title(f"Averaged {self.hand.get_name()}")
 
         if show_plot:
             plt.show()
 
         if save_plot:
-            plt.savefig(f"pics/avgplot4_{subject_to_run}_{self.hand.get_name()}.jpg", format='jpg')
-            # name -> tuple: subj, hand  names
-            print("Figure saved.")
-            print(" ")
-
-    def plot_data(self, show_plot=True, save_plot=False):
-        """
-        Plots all the data contained in object, averaging data in each direction across all subjects
-        """
-
-        dfs = []
-        # for each direction, average all the data
-        for trials in self.data.values():
-            avg = self._average_data(trials)
-            dfs.append(avg)  # TODO: appending AsteriskCalculations object, not AsteriskTrialData object, need to fix
-
-        plt = self._make_plot(dfs)
-
-        plt.title(f"Plot: Averaged {self.hand.get_name()} data")
-
-        if show_plot:
-            plt.show()
-
-        if save_plot:
-            plt.savefig(f"pics/avgplot4_{self.hand.get_name()}.jpg", format='jpg')
+            if subjects_to_run:
+                plt.savefig(f"pics/avgplot4_{subjects_to_run}_{self.hand.get_name()}.jpg", format='jpg')
+            else:
+                plt.savefig(f"pics/avgplot4_{self.hand.get_name()}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
@@ -243,3 +269,11 @@ class AsteriskHandData:
 
         for i in range(8):
             plt.plot(ideal_xs[i], ideal_ys[i], color=order_of_colors[i], label='ideal', linestyle='--')
+
+
+if __name__ == '__main__':
+    h = AsteriskHandData(["sub1", "sub2"], "2v2")
+    h.filter_data()
+    h.plot_avg_data()
+
+

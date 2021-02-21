@@ -13,7 +13,6 @@ from scipy import stats
 
 class AsteriskTrialData:
     def __init__(self, file_name=None, do_fd=True):
-        # TODO: make it so that I can also make an empty AsteriskTrial object or from some data
         """
         Class to represent a single asterisk test trial.
         :param file_name - name of the file that you want to import data from
@@ -36,7 +35,6 @@ class AsteriskTrialData:
         :attribute dist_along_translation - float
         :attribute dist_along_twist - float
         """
-        print(file_name)
         if file_name:
             s, h, t, r, e = file_name.split("_")
             n, _ = e.split(".")
@@ -45,14 +43,18 @@ class AsteriskTrialData:
             # Data will not be filtered in this step
             data = self._read_file(file_name)
             self.poses = data[["x", "y", "rmag"]]
+
         else:
             s, t, r, n = None, None, None, None
             self.hand = None
 
         self.subject = s
         self.trial_translation = t
-        self.trial_rotation = r
+        self.trial_rotation = r  # TODO: still failing on cw and ccw trials with out of bounds error. Investigate
         self.trial_num = n
+
+        if file_name:
+            print(self.generate_name())
 
         self.filtered = False
         self.window_size = 0

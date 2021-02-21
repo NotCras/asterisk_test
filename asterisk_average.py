@@ -14,27 +14,11 @@ class AveragedTrial(AsteriskTrialData):
     def __init__(self):
         super(AveragedTrial, self).__init__()  # makes an empty AsteriskTrialData object
 
+        self.subject = []
         self.names = []  # names of trials averaged
         self.averaged_trials = []  # actual AsteriskTrialData objects that were averaged
         # self.pose_average = []  # maybe just use poses
-        self.pose_sd = []
-
-    # def get_poses(self):
-    #     """
-    #     Separates poses into x, y, theta for easy plotting.
-    #     :param: filt_flag Gives option to return filtered or unfiltered data
-    #     """
-    #     # get the poses
-    #     x_data = []
-    #     y_data = []
-    #     theta_data = []
-    #
-    #     for pose in self.poses:
-    #         x_data.append(pose.x)
-    #         y_data.append(pose.y)
-    #         theta_data.append(pose.theta)
-    #
-    #     return x_data, y_data, theta_data
+        self.pose_sd = None
 
     def get_poses_sd(self):
         """
@@ -42,39 +26,30 @@ class AveragedTrial(AsteriskTrialData):
         :param: filt_flag Gives option to return filtered or unfiltered data
         """
         # get the poses
-        x_data = []
-        y_data = []
-        theta_data = []
+        x = self.pose_sd["x"]
+        y = self.pose_sd["y"]
+        twist = self.pose_sd["rmag"]
 
-        for pose in self.pose_sd:
-            x_data.append(pose.x)
-            y_data.append(pose.y)
-            theta_data.append(pose.theta)
+        return_x = pd.Series.to_list(x)
+        return_y = pd.Series.to_list(y)
+        return_twist = pd.Series.to_list(twist)
 
-        return x_data, y_data, theta_data
+        return return_x, return_y, return_twist
 
-    def get_points(self, points, x_val, bounds):
+    def _get_points(self, points, x_val, bounds):
         """
         Function which gets all the points that fall in a specific value range
         """
-        # data_points = pd.DataFrame()  # makes an empty dataframe
         hi_val = x_val + bounds
         lo_val = x_val - bounds
 
-        print(f"t_pose: {x_val} +/- {bounds}")
-
-        # for t in self.averaged_trials:
-        #     data_points = data_points.append(t.poses)
+        #print(f"t_pose: {x_val} +/- {bounds}")
 
         points_in_bounds = points[(points['x'] > lo_val) & (points['x'] < hi_val)]
 
-        # print("selected datapoints")
-        # print(points_in_bounds)
-        # print("   ")
-
         return points_in_bounds
 
-    def rotate_points(self, points, ang):
+    def _rotate_points(self, points, ang):
         """
         rotate points so they are horizontal
         points is a dataframe with 'x', 'y', 'rmag' columns
@@ -111,16 +86,15 @@ class AveragedTrial(AsteriskTrialData):
         self.trial_num = trial.trial_num
         self.target_line = trial.target_line
 
-
         # get all the data
         data_points = pd.DataFrame()  # makes an empty dataframe
         for t in self.averaged_trials:
             data_points = data_points.append(t.poses)
 
-        #rotate the line so we can do everything based on the x axis
+        # rotate the line so we can do everything based on the x axis
         r_target_x, r_target_y = AsteriskPlotting.get_c(100)
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
-        rotated_data = self.rotate_points(data_points, self.rotations[self.trial_translation])
+        rotated_data = self._rotate_points(data_points, self.rotations[self.trial_translation])
 
         avg_line = pd.DataFrame()
         avg_std = pd.DataFrame()
@@ -128,7 +102,7 @@ class AveragedTrial(AsteriskTrialData):
         # now we go through averaging
         for t in rotated_target_line:
             t_x = t[0]
-            points = self.get_points(rotated_data, t_x, 0.05)
+            points = self._get_points(rotated_data, t_x, 0.05)
             # TODO: 0.05 is arbitrary... make bounds scale with resolution of target_line?
             averaged_point = points.mean(axis=0)  # averages each column in DataFrame
             std_point = points.std(axis=0)
@@ -136,17 +110,17 @@ class AveragedTrial(AsteriskTrialData):
             avg_std = avg_std.append(std_point, ignore_index=True)
 
         # rotate everything back
-        correct_avg = self.rotate_points(avg_line, -1 * self.rotations[self.trial_translation])
-        correct_std = self.rotate_points(avg_std, -1 * self.rotations[self.trial_translation])
+        correct_avg = self._rotate_points(avg_line, -1 * self.rotations[self.trial_translation])
+        correct_std = self._rotate_points(avg_std, -1 * self.rotations[self.trial_translation])
 
         self.poses = correct_avg
-        self.pose_sd = correct_std
+        self.pose_sd = correct_std  # TODO: std confidence intervals don't seem to match up well, need to investigate
 
-        # TODO: Need to add rotation averaging as well
+        print(f"Averaged: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
 
         # now filter and run fd
         self.moving_average()
-        # self.translation_fd, self.rotation_fd = self.calc_frechet_distance()  # TODO: broken, investigate!
+        # self.translation_fd, self.rotation_fd = self.calc_frechet_distance()  # TODO: broken for avg, investigate!
 
         return correct_avg
 
