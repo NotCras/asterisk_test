@@ -125,8 +125,9 @@ class AsteriskHandData:
 
     def calc_avgs(self):
         """
-        calculate a store all averages
+        calculate and store all averages
         """
+        pass
 
     def filter_data(self, window_size=15):
         """
@@ -273,10 +274,17 @@ class AsteriskHandData:
             print("Figure saved.")
             print(" ")
 
+    def plot_fd_subset(self, subject_to_run, trial_number="1", show_plot=True, save_plot=False):
+        """
+        plots a subset of data
+        """
+        pass
+
     def plot_avg_fd(self, subjects_to_run=None, r="n", show_plot=True, save_plot=False):
         """
-        plots averaged fd values
+        plots averaged fd values in a bar chart
         """
+        pass
 
     def plot_all_target_lines(self, order_of_colors):
         x_a, y_a = aplt.get_a()
