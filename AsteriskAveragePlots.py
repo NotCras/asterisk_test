@@ -68,11 +68,13 @@ def plot_average_translation(asterisk_avg: AsteriskAverage):
         except IndexError:
             next_x = asterisk_avg.pose_average[i].x
             next_y = asterisk_avg.pose_average[i].y
+
         dx = next_x - prev_x
         dy = next_y - prev_y
         dlen = sqrt(dx * dx + dy * dy)
         vx = asterisk_avg.pose_sd[i][0] * -dy / dlen
         vy = asterisk_avg.pose_sd[i][0] * dx / dlen
+
         if dlen < 1e-10:
             vec_offset.append((-dy, dx))
         else:

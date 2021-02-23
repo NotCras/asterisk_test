@@ -191,6 +191,7 @@ class AsteriskTrialData:
         Runs a moving average on the pose data. Saves moving average data into new columns with f_ prefix.
         Overwrites previous moving average calculations.
         """
+        # TODO: makes a bunch of nan values at end of unfiltered data, need to fix
         self.poses["f_x"] = self.poses["x"].rolling(
             window=window_size, min_periods=1).mean()
         self.poses["f_y"] = self.poses["y"].rolling(
@@ -218,6 +219,7 @@ class AsteriskTrialData:
         Separates poses into x, y, theta for easy plotting.
         :param: filt_flag Gives option to return filtered or unfiltered data
         """
+
         if self.filtered and filt_flag:
             x = self.poses["f_x"]
             y = self.poses["f_y"]
@@ -227,9 +229,9 @@ class AsteriskTrialData:
             y = self.poses["y"]
             twist = self.poses["rmag"]
 
-        return_x = pd.Series.to_list(x)
-        return_y = pd.Series.to_list(y)
-        return_twist = pd.Series.to_list(twist)
+        return_x = pd.Series.to_list(x.dropna())
+        return_y = pd.Series.to_list(y.dropna())
+        return_twist = pd.Series.to_list(twist.dropna())
 
         return return_x, return_y, return_twist
 

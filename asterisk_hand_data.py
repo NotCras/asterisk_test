@@ -123,6 +123,11 @@ class AsteriskHandData:
         average.make_average_line(trials)
         return average
 
+    def calc_avgs(self):
+        """
+        calculate a store all averages
+        """
+
     def filter_data(self, window_size=15):
         """
         Runs moving average on data stored inside object
@@ -153,7 +158,7 @@ class AsteriskHandData:
             plt.plot(data_x, data_y, color=colors[i], label='trajectory')
 
             if stds:
-                self._plot_sds(df)
+                self._plot_sds(df, colors[i])
 
             # # plot data points separately to show angle error with marker size # TODO: doesn't work
             # for n in range(len(data_x)):
@@ -166,46 +171,61 @@ class AsteriskHandData:
 
         return plt
 
-    def _plot_sds(self, avg_trial, filtered=False):
+    def _plot_sds(self, avg_trial, color, filtered=False):
         """
         plot the standard deviations as a confidence interval around the averaged line
         """
-        data_x, data_y, data_t = avg_trial.get_poses(filtered)  # TODO: a bunch of nan's at the end of the arrays?
+        data_x, data_y, data_t = avg_trial.get_poses(filtered)
         sd_x, sd_y, sd_t = avg_trial.get_poses_sd()
 
-        # it depends on what direction it is
-        if avg_trial.trial_translation in ["a", "e"]:
-            # up and down
-            # ty to https://stackoverflow.com/questions/14050824/add-sum-of-values-of-two-lists-into-new-list
-            conf_up = [x + y for x, y in zip(data_x, sd_x)]
-            conf_down = [x - y for x, y in zip(data_x, sd_x)]
+        # necessary for building the polygon
+        r_x = list(reversed(data_x))
+        r_y = list(reversed(data_y))
+        r_sx = list(reversed(sd_x))
+        r_sy = list(reversed(sd_y))
 
-            # TODO: figure out correct setup later, it has something to do with the funky confidence intervals
-            plt.fill_between(data_x,
-                             conf_up,
-                             conf_down,
-                             alpha=0.5)
+        poly = []
+        for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
+            pt = [dx + sx, dy + sy]
+            poly.append(pt)
 
-        elif avg_trial.trial_translation in ["c", "g"]:
-            # right and left
-            conf_up = [x + y for x, y in zip(data_y, sd_y)]  # know this is correct
-            conf_down = [x - y for x, y in zip(data_y, sd_y)]
+        for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
+            pt = [dx - sx, dy - sy]
+            poly.append(pt)
 
-            plt.fill_between(data_x,
-                             conf_up,
-                             conf_down,
-                             alpha=0.5)
+        # TODO: figure out correct setup later, it has something to do with the funky confidence intervals
+        # if avg_trial.trial_translation in ["c", "g"]:
+        #     for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
+        #         pt = [dx + sx, dy + sy]
+        #         poly.append(pt)
+        #
+        #     for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
+        #     #for a, v in zip(reversed(asterisk_avg.pose_average), reversed(vec_offset)):
+        #         pt = [dx - sx, dy - sy]
+        #         poly.append(pt)
+        #
+        # elif avg_trial.trial_translation in ["a", "e"]:
+        #     for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
+        #         pt = [dx + sy, dy]
+        #         poly.append(pt)
+        #
+        #     for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
+        #         # for a, v in zip(reversed(asterisk_avg.pose_average), reversed(vec_offset)):
+        #         pt = [dx - sy, dy]
+        #         poly.append(pt)
+        #
+        # else:
+        #     for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
+        #         pt = [dx + sy, dy + sx]
+        #         poly.append(pt)
+        #
+        #     for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
+        #         # for a, v in zip(reversed(asterisk_avg.pose_average), reversed(vec_offset)):
+        #         pt = [dx - sy, dy - sx]
+        #         poly.append(pt)
 
-        else:
-            # its a diagonal
-            # TODO: figure out correct setup later, it has something to do with the funky confidence intervals
-            conf_up = [x + y for x, y in zip(data_y, sd_y)]
-            conf_down = [x - y for x, y in zip(data_y, sd_y)]
-
-            plt.fill_between(data_x,
-                             conf_up,
-                             conf_down,
-                             alpha=0.5)
+        polyg = plt.Polygon(poly, color=color, alpha=0.4)
+        plt.gca().add_patch(polyg)
 
     def plot_data_subset(self, subject_to_run, trial_number="1", show_plot=True, save_plot=False):
         """
@@ -231,7 +251,6 @@ class AsteriskHandData:
         Plots the data from one subject, averaging all of the data in each direction
         """
         dfs = []
-        dfs_sd = []  # TODO: add standard deviation to plot later
         for t in ["a", "b", "c", "d", "e", "f", "g", "h"]:
             avg = self._average_dir(t, r, subjects_to_run)
             dfs.append(avg)
@@ -253,6 +272,11 @@ class AsteriskHandData:
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
+
+    def plot_avg_fd(self, subjects_to_run=None, r="n", show_plot=True, save_plot=False):
+        """
+        plots averaged fd values
+        """
 
     def plot_all_target_lines(self, order_of_colors):
         x_a, y_a = aplt.get_a()

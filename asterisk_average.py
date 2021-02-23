@@ -30,9 +30,9 @@ class AveragedTrial(AsteriskTrialData):
         y = self.pose_sd["y"]
         twist = self.pose_sd["rmag"]
 
-        return_x = pd.Series.to_list(x)
-        return_y = pd.Series.to_list(y)
-        return_twist = pd.Series.to_list(twist)
+        return_x = pd.Series.to_list(x.dropna())
+        return_y = pd.Series.to_list(y.dropna())
+        return_twist = pd.Series.to_list(twist.dropna())
 
         return return_x, return_y, return_twist
 
