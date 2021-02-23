@@ -258,21 +258,21 @@ class AsteriskHandData:
 
         plt = self._make_plot(dfs, filtered=False, stds=True)
         if subjects_to_run:
-            plt.title(f"{subjects_to_run}, {self.hand.get_name()}")
+            plt.title(f"{subjects_to_run}, {self.hand.get_name()}, {r}")
         else:
-            plt.title(f"Averaged {self.hand.get_name()}")
-
-        if show_plot:
-            plt.show()
+            plt.title(f"Averaged {self.hand.get_name()}, {r}")
 
         if save_plot:
             if subjects_to_run:
-                plt.savefig(f"pics/avgplot4_{subjects_to_run}_{self.hand.get_name()}.jpg", format='jpg')
+                plt.savefig(f"pics/avgplot4_{subjects_to_run}_{r}_{self.hand.get_name()}.jpg", format='jpg')
             else:
-                plt.savefig(f"pics/avgplot4_{self.hand.get_name()}.jpg", format='jpg')
+                plt.savefig(f"pics/avgplot4_all_{r}_{self.hand.get_name()}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
+
+        if show_plot:
+            plt.show()
 
     def plot_fd_subset(self, subject_to_run, trial_number="1", show_plot=True, save_plot=False):
         """
@@ -306,6 +306,28 @@ class AsteriskHandData:
 if __name__ == '__main__':
     h = AsteriskHandData(["sub1", "sub2"], "2v2")
     h.filter_data()
-    h.plot_avg_data()
+
+    # subject 1 averages
+    h.plot_avg_data(subjects_to_run="sub1", r="n", show_plot=False, save_plot=True)
+    plt.clf()
+    h.plot_avg_data(subjects_to_run="sub1", r="m15", show_plot=False, save_plot=True)
+    plt.clf()
+    h.plot_avg_data(subjects_to_run="sub1", r="p15", show_plot=False, save_plot=True)
+    plt.clf()
+
+    # subject 2 averages
+    h.plot_avg_data(subjects_to_run="sub2", r="n", show_plot=False, save_plot=True)
+    plt.clf()
+    h.plot_avg_data(subjects_to_run="sub2", r="m15", show_plot=False, save_plot=True)
+    plt.clf()
+    h.plot_avg_data(subjects_to_run="sub2", r="p15", show_plot=False, save_plot=True)
+    plt.clf()
+
+    # all subjects
+    h.plot_avg_data(subjects_to_run=None, r="p15", show_plot=False, save_plot=True)
+    plt.clf()
+    h.plot_avg_data(subjects_to_run=None, r="m15", show_plot=False, save_plot=True)
+    plt.clf()
+    h.plot_avg_data(subjects_to_run=None, r="n", show_plot=True, save_plot=True)
 
 
