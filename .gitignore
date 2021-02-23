@@ -7,4 +7,6 @@ __pycache__/
 *.png
 *.jpg
 *.jpeg
+*.tar.gz
+*.tar
 .idea/
