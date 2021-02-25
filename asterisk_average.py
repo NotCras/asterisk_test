@@ -124,6 +124,78 @@ class AveragedTrial(AsteriskTrialData):
 
         return correct_avg
 
+    def avg_debug_plot(self):
+        """
+        Plots one specific average together with all the data that was averaged for sanity checking.
+        """
+        # avgln = AveragedTrial()  # old from when this was in asterisk_hand_data
+        # avgln.make_average_line(self.averaged)
+
+        # plot the trials
+        for i, t in enumerate(self.averaged_trials):
+            # TODO: make it not use poses later
+            plt.plot(t.poses['x'], t.poses['y'], label=f"trial {i}", alpha=0.2, color="xkcd:blue grey")
+
+        # plot average
+        plt.plot(self.poses['x'], self.poses['y'], label="avg", color="xkcd:burnt orange")
+        self.plot_sd("xkcd:burnt orange")
+
+    def plot_sd(self, color, filtered=False):
+        """
+        plot the standard deviations as a confidence interval around the averaged line
+        """
+        data_x, data_y, data_t = self.get_poses(filtered)
+        sd_x, sd_y, sd_t = self.get_poses_sd()
+
+        # necessary for building the polygon
+        r_x = list(reversed(data_x))
+        r_y = list(reversed(data_y))
+        r_sx = list(reversed(sd_x))
+        r_sy = list(reversed(sd_y))
+
+        poly = []
+        for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
+            pt = [dx + sx, dy + sy]
+            poly.append(pt)
+
+        for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
+            pt = [dx - sx, dy - sy]
+            poly.append(pt)
+
+        # TODO: figure out correct setup later, it has something to do with the funky confidence intervals
+        # if avg_trial.trial_translation in ["c", "g"]:
+        #     for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
+        #         pt = [dx + sx, dy + sy]
+        #         poly.append(pt)
+        #
+        #     for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
+        #     #for a, v in zip(reversed(asterisk_avg.pose_average), reversed(vec_offset)):
+        #         pt = [dx - sx, dy - sy]
+        #         poly.append(pt)
+        #
+        # elif avg_trial.trial_translation in ["a", "e"]:
+        #     for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
+        #         pt = [dx + sy, dy]
+        #         poly.append(pt)
+        #
+        #     for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
+        #         # for a, v in zip(reversed(asterisk_avg.pose_average), reversed(vec_offset)):
+        #         pt = [dx - sy, dy]
+        #         poly.append(pt)
+        #
+        # else:
+        #     for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
+        #         pt = [dx + sy, dy + sx]
+        #         poly.append(pt)
+        #
+        #     for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
+        #         # for a, v in zip(reversed(asterisk_avg.pose_average), reversed(vec_offset)):
+        #         pt = [dx - sy, dy - sx]
+        #         poly.append(pt)
+
+        polyg = plt.Polygon(poly, color=color, alpha=0.4)
+        plt.gca().add_patch(polyg)
+
 
 if __name__ == '__main__':
     # demo and test

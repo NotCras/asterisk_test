@@ -25,6 +25,7 @@ class AsteriskHandData:
         self.data = self._gather_hand_data(subjects)
         self.filtered = False
         self.window_size = None
+        self.averages = []
 
     def _gather_hand_data(self, subjects_to_get):
         """
@@ -116,18 +117,30 @@ class AsteriskHandData:
         # get batches of data by trial type
         if subject:
             trials = self._get_ast_dir(t, subject, r)
-        else: # if no subjects given, defaults to all subjects
+        else:  # if no subjects given, defaults to all subjects
             trials = self._get_ast_dir(t, self.subjects_containing, r)
 
         average = AveragedTrial()  # maybe this goes into a new AsteriskAverage class, just like Cindy
         average.make_average_line(trials)
         return average
 
-    def calc_avgs(self):
+    def calc_all_avgs(self, subjects_to_run=None):
         """
         calculate and store all averages
         """
-        pass
+        dfs = []
+
+        if subjects_to_run:
+            pass
+        else:  # if no subjects given, defaults to all subjects
+            subjects_to_run = self.subjects_containing
+
+        for t, r in datamanager.generate_t_r_pairs(self.hand.get_name()):
+            avg = self._average_dir(t, r, subjects_to_run)
+            dfs.append(avg)
+
+        self.averages = dfs
+        return dfs
 
     def filter_data(self, window_size=15):
         """
@@ -149,84 +162,32 @@ class AsteriskHandData:
                 t.save_data()
                 # print(f"Saved: {t.generate_name()}")
 
-    def _make_plot(self, dfs, filtered=True, stds=False):
+    def _make_plot(self, trials, filtered=True, stds=False):
+        """
+        Function to make our plots.
+        :param trials either a list of AsteriskTrialData or AsteriskAverage objs
+        """
         colors = ["tab:blue", "tab:purple", "tab:red", "tab:olive",
                   "tab:cyan", "tab:green", "tab:pink", "tab:orange"]
 
         # plot data
-        for i, df in enumerate(dfs):
-            data_x, data_y, theta = df.get_poses(filtered)
+        for i, t in enumerate(trials):
+            data_x, data_y, theta = t.get_poses(filtered)
             plt.plot(data_x, data_y, color=colors[i], label='trajectory')
 
             if stds:
-                self._plot_sds(df, colors[i])
+                t.plot_sd(colors[i])
 
-            # # plot data points separately to show angle error with marker size # TODO: doesn't work
+            # # plot data points separately to show angle error with marker size # TODO: doesn't work, not sure why
             # for n in range(len(data_x)):
             #     plt.plot(data_x[n], data_y[n], color=colors[i], alpha=0.5, markersize=10 * theta[n])
 
         # plot target lines as dotted lines
-        self.plot_all_target_lines(colors)
-        plt.xticks(np.linspace(-0.5, 0.5, 11), rotation=30)
-        plt.yticks(np.linspace(-0.5, 0.5, 11))
+        self.plot_all_target_lines(colors)  # TODO: maybe break out as a parameter?
+        plt.xticks(np.linspace(-0.6, 0.6, 11), rotation=30)
+        plt.yticks(np.linspace(-0.6, 0.6, 11))
 
         return plt
-
-    def _plot_sds(self, avg_trial, color, filtered=False):
-        """
-        plot the standard deviations as a confidence interval around the averaged line
-        """
-        data_x, data_y, data_t = avg_trial.get_poses(filtered)
-        sd_x, sd_y, sd_t = avg_trial.get_poses_sd()
-
-        # necessary for building the polygon
-        r_x = list(reversed(data_x))
-        r_y = list(reversed(data_y))
-        r_sx = list(reversed(sd_x))
-        r_sy = list(reversed(sd_y))
-
-        poly = []
-        for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
-            pt = [dx + sx, dy + sy]
-            poly.append(pt)
-
-        for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
-            pt = [dx - sx, dy - sy]
-            poly.append(pt)
-
-        # TODO: figure out correct setup later, it has something to do with the funky confidence intervals
-        # if avg_trial.trial_translation in ["c", "g"]:
-        #     for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
-        #         pt = [dx + sx, dy + sy]
-        #         poly.append(pt)
-        #
-        #     for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
-        #     #for a, v in zip(reversed(asterisk_avg.pose_average), reversed(vec_offset)):
-        #         pt = [dx - sx, dy - sy]
-        #         poly.append(pt)
-        #
-        # elif avg_trial.trial_translation in ["a", "e"]:
-        #     for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
-        #         pt = [dx + sy, dy]
-        #         poly.append(pt)
-        #
-        #     for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
-        #         # for a, v in zip(reversed(asterisk_avg.pose_average), reversed(vec_offset)):
-        #         pt = [dx - sy, dy]
-        #         poly.append(pt)
-        #
-        # else:
-        #     for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
-        #         pt = [dx + sy, dy + sx]
-        #         poly.append(pt)
-        #
-        #     for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
-        #         # for a, v in zip(reversed(asterisk_avg.pose_average), reversed(vec_offset)):
-        #         pt = [dx - sy, dy - sx]
-        #         poly.append(pt)
-
-        polyg = plt.Polygon(poly, color=color, alpha=0.4)
-        plt.gca().add_patch(polyg)
 
     def plot_data_subset(self, subject_to_run, trial_number="1", show_plot=True, save_plot=False):
         """
@@ -251,12 +212,13 @@ class AsteriskHandData:
         """
         Plots the data from one subject, averaging all of the data in each direction
         """
-        dfs = []
-        for t in ["a", "b", "c", "d", "e", "f", "g", "h"]:
-            avg = self._average_dir(t, r, subjects_to_run)
-            dfs.append(avg)
+        # dfs = []
+        # for t in ["a", "b", "c", "d", "e", "f", "g", "h"]:
+        #     avg = self._average_dir(t, r, subjects_to_run)
+        #     dfs.append(avg)
+        avgs = self.calc_all_avgs()
 
-        plt = self._make_plot(dfs, filtered=False, stds=True)
+        plt = self._make_plot(avgs, filtered=False, stds=True)
         if subjects_to_run:
             plt.title(f"{subjects_to_run}, {self.hand.get_name()}, {r}")
         else:
@@ -273,6 +235,12 @@ class AsteriskHandData:
 
         if show_plot:
             plt.show()
+
+    def plot_orientation_error(self):
+        """
+        line plot of orientation error throughout a trial
+        """
+        pass
 
     def plot_fd_subset(self, subject_to_run, trial_number="1", show_plot=True, save_plot=False):
         """
