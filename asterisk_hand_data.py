@@ -124,7 +124,7 @@ class AsteriskHandData:
         average.make_average_line(trials)
         return average
 
-    def calc_all_avgs(self, subjects_to_run=None):
+    def calc_all_avgs(self, subjects_to_run=None, rot=None):
         """
         calculate and store all averages
         """
@@ -135,9 +135,14 @@ class AsteriskHandData:
         else:  # if no subjects given, defaults to all subjects
             subjects_to_run = self.subjects_containing
 
-        for t, r in datamanager.generate_t_r_pairs(self.hand.get_name()):
-            avg = self._average_dir(t, r, subjects_to_run)
-            dfs.append(avg)
+        if rot:
+            for t in ["a", "b", "c", "d", "e", "f", "g", "h"]:
+                avg = self._average_dir(t, rot, subjects_to_run)
+                dfs.append(avg)
+        else:
+            for t, r in datamanager.generate_t_r_pairs(self.hand.get_name()):
+                avg = self._average_dir(t, r, subjects_to_run)
+                dfs.append(avg)
 
         self.averages = dfs
         return dfs
@@ -242,10 +247,25 @@ class AsteriskHandData:
         """
         pass
 
-    def plot_fd_subset(self, subject_to_run, trial_number="1", show_plot=True, save_plot=False):
+    def plot_fd_set(self, subject_to_run, trial_number="1", show_plot=True, save_plot=False):
         """
         plots a subset of data
         """
+        trials = self._get_ast_batch(subject_to_run)
+        # dirs = ["a", "b", "c", "d", "e", "f", "g", "h"]  # TODO: add cw and ccw later
+
+        for i, t in enumerate(trials):
+            # plot the fd values for that direction
+            # TODO: currently only for "n", but that's a limitation of _get_ast_batch right now
+            trial_label = f"{t.trial_translation}_{t.trial_rotation}"
+            t_fd = t.translation_fd
+            r_fd = t.rotation_fd
+
+            plt.bar(i, t_fd, trial_label)
+
+            # TODO: finish this
+
+
         pass
 
     def plot_avg_fd(self, subjects_to_run=None, r="n", show_plot=True, save_plot=False):

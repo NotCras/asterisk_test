@@ -128,9 +128,7 @@ class AveragedTrial(AsteriskTrialData):
         """
         Plots one specific average together with all the data that was averaged for sanity checking.
         """
-        # avgln = AveragedTrial()  # old from when this was in asterisk_hand_data
-        # avgln.make_average_line(self.averaged)
-
+        # TODO: show all target line points on plot, and show at least one averaging interval
         # plot the trials
         for i, t in enumerate(self.averaged_trials):
             # TODO: make it not use poses later
