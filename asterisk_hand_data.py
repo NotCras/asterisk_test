@@ -62,7 +62,7 @@ class AsteriskHandData:
 
         return gathered_data
 
-    def _get_ast_batch(self, subject_to_run, trial_number=None):  # TODO: rename this function, be more specific
+    def _get_ast_batch(self, subject_to_run, trial_number=None, r="n"):  # TODO: rename this function, be more specific
         """
         Picks out the specific subject and trial number from data.
         :param subject_to_run specify the subject you want, in list form! Doesn't matter if only one
@@ -72,7 +72,7 @@ class AsteriskHandData:
         translations = ["a", "b", "c", "d", "e", "f", "g", "h"]
 
         for dir in translations:
-            dict_key = f"{dir}_n"
+            dict_key = f"{dir}_{r}"
             trials = self.data[dict_key]
             print(f"For {subject_to_run} and {trial_number}: {dir}")
 
@@ -124,7 +124,7 @@ class AsteriskHandData:
         average.make_average_line(trials)
         return average
 
-    def calc_all_avgs(self, subjects_to_run=None, rot=None):
+    def calc_avg_ast(self, subjects_to_run=None, rot=None):
         """
         calculate and store all averages
         """
@@ -194,6 +194,20 @@ class AsteriskHandData:
 
         return plt
 
+    def _make_fd_plot(self, trials):
+        """
+        make a bar plot with fd values for each direction
+        """
+        for i, t in enumerate(trials):
+            # plot the fd values for that direction
+            trial_label = f"{t.trial_translation}_{t.trial_rotation}"
+            t_fd = t.translation_fd
+            r_fd = t.rotation_fd  # TODO: don't do anything with r_fd
+
+            plt.bar(i, t_fd, trial_label)
+
+        return plt
+
     def plot_data_subset(self, subject_to_run, trial_number="1", show_plot=True, save_plot=False):
         """
         Plots a subset of the data, as specified in parameters
@@ -221,7 +235,8 @@ class AsteriskHandData:
         # for t in ["a", "b", "c", "d", "e", "f", "g", "h"]:
         #     avg = self._average_dir(t, r, subjects_to_run)
         #     dfs.append(avg)
-        avgs = self.calc_all_avgs()
+
+        avgs = self.calc_avg_ast(subjects_to_run, r)
 
         plt = self._make_plot(avgs, filtered=False, stds=True)
         if subjects_to_run:
@@ -241,38 +256,75 @@ class AsteriskHandData:
         if show_plot:
             plt.show()
 
-    def plot_orientation_error(self):
+    def plot_orientation_error(self, direction_label, subject, rotation_label="n", incl_avg = False):
         """
-        line plot of orientation error throughout a trial
+        line plot of orientation error throughout a trial for a specific direction
         """
-        pass
+        trials = self._get_ast_dir(direction_label, subject, rotation_label)
 
-    def plot_fd_set(self, subject_to_run, trial_number="1", show_plot=True, save_plot=False):
+        # if self.averages and incl_avg:
+        #     for a in self.averages:
+        #         if a.trial_translation==direction_label and a.trial_rotation==rotation_label:  # TODO: also get subjects
+        #             trials.append(a)
+
+        for t in trials:
+            rot_err = t.calc_rot_err()
+            # t_x, _ = aplt.get_direction(t.trial_translation)
+            x, _, _ = t.get_poses()
+            plt.plt(x, rot_err, label=f"{t.subject}, trial {t.trial_num}")
+
+
+
+    def plot_fd_set(self, subject_to_run, trial_number="1", r="n", show_plot=True, save_plot=False):
         """
         plots a subset of data
         """
-        trials = self._get_ast_batch(subject_to_run)
+        trials = self._get_ast_batch(subject_to_run, trial_number, r)
         # dirs = ["a", "b", "c", "d", "e", "f", "g", "h"]  # TODO: add cw and ccw later
 
-        for i, t in enumerate(trials):
-            # plot the fd values for that direction
-            # TODO: currently only for "n", but that's a limitation of _get_ast_batch right now
-            trial_label = f"{t.trial_translation}_{t.trial_rotation}"
-            t_fd = t.translation_fd
-            r_fd = t.rotation_fd
+        plt = self._make_fd_plot(trials)
+        if subject_to_run:
+            plt.title(f"FD {subject_to_run}, {self.hand.get_name()}, {r}")
+        else:
+            plt.title(f"Frechet Distance {self.hand.get_name()}, {r}")
 
-            plt.bar(i, t_fd, trial_label)
+        if save_plot:
+            if subject_to_run:
+                plt.savefig(f"pics/fdplot4_{subject_to_run}_{r}_{self.hand.get_name()}.jpg", format='jpg')
+            else:
+                plt.savefig(f"pics/fdplot4_all_{r}_{self.hand.get_name()}.jpg", format='jpg')
+            # name -> tuple: subj, hand  names
+            print("Figure saved.")
+            print(" ")
 
-            # TODO: finish this
+        if show_plot:
+            plt.show()
 
-
-        pass
 
     def plot_avg_fd(self, subjects_to_run=None, r="n", show_plot=True, save_plot=False):
         """
         plots averaged fd values in a bar chart
         """
-        pass
+        trials = self.averages
+        # dirs = ["a", "b", "c", "d", "e", "f", "g", "h"]  # TODO: add cw and ccw later
+
+        plt = self._make_fd_plot(trials)
+        if subjects_to_run:
+            plt.title(f"Avg FD {subjects_to_run}, {self.hand.get_name()}, {r}")
+        else:
+            plt.title(f"Avg FD {self.hand.get_name()}, {r}")
+
+        if save_plot:
+            if subjects_to_run:
+                plt.savefig(f"pics/fdavgplot4_{subjects_to_run}_{r}_{self.hand.get_name()}.jpg", format='jpg')
+            else:
+                plt.savefig(f"pics/fdavgplot4_all_{r}_{self.hand.get_name()}.jpg", format='jpg')
+            # name -> tuple: subj, hand  names
+            print("Figure saved.")
+            print(" ")
+
+        if show_plot:
+            plt.show()
 
     def plot_all_target_lines(self, order_of_colors):
         x_a, y_a = aplt.get_a()

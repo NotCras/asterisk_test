@@ -136,6 +136,17 @@ class AsteriskTrialData:
         inlier_df = self._remove_outliers(df, ["x", "y", "rmag"])
         return inlier_df.round(4)
 
+    def is_trial(self, s, h, t, r, n):
+        """
+        a function that returns whether this
+        """
+        # TODO: make with *args instead, that way we can specify as much as we want to
+        if s==self.subject and h==self.hand.get_name() \
+                and t==self.trial_translation and r==self.trial_rotation and n==self.trial_num:
+            return True
+        else:
+            return False
+
     def generate_name(self):
         """
         Generates the codified name of the trial
@@ -308,26 +319,7 @@ class AsteriskTrialData:
         Using object trajectory (self.poses), build a line to compare to for frechet distance.
         Updates this attribute on object.
         """
-        x_vals, y_vals = 0, 0
-
-        if self.trial_translation == "a":
-            x_vals, y_vals = aplt.get_a(n_samples)
-        elif self.trial_translation == "b":
-            x_vals, y_vals = aplt.get_b(n_samples)
-        elif self.trial_translation == "c":
-            x_vals, y_vals = aplt.get_c(n_samples)
-        elif self.trial_translation == "d":
-            x_vals, y_vals = aplt.get_d(n_samples)
-        elif self.trial_translation == "e":
-            x_vals, y_vals = aplt.get_e(n_samples)
-        elif self.trial_translation == "f":
-            x_vals, y_vals = aplt.get_f(n_samples)
-        elif self.trial_translation == "g":
-            x_vals, y_vals = aplt.get_g(n_samples)
-        elif self.trial_translation == "h":
-            x_vals, y_vals = aplt.get_h(n_samples)
-        elif self.trial_translation == "n":
-            x_vals, y_vals = 0, 0  # want to rotate around center point
+        x_vals, y_vals = aplt.get_direction(self.trial_translation)
 
         target_line = np.column_stack((x_vals, y_vals))
 
@@ -373,6 +365,21 @@ class AsteriskTrialData:
             target_rot = np.zeros(1)
 
         return target_rot
+
+    def calc_rot_err(self, filt_flag=True):
+        """
+        calculate and return the error in rotation for every data point
+        """
+
+        if self.filtered and filt_flag:
+            rots = self.poses["f_rmag"]
+        else:
+            rots = self.poses["rmag"]
+
+        # subtract desired rotation
+        rots = rots - self.target_rotation
+
+        return pd.Series.to_list(rots)
 
     def calc_frechet_distance(self):
         """

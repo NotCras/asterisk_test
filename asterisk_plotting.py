@@ -86,3 +86,30 @@ class AsteriskPlotting:
     def get_h(num_points=25):
         x_coords, y_coords = AsteriskPlotting.diagonal(num_points, mod1=-1)
         return x_coords, y_coords
+
+    @staticmethod
+    def get_direction(translation_label, n_samples=100):
+        """
+        return the appropriate x and y coordinates for any direction
+        """
+        x_vals, y_vals = 0, 0
+        if translation_label == "a":
+            x_vals, y_vals = AsteriskPlotting.get_a(n_samples)
+        elif translation_label == "b":
+            x_vals, y_vals = AsteriskPlotting.get_b(n_samples)
+        elif translation_label == "c":
+            x_vals, y_vals = AsteriskPlotting.get_c(n_samples)
+        elif translation_label == "d":
+            x_vals, y_vals = AsteriskPlotting.get_d(n_samples)
+        elif translation_label == "e":
+            x_vals, y_vals = AsteriskPlotting.get_e(n_samples)
+        elif translation_label == "f":
+            x_vals, y_vals = AsteriskPlotting.get_f(n_samples)
+        elif translation_label == "g":
+            x_vals, y_vals = AsteriskPlotting.get_g(n_samples)
+        elif translation_label == "h":
+            x_vals, y_vals = AsteriskPlotting.get_h(n_samples)
+        elif translation_label == "n":
+            x_vals, y_vals = 0, 0  # want to rotate around center point
+
+        return x_vals, y_vals
