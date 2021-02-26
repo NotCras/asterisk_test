@@ -47,7 +47,6 @@ class AsteriskCalculations:
         :param pose1
         :param pose2
         &#34;&#34;&#34;
-        # pdb.set_trace()
         return sqrt((pose1[0] - pose2[0]) ** 2 + (pose1[1] - pose2[1]) ** 2)
 
     @staticmethod
@@ -68,95 +67,7 @@ class AsteriskCalculations:
         dists_targets = [AsteriskCalculations.t_distance(obj_pose, p) for p in target_poses]
         i_target = dists_targets.index(min(dists_targets))
 
-        return i_target
-
-    @staticmethod
-    def frechet_dist(poses_obj, i_target, target_poses, scl_ratio=(0.5, 0.5)) -&gt; (int, float):
-        &#34;&#34;&#34; Implement Frechet distance
-        :param poses_obj all the object poses np.array
-        :param i_target the closest point in target_poses
-        :param target_poses [Pose2D];
-        :param scl_ratio - how much to scale distance and rotation error by
-        :returns max of the min distance between target_poses and obj_poses &#34;&#34;&#34;
-
-        # Length of target curve
-        n_target = min(i_target + 1, len(target_poses))
-        # Length of object path
-        n_object_path = poses_obj.shape[1]
-
-        # Matrix to store data in as we calculate Frechet distance
-        # Entry i,j has the cost of pairing i with j, assuming best pairings up to that point
-        ca = np.zeros((n_target, n_object_path), dtype=np.float64)
-        ds = np.zeros((n_target, n_object_path), dtype=np.float64)
-        dsum = np.zeros((n_target, n_object_path), dtype=np.float64)
-        imatch = np.zeros((n_target, n_object_path), dtype=np.int)
-
-        print(&#34;Frechet debug: target {0}, n {1}&#34;.format(i_target, n_object_path))
-
-        # Top left corner
-        ca[0, 0] = target_poses[0].distance(Pose2D(poses_obj[0, 0], poses_obj[1, 0], poses_obj[2, 0]), scl_ratio)
-        ds[0, 0] = ca[0, 0]
-        dsum[0, 0] = ds[0, 0]
-        imatch[0, 0] = 0  # Match the first target pose to the first object pose
-        target_index = [i for i in range(0, n_target)]
-
-        # Fill in left column ...
-        for i_t in range(1, n_target):
-            ds[i_t, 0] = target_poses[i_t].distance(Pose2D(poses_obj[0, 0], poses_obj[1, 0], poses_obj[2, 0]),
-                                                    scl_ratio)
-            ca[i_t, 0] = max(ca[i_t - 1, 0], ds[i_t, 0])
-            dsum[i_t, 0] = dsum[i_t - 1, 0] + ds[i_t, 0]
-            imatch[i_t, 0] = 0  # Match the ith target pose to the first object pose
-
-        # ... and top row
-        for i_p in range(1, n_object_path):
-            ds[0, i_p] = target_poses[0].distance(Pose2D(poses_obj[0, i_p], poses_obj[1, i_p], poses_obj[2, i_p]),
-                                                  scl_ratio)
-            ca[0, i_p] = max(ca[0, i_p - 1], ds[0, i_p])
-            if ds[0, i_p] &lt; dsum[0, i_p - 1]:
-                imatch[0, i_p] = i_p  # Match the first target pose to this object pose
-                dsum[0, i_p] = ds[0, i_p]
-            else:
-                imatch[0, i_p] = imatch[0, i_p - 1]  # Match to an earlier pose
-                dsum[0, i_p] = dsum[0, i_p - 1]
-
-        # Remaining matrix
-        for i_t in range(1, n_target):
-            tp = target_poses[i_t]
-            for i_p in range(1, n_object_path):
-                ds[i_t, i_p] = tp.distance(Pose2D(poses_obj[0, i_p], poses_obj[1, i_p], poses_obj[2, i_p]), scl_ratio)
-                ca[i_t, i_p] = max(min(ca[i_t - 1, i_p],
-                                       ca[i_t - 1, i_p - 1],
-                                       ca[i_t, i_p - 1]),
-                                   ds[i_t, i_p])
-                # Compare using this match with the best match upper row so far
-                # to best match found so far
-                if ds[i_t, i_p] + dsum[i_t - 1, i_p] &lt; dsum[i_t, i_p - 1]:
-                    imatch[i_t, i_p] = i_p
-                    dsum[i_t, i_p] = ds[i_t, i_p] + dsum[i_t - 1, i_p]
-                else:
-                    dsum[i_t, i_p] = dsum[i_t, i_p - 1]  # Keep the old match
-                    imatch[i_t, i_p] = imatch[i_t, i_p - 1]
-
-        # initialize with minimum value match - allows backtracking
-        target_index = []
-        v_min = np.amin(ds, axis=1)
-        for r in range(0, n_target):
-            indx = np.where(ds[r, :] == v_min[r])
-            target_index.append(indx[0][0])
-
-        b_is_ok = True
-        for i in range(0, n_target - 1):
-            if target_index[i + 1] &lt; target_index[i]:
-                b_is_ok = False
-                print(&#34;Frechet: Found array not sorted&#34;)
-
-        # Could just do this, but leaving be for a moment to ensure working
-        if b_is_ok == False:
-            for i_t in range(0, n_target):
-                target_index[i_t] = imatch[i_t, n_object_path - 1]
-
-        return ca[n_target - 1, n_object_path - 1], target_index</code></pre>
+        return i_target</code></pre>
 </details>
 </section>
 <section>
@@ -195,7 +106,6 @@ Deals primarily in Pose2D due to legacy code</p></div>
         :param pose1
         :param pose2
         &#34;&#34;&#34;
-        # pdb.set_trace()
         return sqrt((pose1[0] - pose2[0]) ** 2 + (pose1[1] - pose2[1]) ** 2)
 
     @staticmethod
@@ -216,201 +126,10 @@ Deals primarily in Pose2D due to legacy code</p></div>
         dists_targets = [AsteriskCalculations.t_distance(obj_pose, p) for p in target_poses]
         i_target = dists_targets.index(min(dists_targets))
 
-        return i_target
-
-    @staticmethod
-    def frechet_dist(poses_obj, i_target, target_poses, scl_ratio=(0.5, 0.5)) -&gt; (int, float):
-        &#34;&#34;&#34; Implement Frechet distance
-        :param poses_obj all the object poses np.array
-        :param i_target the closest point in target_poses
-        :param target_poses [Pose2D];
-        :param scl_ratio - how much to scale distance and rotation error by
-        :returns max of the min distance between target_poses and obj_poses &#34;&#34;&#34;
-
-        # Length of target curve
-        n_target = min(i_target + 1, len(target_poses))
-        # Length of object path
-        n_object_path = poses_obj.shape[1]
-
-        # Matrix to store data in as we calculate Frechet distance
-        # Entry i,j has the cost of pairing i with j, assuming best pairings up to that point
-        ca = np.zeros((n_target, n_object_path), dtype=np.float64)
-        ds = np.zeros((n_target, n_object_path), dtype=np.float64)
-        dsum = np.zeros((n_target, n_object_path), dtype=np.float64)
-        imatch = np.zeros((n_target, n_object_path), dtype=np.int)
-
-        print(&#34;Frechet debug: target {0}, n {1}&#34;.format(i_target, n_object_path))
-
-        # Top left corner
-        ca[0, 0] = target_poses[0].distance(Pose2D(poses_obj[0, 0], poses_obj[1, 0], poses_obj[2, 0]), scl_ratio)
-        ds[0, 0] = ca[0, 0]
-        dsum[0, 0] = ds[0, 0]
-        imatch[0, 0] = 0  # Match the first target pose to the first object pose
-        target_index = [i for i in range(0, n_target)]
-
-        # Fill in left column ...
-        for i_t in range(1, n_target):
-            ds[i_t, 0] = target_poses[i_t].distance(Pose2D(poses_obj[0, 0], poses_obj[1, 0], poses_obj[2, 0]),
-                                                    scl_ratio)
-            ca[i_t, 0] = max(ca[i_t - 1, 0], ds[i_t, 0])
-            dsum[i_t, 0] = dsum[i_t - 1, 0] + ds[i_t, 0]
-            imatch[i_t, 0] = 0  # Match the ith target pose to the first object pose
-
-        # ... and top row
-        for i_p in range(1, n_object_path):
-            ds[0, i_p] = target_poses[0].distance(Pose2D(poses_obj[0, i_p], poses_obj[1, i_p], poses_obj[2, i_p]),
-                                                  scl_ratio)
-            ca[0, i_p] = max(ca[0, i_p - 1], ds[0, i_p])
-            if ds[0, i_p] &lt; dsum[0, i_p - 1]:
-                imatch[0, i_p] = i_p  # Match the first target pose to this object pose
-                dsum[0, i_p] = ds[0, i_p]
-            else:
-                imatch[0, i_p] = imatch[0, i_p - 1]  # Match to an earlier pose
-                dsum[0, i_p] = dsum[0, i_p - 1]
-
-        # Remaining matrix
-        for i_t in range(1, n_target):
-            tp = target_poses[i_t]
-            for i_p in range(1, n_object_path):
-                ds[i_t, i_p] = tp.distance(Pose2D(poses_obj[0, i_p], poses_obj[1, i_p], poses_obj[2, i_p]), scl_ratio)
-                ca[i_t, i_p] = max(min(ca[i_t - 1, i_p],
-                                       ca[i_t - 1, i_p - 1],
-                                       ca[i_t, i_p - 1]),
-                                   ds[i_t, i_p])
-                # Compare using this match with the best match upper row so far
-                # to best match found so far
-                if ds[i_t, i_p] + dsum[i_t - 1, i_p] &lt; dsum[i_t, i_p - 1]:
-                    imatch[i_t, i_p] = i_p
-                    dsum[i_t, i_p] = ds[i_t, i_p] + dsum[i_t - 1, i_p]
-                else:
-                    dsum[i_t, i_p] = dsum[i_t, i_p - 1]  # Keep the old match
-                    imatch[i_t, i_p] = imatch[i_t, i_p - 1]
-
-        # initialize with minimum value match - allows backtracking
-        target_index = []
-        v_min = np.amin(ds, axis=1)
-        for r in range(0, n_target):
-            indx = np.where(ds[r, :] == v_min[r])
-            target_index.append(indx[0][0])
-
-        b_is_ok = True
-        for i in range(0, n_target - 1):
-            if target_index[i + 1] &lt; target_index[i]:
-                b_is_ok = False
-                print(&#34;Frechet: Found array not sorted&#34;)
-
-        # Could just do this, but leaving be for a moment to ensure working
-        if b_is_ok == False:
-            for i_t in range(0, n_target):
-                target_index[i_t] = imatch[i_t, n_object_path - 1]
-
-        return ca[n_target - 1, n_object_path - 1], target_index</code></pre>
+        return i_target</code></pre>
 </details>
 <h3>Static methods</h3>
 <dl>
-<dt id="asterisk_test.asterisk_calculations.AsteriskCalculations.frechet_dist"><code class="name flex">
-<span>def <span class="ident">frechet_dist</span></span>(<span>poses_obj, i_target, target_poses, scl_ratio=(0.5, 0.5)) ‑> (<class 'int'>, <class 'float'>)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Implement Frechet distance
-:param poses_obj all the object poses np.array
-:param i_target the closest point in target_poses
-:param target_poses [Pose2D];
-:param scl_ratio - how much to scale distance and rotation error by
-:returns max of the min distance between target_poses and obj_poses</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@staticmethod
-def frechet_dist(poses_obj, i_target, target_poses, scl_ratio=(0.5, 0.5)) -&gt; (int, float):
-    &#34;&#34;&#34; Implement Frechet distance
-    :param poses_obj all the object poses np.array
-    :param i_target the closest point in target_poses
-    :param target_poses [Pose2D];
-    :param scl_ratio - how much to scale distance and rotation error by
-    :returns max of the min distance between target_poses and obj_poses &#34;&#34;&#34;
-
-    # Length of target curve
-    n_target = min(i_target + 1, len(target_poses))
-    # Length of object path
-    n_object_path = poses_obj.shape[1]
-
-    # Matrix to store data in as we calculate Frechet distance
-    # Entry i,j has the cost of pairing i with j, assuming best pairings up to that point
-    ca = np.zeros((n_target, n_object_path), dtype=np.float64)
-    ds = np.zeros((n_target, n_object_path), dtype=np.float64)
-    dsum = np.zeros((n_target, n_object_path), dtype=np.float64)
-    imatch = np.zeros((n_target, n_object_path), dtype=np.int)
-
-    print(&#34;Frechet debug: target {0}, n {1}&#34;.format(i_target, n_object_path))
-
-    # Top left corner
-    ca[0, 0] = target_poses[0].distance(Pose2D(poses_obj[0, 0], poses_obj[1, 0], poses_obj[2, 0]), scl_ratio)
-    ds[0, 0] = ca[0, 0]
-    dsum[0, 0] = ds[0, 0]
-    imatch[0, 0] = 0  # Match the first target pose to the first object pose
-    target_index = [i for i in range(0, n_target)]
-
-    # Fill in left column ...
-    for i_t in range(1, n_target):
-        ds[i_t, 0] = target_poses[i_t].distance(Pose2D(poses_obj[0, 0], poses_obj[1, 0], poses_obj[2, 0]),
-                                                scl_ratio)
-        ca[i_t, 0] = max(ca[i_t - 1, 0], ds[i_t, 0])
-        dsum[i_t, 0] = dsum[i_t - 1, 0] + ds[i_t, 0]
-        imatch[i_t, 0] = 0  # Match the ith target pose to the first object pose
-
-    # ... and top row
-    for i_p in range(1, n_object_path):
-        ds[0, i_p] = target_poses[0].distance(Pose2D(poses_obj[0, i_p], poses_obj[1, i_p], poses_obj[2, i_p]),
-                                              scl_ratio)
-        ca[0, i_p] = max(ca[0, i_p - 1], ds[0, i_p])
-        if ds[0, i_p] &lt; dsum[0, i_p - 1]:
-            imatch[0, i_p] = i_p  # Match the first target pose to this object pose
-            dsum[0, i_p] = ds[0, i_p]
-        else:
-            imatch[0, i_p] = imatch[0, i_p - 1]  # Match to an earlier pose
-            dsum[0, i_p] = dsum[0, i_p - 1]
-
-    # Remaining matrix
-    for i_t in range(1, n_target):
-        tp = target_poses[i_t]
-        for i_p in range(1, n_object_path):
-            ds[i_t, i_p] = tp.distance(Pose2D(poses_obj[0, i_p], poses_obj[1, i_p], poses_obj[2, i_p]), scl_ratio)
-            ca[i_t, i_p] = max(min(ca[i_t - 1, i_p],
-                                   ca[i_t - 1, i_p - 1],
-                                   ca[i_t, i_p - 1]),
-                               ds[i_t, i_p])
-            # Compare using this match with the best match upper row so far
-            # to best match found so far
-            if ds[i_t, i_p] + dsum[i_t - 1, i_p] &lt; dsum[i_t, i_p - 1]:
-                imatch[i_t, i_p] = i_p
-                dsum[i_t, i_p] = ds[i_t, i_p] + dsum[i_t - 1, i_p]
-            else:
-                dsum[i_t, i_p] = dsum[i_t, i_p - 1]  # Keep the old match
-                imatch[i_t, i_p] = imatch[i_t, i_p - 1]
-
-    # initialize with minimum value match - allows backtracking
-    target_index = []
-    v_min = np.amin(ds, axis=1)
-    for r in range(0, n_target):
-        indx = np.where(ds[r, :] == v_min[r])
-        target_index.append(indx[0][0])
-
-    b_is_ok = True
-    for i in range(0, n_target - 1):
-        if target_index[i + 1] &lt; target_index[i]:
-            b_is_ok = False
-            print(&#34;Frechet: Found array not sorted&#34;)
-
-    # Could just do this, but leaving be for a moment to ensure working
-    if b_is_ok == False:
-        for i_t in range(0, n_target):
-            target_index[i_t] = imatch[i_t, n_object_path - 1]
-
-    return ca[n_target - 1, n_object_path - 1], target_index</code></pre>
-</details>
-</dd>
 <dt id="asterisk_test.asterisk_calculations.AsteriskCalculations.narrow_target"><code class="name flex">
 <span>def <span class="ident">narrow_target</span></span>(<span>obj_pose, target_poses, scl_ratio=(0.5, 0.5)) ‑> int</span>
 </code></dt>
@@ -472,7 +191,6 @@ def t_distance(pose1, pose2):
     :param pose1
     :param pose2
     &#34;&#34;&#34;
-    # pdb.set_trace()
     return sqrt((pose1[0] - pose2[0]) ** 2 + (pose1[1] - pose2[1]) ** 2)</code></pre>
 </details>
 </dd>
@@ -497,7 +215,6 @@ def t_distance(pose1, pose2):
 <li>
 <h4><code><a title="asterisk_test.asterisk_calculations.AsteriskCalculations" href="#asterisk_test.asterisk_calculations.AsteriskCalculations">AsteriskCalculations</a></code></h4>
 <ul class="">
-<li><code><a title="asterisk_test.asterisk_calculations.AsteriskCalculations.frechet_dist" href="#asterisk_test.asterisk_calculations.AsteriskCalculations.frechet_dist">frechet_dist</a></code></li>
 <li><code><a title="asterisk_test.asterisk_calculations.AsteriskCalculations.narrow_target" href="#asterisk_test.asterisk_calculations.AsteriskCalculations.narrow_target">narrow_target</a></code></li>
 <li><code><a title="asterisk_test.asterisk_calculations.AsteriskCalculations.r_distance" href="#asterisk_test.asterisk_calculations.AsteriskCalculations.r_distance">r_distance</a></code></li>
 <li><code><a title="asterisk_test.asterisk_calculations.AsteriskCalculations.t_distance" href="#asterisk_test.asterisk_calculations.AsteriskCalculations.t_distance">t_distance</a></code></li>
