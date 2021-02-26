@@ -220,7 +220,7 @@ class AsteriskTrialData:
         Overwrites previous moving average calculations.
         :param window_size: size of moving average. Defaults to 15.
         """
-        # TODO: makes a bunch of nan values at end of unfiltered data, need to fix
+        # TODO: makes a bunch of nan values at end of data
         self.poses["f_x"] = self.poses["x"].rolling(
             window=window_size, min_periods=1).mean()
         self.poses["f_y"] = self.poses["y"].rolling(
