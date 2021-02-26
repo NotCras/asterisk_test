@@ -24,7 +24,6 @@ class AveragedTrial(AsteriskTrialData):
     def get_poses_sd(self):
         """
         Separates poses into x, y, theta for easy plotting.
-        :param: filt_flag Gives option to return filtered or unfiltered data
         """
         # get the poses
         x = self.pose_sd["x"]
@@ -40,6 +39,9 @@ class AveragedTrial(AsteriskTrialData):
     def _get_points(self, points, x_val, bounds):
         """
         Function which gets all the points that fall in a specific value range
+        :param points: list of all points to sort
+        :param x_val: x value to look around
+        :param bounds: bounds around x value to look around
         """
         hi_val = x_val + bounds
         lo_val = x_val - bounds
@@ -53,7 +55,8 @@ class AveragedTrial(AsteriskTrialData):
     def _rotate_points(self, points, ang):
         """
         rotate points so they are horizontal
-        points is a dataframe with 'x', 'y', 'rmag' columns
+        :param points: points is a dataframe with 'x', 'y', 'rmag' columns
+        :param ang: angle to rotate data
         """
         rad = radians(ang)
         rotated_line = pd.DataFrame(columns=['x', 'y', 'rmag'])
@@ -69,7 +72,9 @@ class AveragedTrial(AsteriskTrialData):
 
     def make_average_line(self, trials):
         """
-        Average the path of 2 or more AsteriskTrialObjects
+        Average the path of 2 or more AsteriskTrialObjects. Produces average and standard deviations.
+        Saves this data on the object itself.
+        :param trials: list of trials to average
         """
 
         # collect the asterisktrialdata objects
@@ -127,7 +132,9 @@ class AveragedTrial(AsteriskTrialData):
 
     def avg_debug_plot(self, show_plot=True, save_plot=False):
         """
-        Plots one specific average together with all the data that was averaged for sanity checking.
+        Plots one specific average together with all the data that was averaged for sanity checking the average.
+        :param show_plot: flag to show plot. Default is true
+        :param save_plot: flat to save plot as a file. Default is False
         """
         # TODO: show all target line points on plot, and show at least one averaging interval
         # plot the trials
@@ -150,11 +157,13 @@ class AveragedTrial(AsteriskTrialData):
             plt.legend()
             plt.show()
 
-    def plot_sd(self, color, filtered=False):
+    def plot_sd(self, color, use_filtered=False):
         """
         plot the standard deviations as a confidence interval around the averaged line
+        :param color: color for sd polygon, must be compatible with matplotlib.
+        :param use_filtered: enables option to use filtered or unfiltered data. Defaults to False
         """
-        data_x, data_y, data_t = self.get_poses(filtered)
+        data_x, data_y, data_t = self.get_poses(use_filtered)
         sd_x, sd_y, sd_t = self.get_poses_sd()
 
         # necessary for building the polygon

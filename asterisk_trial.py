@@ -15,25 +15,25 @@ class AsteriskTrialData:
     def __init__(self, file_name=None, do_fd=True):
         """
         Class to represent a single asterisk test trial.
-        :param file_name - name of the file that you want to import data from
+        :param file_name: - name of the file that you want to import data from
 
         Class contains:
-        :attribute hand - hand object with info for hand involved in the trial (see above)
-        :attribute subject_num - integer value for subject number
-        :attribute direction - single lettered descriptor for which direction the object travels in for this trial
-        :attribute trial_type - indicates one-step or two-step trial as a string (None, Plus15, Minus15)
-        :attribute trial_num - integer number of the trial 
+        :attribute hand: - hand object with info for hand involved in the trial (see above)
+        :attribute subject_num: - integer value for subject number
+        :attribute direction: - single lettered descriptor for which direction the object travels in for this trial
+        :attribute trial_type: - indicates one-step or two-step trial as a string (None, Plus15, Minus15)
+        :attribute trial_num: - integer number of the trial
 
-        :attribute poses - pandas dataframe containing the object's trajectory (as floats)
-        :attribute filtered - boolean that indicates whether trial has been filtered or not
-        :attribute ideal_poses - pandas dataframe containing the 'perfect trial' line that we will compare our trial to using Frechet Distance. 
+        :attribute poses: - pandas dataframe containing the object's trajectory (as floats)
+        :attribute filtered: - boolean that indicates whether trial has been filtered or not
+        :attribute ideal_poses: - pandas dataframe containing the 'perfect trial' line that we will compare our trial to using Frechet Distance.
         This 'perfect trial' line is a line that travels in the trial direction (with no deviations) to the max travel distance the 
         trial got to in the respective direction. This is denoted as the projection of the object trajectory on the direction
 
-        :attribute total_distance - float value
-        :attribute frechet_distance - float value
-        :attribute dist_along_translation - float
-        :attribute dist_along_twist - float
+        :attribute total_distance: - float value
+        :attribute frechet_distance: - float value
+        :attribute dist_along_translation: - float
+        :attribute dist_along_twist: - float
         """
         if file_name:
             s, h, t, r, e = file_name.split("_")
@@ -85,12 +85,15 @@ class AsteriskTrialData:
     def add_hand(self, hand_name):
         """
         If you didn't make the object with a file_name, a function to set hand in painless manner
+        :param hand_name: name of hand to make
         """
         self.hand = HandObj(hand_name)
 
     def _read_file(self, file_name, folder="csv/"):
         """
         Function to read file and save relevant data in the object
+        :param file_name: name of file to read in
+        :param folder: name of folder to read file from. Defaults csv folder
         """
         total_path = f"{folder}{file_name}"
         try:
@@ -101,9 +104,9 @@ class AsteriskTrialData:
             df = self._condition_df(df_temp)
 
         except Exception as e:  # TODO: add more specific except clauses
-            print(e)
+            # print(e)
             df = None
-            print(f"{total_path} has failed to read csv")
+            # print(f"{total_path} has failed to read csv")
         return df
 
     def _condition_df(self, df):
@@ -136,14 +139,25 @@ class AsteriskTrialData:
         inlier_df = self._remove_outliers(df, ["x", "y", "rmag"])
         return inlier_df.round(4)
 
-    def is_trial(self, s, h, t, r, n):
-        """
-        a function that returns whether this
+    def is_trial(self, subject_name, hand_name, translation_name, rotation_name, trial_num=None):
+        """  TODO: not tested yet
+        a function that returns whether this trial is equivalent to the parameters listed
+        :param subject_name: name of subject
+        :param hand_name: name of hand
+        :param translation_name: name of translation trial
+        :param rotation_name: name of rotation trial
+        :param trial_num: trial number, default parameter
         """
         # TODO: make with *args instead, that way we can specify as much as we want to
-        if s==self.subject and h==self.hand.get_name() \
-                and t==self.trial_translation and r==self.trial_rotation and n==self.trial_num:
-            return True
+        if subject_name == self.subject and hand_name == self.hand.get_name() \
+                and translation_name == self.trial_translation \
+                and rotation_name == self.trial_rotation:
+            if trial_num and trial_num == self.trial_num:
+                return True
+            elif trial_num:
+                return False
+            else:
+                return True
         else:
             return False
 
@@ -158,9 +172,10 @@ class AsteriskTrialData:
     def save_data(self, file_name_overwrite=None):
         """
         Saves pose data as a new csv file
+        :param file_name_overwrite: optional parameter, will save as generate_name unless a different name is specified
         """
         if file_name_overwrite:
-            new_file_name = file_name_overwrite
+            new_file_name = file_name_overwrite + ".csv"
         else:
             new_file_name = self.generate_name() + ".csv"
 
@@ -175,13 +190,15 @@ class AsteriskTrialData:
             self.poses.to_csv(new_file_name, index=True, columns=[
                 "x", "y", "rmag"])
 
-        print(f"CSV File generated with name: {new_file_name}")
+        # print(f"CSV File generated with name: {new_file_name}")
 
     def _remove_outliers(self, df_to_fix, columns):
         """
         Removes extreme outliers from data, in 99% quartile.
         Occasionally this happens in the aruco analyzed data and is a necessary function to run.
         These values completely mess up the moving average filter unless they are dealt with earlier.
+        :param df_to_fix: the dataframe to fix
+        :param columns: dataframe columns to remove outliers from
         """
         for col in columns:
             # see: https://stackoverflow.com/questions/23199796/detect-and-exclude-outliers-in-pandas-data-frame
@@ -201,6 +218,7 @@ class AsteriskTrialData:
         """
         Runs a moving average on the pose data. Saves moving average data into new columns with f_ prefix.
         Overwrites previous moving average calculations.
+        :param window_size: size of moving average. Defaults to 15.
         """
         # TODO: makes a bunch of nan values at end of unfiltered data, need to fix
         self.poses["f_x"] = self.poses["x"].rolling(
@@ -216,22 +234,22 @@ class AsteriskTrialData:
 
         # print("Moving average completed.")
 
-    def _get_pose_array(self, get_filtered=True):
+    def _get_pose_array(self, use_filtered=True):
         """
-        Returns the poses for this trial as np.array
+        Returns the poses for this trial as np.array. TODO: get rid of this function
+        :param: use_filtered: Gives option to return filtered or unfiltered data
         """
-        if self.filtered and get_filtered:
+        if self.filtered and use_filtered:
             return self.poses[["f_x", "f_y", "f_rmag"]].to_numpy()  # TODO: causes weird decimals, need a workaround
         else:
             return self.poses[["x", "y", "rmag"]].to_numpy()
 
-    def get_poses(self, filt_flag=True):
+    def get_poses(self, use_filtered=True):
         """
         Separates poses into x, y, theta for easy plotting.
-        :param: filt_flag Gives option to return filtered or unfiltered data
+        :param: use_filtered: Gives option to return filtered or unfiltered data
         """
-
-        if self.filtered and filt_flag:
+        if self.filtered and use_filtered:
             x = self.poses["f_x"]
             y = self.poses["f_y"]
             twist = self.poses["f_rmag"]
@@ -246,41 +264,38 @@ class AsteriskTrialData:
 
         return return_x, return_y, return_twist
 
-    def get_translations_array(self, filt_flag=True):
+    def get_translations_array(self, use_filtered=True):  # TODO: get rid of this
         """
         an attempt to get non-scientific notation in data. This is something from numpy.
         About issue, and actual fixes ::
         https://stackoverflow.com/questions/9777783/suppress-scientific-notation-in-numpy-when-creating-array-from-nested-list
+        :param: use_filtered: Gives option to return filtered or unfiltered data
         """
         arr = np.zeros([self.poses.shape[0], 2])
 
         for i, p in enumerate(self.poses.iterrows()):
-            if self.filtered and filt_flag:
+            if self.filtered and use_filtered:
                 x_val = p[1]["f_x"]
                 y_val = p[1]["f_y"]
             else:
                 x_val = p[1]["x"]
                 y_val = p[1]["y"]
 
-            # print(f"{i}:: {x_val} and {y_val}")
-
-            # arr.append([x_val, y_val])
             arr[i][0] = x_val
             arr[i][1] = y_val
-            # print(f"{arr[i]}")
-            # print("    ")
 
         return arr
 
-    def plot_trial(self, file_name=None):  # TODO: make it so that we can choose filtered or unfiltered data
+    def plot_trial(self, use_filtered=True, show_plot=True, save_plot=False):
         """
         Plot the poses in the trial, using marker size to denote the error in twist from the desired twist
+        :param: use_filtered Gives option to return filtered or unfiltered data
+        :param show_plot: flag to show plot. Default is true
+        :param save_plot: flat to save plot as a file. Default is False
         """
-        data_x, data_y, theta = self.get_poses()
+        data_x, data_y, theta = self.get_poses(use_filtered)
 
         plt.plot(data_x, data_y, color='tab:red', label='trajectory')
-
-        # plt.scatter(data_x, data_y, marker='o', color='red', alpha=0.5, s=5*theta)
 
         # plot data points separately to show angle error with marker size
         for n in range(len(data_x)):
@@ -293,31 +308,32 @@ class AsteriskTrialData:
         max_y = max(data_y)
         min_x = min(data_x)
 
-        # print(f"max_x: {max_x}, min_x: {min_x}, y: {max_y}")
-
         plt.xlabel('X')
         plt.ylabel('Y')
         plt.title('Path of Object')
-        # plt.grid()
 
+        # gives a realistic view of what the path looks like
         plt.xticks(np.linspace(aplt.round_half_down(min_x, decimals=2),
                                aplt.round_half_up(max_x, decimals=2), 10), rotation=30)
-        # gives a realistic view of what the path looks like
-        # plt.xticks(np.linspace(0, aplt.round_half_up(max_y, decimals=2), 10), rotation=30)
         plt.yticks(np.linspace(0, aplt.round_half_up(max_y, decimals=2), 10))
 
-        # plt.xlim(0., 0.5)
-        # plt.ylim(0., 0.5)
+        plt.title(f"Plot: {self.generate_name()}")
 
-        if file_name:
-            plt.savefig(f"plot_{file_name}.jpg", format='jpg')
+        if save_plot:
+            plt.savefig(f"pics/plot_{self.generate_name()}.jpg", format='jpg')
+            # name -> tuple: subj, hand  names
+            print("Figure saved.")
+            print(" ")
 
-        plt.show()
+        if show_plot:
+            plt.legend()
+            plt.show()
 
     def generate_target_line(self, n_samples=100):
         """
         Using object trajectory (self.poses), build a line to compare to for frechet distance.
         Updates this attribute on object.
+        :param n_samples: number of samples for target line. Defaults to 100
         """
         x_vals, y_vals = aplt.get_direction(self.trial_translation, n_samples)
 
@@ -341,9 +357,9 @@ class AsteriskTrialData:
     def generate_target_rot(self, n_samples=50):
         """
         get target rotation to compare to with fd
+        :param n_samples: number of samples for target line. TODO: Currently not used
         """
         if self.trial_rotation in ["cw", "ccw"]:
-            # TODO: we compute rotation magnitude, so no neg values... need to fix
             if self.filtered:
                 last_rot = self.poses.tail(1)["f_rmag"]
             else:
@@ -351,6 +367,7 @@ class AsteriskTrialData:
 
             target_rot = pd.Series.to_list(last_rot)
 
+        # TODO: we compute rotation magnitude, so no neg values ever show up, revisit how rotation is calc'd?
         # elif self.trial_rotation == "ccw":
         #     last_rot = self.poses.tail["rmag"]
         #     target_rot = np.array([-last_rot])
@@ -366,12 +383,13 @@ class AsteriskTrialData:
 
         return target_rot
 
-    def calc_rot_err(self, filt_flag=True):
+    def calc_rot_err(self, use_filtered=True):
         """
         calculate and return the error in rotation for every data point
+        :param: use_filtered: Gives option to return filtered or unfiltered data
         """
 
-        if self.filtered and filt_flag:
+        if self.filtered and use_filtered:
             rots = self.poses["f_rmag"]
         else:
             rots = self.poses["rmag"]
@@ -381,12 +399,12 @@ class AsteriskTrialData:
 
         return pd.Series.to_list(rots)
 
-    def calc_frechet_distance(self):
+    def calc_frechet_distance(self):  # TODO: get rid of this function
         """
         Calculate the frechet distance between self.poses and a target path
         Uses frechet distance calculation from asterisk_calculations object
         """
-        o_path = self._get_pose_array()  # TODO: add a consideration for filtered data
+        o_path = self._get_pose_array(use_filtered=False)
         o_path_t = o_path[:, [0, 1]]  # just want first and second columns for translation
         o_path_ang = o_path[:, [2]]
 
@@ -399,6 +417,7 @@ class AsteriskTrialData:
         """
         Get the points that each data point was associated with in the frechet distance calculations
         using the frechet distance values
+        TODO: We don't do it this way anyway
         """
 
         target_indices = []

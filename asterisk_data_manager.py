@@ -11,15 +11,21 @@ class AstData:
     def __init__(self):
         """
         Class which contains helper functions for data wrangling - getting ready for asterisk data analysis
-        home - home directory of git repo
+        :param home: home directory of git repo
         """
         self.home = Path(__file__).parent.absolute()
 
     def view_images(self, subject_name, hand_name, translation_name, rotation_name, trial_number):
+        """
+        View images of trial specified as a video
+        :param subject_name: name of subject
+        :param hand_name: name of hand
+        :param translation_name: name of direction
+        :param rotation_name: name of rotation
+        :param trial_number: trial number
+        """
         os.chdir(self.home)
-
         data_name = f"{subject_name}_{hand_name}_{translation_name}_{rotation_name}_{trial_number}"
-
         file_dir = f"viz/{data_name}/"
         os.chdir(file_dir)
 
@@ -49,7 +55,12 @@ class AstData:
     
     def single_extract(self, subject_name, hand_name, translation_name, rotation_name, trial_number):
         """
-        Extract a single zip file.
+        Extract a single zip file, specified by parameters.
+        :param subject_name: name of subject
+        :param hand_name: name of hand
+        :param translation_name: name of direction
+        :param rotation_name: name of rotation
+        :param trial_number: trial number
         """
         folders = f"asterisk_test_data/{subject_name}/{hand_name}/"
         file_name = f"{subject_name}_{hand_name}_{translation_name}_{rotation_name}_{trial_number}"
@@ -65,15 +76,37 @@ class AstData:
     def batch_extract(self, subject_name, hand_name):
         """
         Extract a batch of zip files for a specific subject and hand
+        :param subject_name: name of subject
+        :param hand_name: name of hand
         """
-
         for s, h, t, r, n in generate_names_with_s_h(subject_name, hand_name):
             self.single_extract(s, h, t, r, n)
 
 
-# TODO: move following functions into a new asterisk_naming file, fits there better
-# TODO: make functions that just return a list of hands, subjects, translations, rotations... yata yata
+# TODO: move following functions into a new asterisk_naming file?
+def generate_options(key):
+    """
+    One function to return all sorts of parameter lists. Mainly to be used outside of data manager
+    :param key: the key of the list that you want
+    :return: list of parameters
+    """
+    options = {
+            "subjects": ["sub1", "sub2", "sub3"],
+            "hands": ["2v2", "2v3", "3v3", "barrett", "basic", "human", "m2active", "m2stiff", "modelvf"],
+            "translations": ["a", "b", "c", "d", "e", "f", "g", "h"],
+            "rotations": ["n", "m15", "p15"],
+            "rotations_n_trans": ["cw", "ccw"],
+            "numbers": ["1", "2", "3"]  # , "4", "5"]
+            }
+    return options[key]
+
+
 def generate_t_r_pairs(hand_name):
+    """
+    Generator that feeds all trial combinations pertaining to a specific hand
+    :param hand_name: name of hand specified
+    :return: yields translation and rotation combinations
+    """
     translations = ["a", "b", "c", "d", "e", "f", "g", "h", "n"]
     n_trans_rot_opts = ["cw", "ccw"]
     rotations = ["n", "p15", "m15"]
@@ -95,17 +128,36 @@ def generate_t_r_pairs(hand_name):
 
 
 def generate_names_with_s_h(subject_name, hand_name):
-    num = ["1", "2", "3"]  # , "4", "5"] #for now, since missing random trials 4 and 5 across the study
+    """
+    Generates all trial combinations with a specific hand name
+    :param subject_name: name of subject
+    :param hand_name: name of hand
+    :return: yields all parameters
+    """
+    num = ["1", "2", "3"]  # , "4", "5"]  #for now
 
     for t, r in generate_t_r_pairs(hand_name):
         for n in num:
             yield subject_name, hand_name, t, r, n
 
 
-def generate_all_names():
+def generate_all_names(subject=None, hand_name=None):
+    """
+    Generate all combinations of all parameters
+    :param subject: list of subjects to provide, if none provided defaults to all subjects
+    :param hand_name: list of hands to provide, if none provided defaults to all hands
+    :return: yields all combinations specified
+    """
     # TODO: make smart version so you can be picky with your options... make the constant lists as default parameters
-    subjects = ["sub1", "sub2", "sub3"]
-    hands = ["human", "basic",  "m2stiff", "m2active",
+    if subject:
+        pass
+    else:
+        subjects = ["sub1", "sub2", "sub3"]
+
+    if hand_name:
+        pass
+    else:
+        hands = ["human", "basic",  "m2stiff", "m2active",
              "2v2", "3v3", "2v3", "barrett", "modelvf"]
 
     for s in subjects:
@@ -116,6 +168,10 @@ def generate_all_names():
 def smart_input(prompt, option, valid_options=None):
     """
     Asks for input and continues asking until there is a valid response
+    :param prompt: the prompt that you want printed
+    :param option: the option you want the input to choose from,
+        if not in the options will look at valid_options for option
+    :param valid_options: provides the ability to specify your own custom options
     """
     values = {
         "subjects": ["sub1", "sub2", "sub3"],
@@ -127,7 +183,6 @@ def smart_input(prompt, option, valid_options=None):
         "consent": ["y", "n"]
         }
 
-    print(option)
     if option not in values.keys() and valid_options:  # TODO: Do as try catch clause
         values[option] = valid_options
     elif option not in values.keys() and valid_options is None:

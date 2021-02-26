@@ -2,13 +2,11 @@ import csv
 
 
 class HandObj:
-    def __init__(self, name, fingers=None):
+    def __init__(self, name, num_fingers=None):
         """
         Class which stores relevant hand information.
-        :param hand_name - name of the hand
-        :param span - max span measurement, precision grasp
-        :param depth - max depth measurement, precision grasp
-        :param num_fingers - number of fingers on hand
+        :param hand_name: name of the hand
+        :param num_fingers: number of fingers on hand
         """
         spans, depths = self._load_measurements()
 
@@ -16,7 +14,7 @@ class HandObj:
         # TODO: edit here when load measurements function is done
         self.span = spans[name]
         self.depth = depths[name]
-        self.num_fingers = fingers
+        self.num_fingers = num_fingers
         # TODO: decide how to check if two hands are the same. Just go by name? Or check everything?
 
     def get_name(self):
@@ -49,13 +47,14 @@ class HandObj:
         return spans, depths
 
 
-h_two_v_two = HandObj("2v2", 2)
-h_two_v_three = HandObj("2v3", 2)
-h_three_v_three = HandObj("3v3", 2)
+if __name__ == '__main__':
+    h_two_v_two = HandObj("2v2", 2)
+    h_two_v_three = HandObj("2v3", 2)
+    h_three_v_three = HandObj("3v3", 2)
 
-h_basic = HandObj("basic", 2)
-h_m_stiff = HandObj("m2stiff", 2)
-h_m_active = HandObj("m2active", 2)
-h_m_vf = HandObj("modelvf", 2)
+    h_basic = HandObj("basic", 2)
+    h_m_stiff = HandObj("m2stiff", 2)
+    h_m_active = HandObj("m2active", 2)
+    h_m_vf = HandObj("modelvf", 2)
 
-h_barrett = HandObj("barrett", 3)
+    h_barrett = HandObj("barrett", 3)
