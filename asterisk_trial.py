@@ -232,18 +232,6 @@ class AsteriskTrialData:
         self.filtered = True
         self.window_size = window_size
 
-        # print("Moving average completed.")
-
-    def _get_pose_array(self, use_filtered=True):
-        """
-        Returns the poses for this trial as np.array. TODO: get rid of this function
-        :param: use_filtered: Gives option to return filtered or unfiltered data
-        """
-        if self.filtered and use_filtered:
-            return self.poses[["f_x", "f_y", "f_rmag"]].to_numpy()  # TODO: causes weird decimals, need a workaround
-        else:
-            return self.poses[["x", "y", "rmag"]].to_numpy()
-
     def get_poses(self, use_filtered=True):
         """
         Separates poses into x, y, theta for easy plotting.
@@ -264,32 +252,10 @@ class AsteriskTrialData:
 
         return return_x, return_y, return_twist
 
-    def get_translations_array(self, use_filtered=True):  # TODO: get rid of this
-        """
-        an attempt to get non-scientific notation in data. This is something from numpy.
-        About issue, and actual fixes ::
-        https://stackoverflow.com/questions/9777783/suppress-scientific-notation-in-numpy-when-creating-array-from-nested-list
-        :param: use_filtered: Gives option to return filtered or unfiltered data
-        """
-        arr = np.zeros([self.poses.shape[0], 2])
-
-        for i, p in enumerate(self.poses.iterrows()):
-            if self.filtered and use_filtered:
-                x_val = p[1]["f_x"]
-                y_val = p[1]["f_y"]
-            else:
-                x_val = p[1]["x"]
-                y_val = p[1]["y"]
-
-            arr[i][0] = x_val
-            arr[i][1] = y_val
-
-        return arr
-
     def plot_trial(self, use_filtered=True, show_plot=True, save_plot=False):
         """
         Plot the poses in the trial, using marker size to denote the error in twist from the desired twist
-        :param: use_filtered Gives option to return filtered or unfiltered data
+        :param use_filtered: Gives option to return filtered or unfiltered data
         :param show_plot: flag to show plot. Default is true
         :param save_plot: flat to save plot as a file. Default is False
         """
@@ -399,14 +365,16 @@ class AsteriskTrialData:
 
         return pd.Series.to_list(rots)
 
-    def calc_frechet_distance(self):  # TODO: get rid of this function
+    def calc_frechet_distance(self):
         """
         Calculate the frechet distance between self.poses and a target path
         Uses frechet distance calculation from asterisk_calculations object
         """
-        o_path = self._get_pose_array(use_filtered=False)
-        o_path_t = o_path[:, [0, 1]]  # just want first and second columns for translation
-        o_path_ang = o_path[:, [2]]
+        # o_path = self._get_pose_array(use_filtered=False)
+        # o_path_t = o_path[:, [0, 1]]  # just want first and second columns for translation
+        # o_path_ang = o_path[:, [2]]
+        o_x, o_y, o_path_ang = self.get_poses(use_filtered=False)
+        o_path_t = np.column_stack((o_x, o_y))
 
         t_fd = sm.frechet_dist(o_path_t, self.target_line)
         r_fd = sm.frechet_dist(o_path_ang, self.target_rotation)  # just max error right now
@@ -419,11 +387,10 @@ class AsteriskTrialData:
         using the frechet distance values
         TODO: We don't do it this way anyway
         """
-
         target_indices = []
         # print(self.translation_fd)
 
-        for p in self._get_pose_array():
+        for p in np.column_stack((self.get_poses())):
             associated_target_index = None
             prev_d = 1000  # arbitrarily high number
 
