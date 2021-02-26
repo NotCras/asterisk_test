@@ -2,6 +2,7 @@
 import numpy as np
 from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan, radians
 import pandas as pd
+import matplotlib.pyplot as plt
 from asterisk_trial import AsteriskTrialData
 from asterisk_plotting import AsteriskPlotting
 import pdb
@@ -124,7 +125,7 @@ class AveragedTrial(AsteriskTrialData):
 
         return correct_avg
 
-    def avg_debug_plot(self):
+    def avg_debug_plot(self, show_plot=True, save_plot=False):
         """
         Plots one specific average together with all the data that was averaged for sanity checking.
         """
@@ -132,11 +133,22 @@ class AveragedTrial(AsteriskTrialData):
         # plot the trials
         for i, t in enumerate(self.averaged_trials):
             # TODO: make it not use poses later
-            plt.plot(t.poses['x'], t.poses['y'], label=f"trial {i}", alpha=0.2, color="xkcd:blue grey")
+            plt.plot(t.poses['x'], t.poses['y'], label=f"trial {i}", alpha=0.5, color="xkcd:blue grey")
 
         # plot average
         plt.plot(self.poses['x'], self.poses['y'], label="avg", color="xkcd:burnt orange")
         self.plot_sd("xkcd:burnt orange")
+
+        if save_plot:
+            plt.savefig(f"pics/avgdebug_{self.subject}_{self.hand.get_name()}_{self.trial_translation}_"
+                        f"{self.trial_rotation}_{self.trial_number}.jpg", format='jpg')
+            # name -> tuple: subj, hand  names
+            print("Figure saved.")
+            print(" ")
+
+        if show_plot:
+            plt.legend()
+            plt.show()
 
     def plot_sd(self, color, filtered=False):
         """
@@ -197,40 +209,18 @@ class AveragedTrial(AsteriskTrialData):
 
 if __name__ == '__main__':
     # demo and test
-    test1 = AsteriskTrialData('sub1_2v2_a_n_1.csv')
-    test2 = AsteriskTrialData('sub1_2v2_a_n_2.csv')
-    test3 = AsteriskTrialData('sub1_2v2_a_n_3.csv')
+    test1 = AsteriskTrialData('sub1_2v2_c_n_1.csv')
+    test2 = AsteriskTrialData('sub1_2v2_c_n_2.csv')
+    test3 = AsteriskTrialData('sub1_2v2_c_n_3.csv')
 
-    test4 = AsteriskTrialData('sub2_2v2_a_n_1.csv')
-    test5 = AsteriskTrialData('sub2_2v2_a_n_2.csv')
-    test6 = AsteriskTrialData('sub2_2v2_a_n_3.csv')
+    test4 = AsteriskTrialData('sub2_2v2_c_n_1.csv')
+    test5 = AsteriskTrialData('sub2_2v2_c_n_2.csv')
+    test6 = AsteriskTrialData('sub2_2v2_c_n_3.csv')
 
     lines = [test1, test2, test3, test4, test5, test6]
 
     avgln = AveragedTrial()
     avgln.make_average_line(lines)
 
-    # make a comparison plot!
-    import matplotlib.pyplot as plt
-    # plot all trials
-    plt.plot(test1.poses['x'], test1.poses['y'], label="test1", alpha=0.2, color="xkcd:blue grey")
-    plt.plot(test2.poses['x'], test2.poses['y'], label="test2", alpha=0.2, color="xkcd:blue grey")
-    plt.plot(test3.poses['x'], test3.poses['y'], label="test3", alpha=0.2, color="xkcd:blue grey")
-    plt.plot(test4.poses['x'], test4.poses['y'], label="test4", alpha=0.4, color="xkcd:light grey")
-    plt.plot(test5.poses['x'], test5.poses['y'], label="test5", alpha=0.4, color="xkcd:light grey")
-    plt.plot(test6.poses['x'], test6.poses['y'], label="test6", alpha=0.4, color="xkcd:light grey")
-
-    # draw average
-    plt.plot(avgln.poses['x'], avgln.poses['y'], label="avg", color="xkcd:burnt orange")
-    # draw std
-    plt.fill_between(avgln.poses['x'],
-                     (avgln.poses['y'] + avgln.pose_sd['y']),
-                     (avgln.poses['y'] - avgln.pose_sd['y']),
-                     alpha=0.5)
-
-    # draw average filtered with moving average
-    plt.plot(avgln.poses['f_x'], avgln.poses['f_y'], label="f_avg", color="xkcd:bright blue")
-
-    plt.legend()
-    plt.show()
+    avgln.avg_debug_plot()
 

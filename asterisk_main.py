@@ -27,7 +27,7 @@ def run():
         print("   ")
 
         print("Generating CSVs")
-        data.save_data()
+        data.save_all_data()
         print("   ")
 
 

@@ -314,12 +314,12 @@ class AsteriskTrialData:
 
         plt.show()
 
-    def generate_target_line(self, n_samples=50):
+    def generate_target_line(self, n_samples=100):
         """
         Using object trajectory (self.poses), build a line to compare to for frechet distance.
         Updates this attribute on object.
         """
-        x_vals, y_vals = aplt.get_direction(self.trial_translation)
+        x_vals, y_vals = aplt.get_direction(self.trial_translation, n_samples)
 
         target_line = np.column_stack((x_vals, y_vals))
 

@@ -14,7 +14,7 @@ from asterisk_plotting import AsteriskPlotting as aplt
 
 
 class AsteriskHandData:
-    # TODO: add ability to add trials after the fact
+    # TODO: add ability to add trials after the fact?
     def __init__(self, subjects, hand_name):
         """
         Class to hold all the data pertaining to a specific hand.
@@ -61,6 +61,12 @@ class AsteriskHandData:
                     continue
 
         return gathered_data
+
+    def add_trial(self, ast_trial):
+        """
+        add an ast_trial after the fact
+        """
+        pass
 
     def _get_ast_batch(self, subject_to_run, trial_number=None, r="n"):  # TODO: rename this function, be more specific
         """
@@ -158,7 +164,7 @@ class AsteriskHandData:
         self.filtered = True
         self.window_size = window_size
 
-    def save_data(self):
+    def save_all_data(self):
         """
         Saves each AsteriskTrialObject
         """
@@ -218,14 +224,15 @@ class AsteriskHandData:
         plt = self._make_plot(dfs)
         plt.title(f"Plot: {subject_to_run}_{self.hand.get_name()}, set #{trial_number}")
 
-        if show_plot:
-            plt.show()
-
         if save_plot:
             plt.savefig(f"pics/fullplot4_{subject_to_run}_{self.hand.get_name()}_{trial_number}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
+
+        if show_plot:
+            plt.legend()
+            plt.show()
 
     def plot_avg_data(self, subjects_to_run=None, r="n", show_plot=True, save_plot=False):
         """
@@ -254,17 +261,18 @@ class AsteriskHandData:
             print(" ")
 
         if show_plot:
+            plt.legend()
             plt.show()
 
-    def plot_orientation_error(self, direction_label, subject, rotation_label="n", incl_avg = False):
+    def plot_orientation_error(self, direction_label, subject, r="n", show_plot=True, save_plot=False):
         """
         line plot of orientation error throughout a trial for a specific direction
         """
-        trials = self._get_ast_dir(direction_label, subject, rotation_label)
+        trials = self._get_ast_dir(direction_label, subject, r)
 
-        # if self.averages and incl_avg:
+        # if self.averages and incl_avg:  # TODO: have an option to include the average?
         #     for a in self.averages:
-        #         if a.trial_translation==direction_label and a.trial_rotation==rotation_label:  # TODO: also get subjects
+        #         if a.trial_translation==direction_label and a.trial_rotation==rotation_label:
         #             trials.append(a)
 
         for t in trials:
@@ -273,6 +281,18 @@ class AsteriskHandData:
             x, _, _ = t.get_poses()
             plt.plt(x, rot_err, label=f"{t.subject}, trial {t.trial_num}")
 
+        if save_plot:
+            if subject:
+                plt.savefig(f"pics/angerror_{subject}_{direction_label}_{r}_{self.hand.get_name()}.jpg", format='jpg')
+            else:
+                plt.savefig(f"pics/angerror_all_{direction_label}_{r}_{self.hand.get_name()}.jpg", format='jpg')
+            # name -> tuple: subj, hand  names
+            print("Figure saved.")
+            print(" ")
+
+        if show_plot:
+            plt.legend()
+            plt.show()
 
 
     def plot_fd_set(self, subject_to_run, trial_number="1", r="n", show_plot=True, save_plot=False):
@@ -298,6 +318,7 @@ class AsteriskHandData:
             print(" ")
 
         if show_plot:
+            plt.legend()
             plt.show()
 
 
@@ -324,6 +345,7 @@ class AsteriskHandData:
             print(" ")
 
         if show_plot:
+            plt.legend()
             plt.show()
 
     def plot_all_target_lines(self, order_of_colors):
