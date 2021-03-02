@@ -228,7 +228,7 @@ class AsteriskTrialData:
         self.poses["f_rmag"] = self.poses["rmag"].rolling(
             window=window_size, min_periods=1).mean()
 
-        self.poses.round(4)
+        self.poses = self.poses.round(4)
         self.filtered = True
         self.window_size = window_size
 

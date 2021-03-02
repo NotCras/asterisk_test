@@ -77,7 +77,7 @@ class AsteriskHandData:
         label = f"{ast_trial.trial_translation}_{ast_trial.trial_rotation}"
         self.data[label].append(ast_trial)
 
-    def _get_ast_batch(self, subjects, trial_number=None, rotation_type="n"):  # TODO: rename this function, be more specific
+    def _get_ast_set(self, subjects, trial_number=None, rotation_type="n"):
         """
         Picks out an asterisk of data (all translational directions) with specific parameters
         :param subjects: specify the subject or subjects you want
@@ -98,8 +98,8 @@ class AsteriskHandData:
                 if trial_number:  # if we want a specific trial, look for it
                     if (t.subject == subjects) and (t.trial_num == trial_number):
                         dfs.append(t)
-                        break
-                    # TODO: throw an exception in case there isn't any of the trial that we want
+                    elif (t.subject in subjects) and (t.trial_num == trial_number):
+                        dfs.append(t)
 
                 else:  # otherwise, grab trial as long as it has the right subject
                     if t.subject == subjects or t.subject in subjects:
@@ -147,7 +147,7 @@ class AsteriskHandData:
         :param subjects: subject(s) to include in the average. Defaults to all subjects in object
         :param rotation: refers to the rotation type ("n", "m15", "p15"). Defaults to all
         """
-        dfs = []
+        averages = []
         if subjects:
             pass
         else:  # if no subjects given, defaults to all subjects
@@ -156,14 +156,14 @@ class AsteriskHandData:
         if rotation:
             for t in ["a", "b", "c", "d", "e", "f", "g", "h"]:
                 avg = self._average_dir(t, rotation, subjects)
-                dfs.append(avg)
+                averages.append(avg)
         else:
             for t, r in datamanager.generate_t_r_pairs(self.hand.get_name()):
                 avg = self._average_dir(t, r, subjects)
-                dfs.append(avg)
+                averages.append(avg)
 
-        self.averages = dfs
-        return dfs
+        self.averages = averages
+        return averages
 
     def filter_data(self, window_size=15):
         """
@@ -216,13 +216,13 @@ class AsteriskHandData:
         make a bar plot with fd values for each direction
         :param trials: a set of asterisktrials or average objects, best if its an asterisk of data with no repeats
         """
-        for i, t in enumerate(trials):
+        for i, t in enumerate(trials):  # TODO: make it work with plotting multiple values for one label?
             # plot the fd values for that direction
             trial_label = f"{t.trial_translation}_{t.trial_rotation}"
             t_fd = t.translation_fd
             r_fd = t.rotation_fd  # TODO: don't do anything with r_fd
 
-            plt.bar(i, t_fd, trial_label)
+            plt.bar(trial_label, t_fd)
 
         return plt
 
@@ -234,7 +234,7 @@ class AsteriskHandData:
         :param show_plot: flag to show plot. Default is true
         :param save_plot: flat to save plot as a file. Default is False
         """
-        dfs = self._get_ast_batch([subjects], trial_number)  # TODO: make this work for the hand data object
+        dfs = self._get_ast_set(subjects, trial_number)  # TODO: make this work for the hand data object
         plt = self._make_plot(dfs)
         plt.title(f"Plot: {subjects}_{self.hand.get_name()}, set #{trial_number}")
 
@@ -251,12 +251,15 @@ class AsteriskHandData:
     def plot_avg_data(self, subjects, rotation="n", show_plot=True, save_plot=False):
         """
         Plots the data from one subject, averaging all of the data in each direction
-        :param subjects list of subjects. If none is provided, uses all of them
-        :param rotation the type of rotation type to plot, will collect an asterisk of this
-        :param show_plot flag to show plot. Default is true
-        :param save_plot flat to save plot as a file. Default is False
+        :param subjects: list of subjects. If none is provided, uses all of them
+        :param rotation: the type of rotation type to plot, will collect an asterisk of this
+        :param show_plot: flag to show plot. Default is true
+        :param save_plot: flat to save plot as a file. Default is False
         """
-        avgs = self.calc_avg_ast(subjects, rotation)
+        if self.averages:
+            avgs = self.averages
+        else:
+            avgs = self.calc_avg_ast(subjects, rotation)
         plt = self._make_plot(avgs, use_filtered=False, stds=True)
 
         if subjects:
@@ -278,15 +281,18 @@ class AsteriskHandData:
             plt.show()
 
     def plot_orientation_error(self, translation, subject=None, rotation="n", show_plot=True, save_plot=False):
-        """  # TODO: still need to test
-        line plot of orientation error throughout a trial for a specific direction
-        :param translation the type of translation
-        :param subject list of subjects. If none is provided, uses all of them
-        :param rotation type of rotation. Defaults to "n"
-        :param show_plot flag to show plot. Default is true
-        :param save_plot flat to save plot as a file. Default is False
         """
-        trials = self._get_ast_dir(translation, subject, rotation)
+        line plot of orientation error throughout a trial for a specific direction
+        :param translation: the type of translation
+        :param subject: list of subjects. If none is provided, uses all of them
+        :param rotation: type of rotation. Defaults to "n"
+        :param show_plot: flag to show plot. Default is true
+        :param save_plot: flat to save plot as a file. Default is False
+        """
+        if subject:
+            trials = self._get_ast_dir(translation, subject, rotation)
+        else:
+            trials = self._get_ast_dir(translation, self.subjects_containing, rotation)
 
         # if self.averages and incl_avg:  # TODO: have an option to include the average?
         #     for a in self.averages:
@@ -294,9 +300,10 @@ class AsteriskHandData:
         #             trials.append(a)
 
         for t in trials:
-            rot_err = t.calc_rot_err()  # TODO: not sure what to use as an x value for orientation error
-            x, _, _ = t.get_poses()
-            plt.plt(x, rot_err, label=f"{t.subject}, trial {t.trial_num}")
+            rot_err = t.calc_rot_err()
+            # currently using the get_c function to generate a normalized set of x values to use as x values
+            x, _ = aplt.get_c(len(rot_err))  # will need to multiply by 2 to get it to go to 1.0 instead of 0.5
+            plt.plot(2*x, rot_err, label=f"Orientation Err {t.subject}, trial {t.trial_num}")
 
         if save_plot:
             if subject:
@@ -314,13 +321,13 @@ class AsteriskHandData:
     def plot_fd_set(self, subjects, trial_number="1", rotation="n", show_plot=True, save_plot=False):
         """  # TODO: still need to test
         plots the frechet distance values of an asterisk of data specified in the parameters
-        :param subject list of subjects. If none is provided, uses all of them
-        :param trial_number the trial number to choose. Defaults to "1"
-        :param rotation type of rotation. Defaults to "n"
-        :param show_plot flag to show plot. Default is true
-        :param save_plot flat to save plot as a file. Default is False
+        :param subject: list of subjects. If none is provided, uses all of them
+        :param trial_number: the trial number to choose. Defaults to "1"
+        :param rotation: type of rotation. Defaults to "n"
+        :param show_plot: flag to show plot. Default is true
+        :param save_plot: flat to save plot as a file. Default is False
         """
-        trials = self._get_ast_batch(subjects, trial_number, rotation)
+        trials = self._get_ast_set(subjects, trial_number, rotation)
         # dirs = ["a", "b", "c", "d", "e", "f", "g", "h"]  # TODO: add cw and ccw later, once index issue is fixed
 
         plt = self._make_fd_plot(trials)
@@ -345,10 +352,10 @@ class AsteriskHandData:
     def plot_avg_fd(self, subjects=None, rotation="n", show_plot=True, save_plot=False):
         """  # TODO: still need to test
         plots averaged fd values in a bar chart
-        :param subject list of subjects. If none is provided, uses all of them
-        :param rotation type of rotation. Defaults to "n"
-        :param show_plot flag to show plot. Default is true
-        :param save_plot flat to save plot as a file. Default is False
+        :param subject: list of subjects. If none is provided, uses all of them
+        :param rotation: type of rotation. Defaults to "n"
+        :param show_plot: flag to show plot. Default is true
+        :param save_plot: flat to save plot as a file. Default is False
         """
         trials = self.averages
         # dirs = ["a", "b", "c", "d", "e", "f", "g", "h"]  # TODO: add cw and ccw later, once index issue is fixed
@@ -373,6 +380,10 @@ class AsteriskHandData:
             plt.show()
 
     def plot_all_target_lines(self, order_of_colors):
+        """
+        Plot all target lines on a plot for easy reference
+        :param order_of_colors:
+        """
         x_a, y_a = aplt.get_a()
         x_b, y_b = aplt.get_b()
         x_c, y_c = aplt.get_c()

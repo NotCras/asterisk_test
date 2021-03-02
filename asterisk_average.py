@@ -97,7 +97,7 @@ class AveragedTrial(AsteriskTrialData):
         for t in self.averaged_trials:
             data_points = data_points.append(t.poses)
 
-        # rotate the line so we can do everything based on the x axis
+        # rotate the line so we can do everything based on the x axis. Yes, I know this is hacky
         r_target_x, r_target_y = AsteriskPlotting.get_c(100)
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
         rotated_data = self._rotate_points(data_points, self.rotations[self.trial_translation])
@@ -139,10 +139,11 @@ class AveragedTrial(AsteriskTrialData):
         # TODO: show all target line points on plot, and show at least one averaging interval
         # plot the trials
         for i, t in enumerate(self.averaged_trials):
-            # TODO: make it not use poses later
+            # TODO: use a getter for values
             plt.plot(t.poses['x'], t.poses['y'], label=f"trial {i}", alpha=0.5, color="xkcd:blue grey")
 
         # plot average
+        # TODO: use a getter for values
         plt.plot(self.poses['x'], self.poses['y'], label="avg", color="xkcd:burnt orange")
         self.plot_sd("xkcd:burnt orange")
 

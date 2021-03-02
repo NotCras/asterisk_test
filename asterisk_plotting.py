@@ -111,5 +111,8 @@ class AsteriskPlotting:
             x_vals, y_vals = AsteriskPlotting.get_h(n_samples)
         elif translation_label == "n":
             x_vals, y_vals = 0, 0  # want to rotate around center point
+        else:
+            # throw error
+            pass
 
         return x_vals, y_vals
