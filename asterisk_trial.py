@@ -311,14 +311,14 @@ class AsteriskTrialData:
         target_line_length = AsteriskCalculations.narrow_target(last_obj_pose, target_line)
 
         if target_line_length:
-            distance_travelled = target_line[target_line_length+1]
+            distance_travelled = AsteriskCalculations.t_distance([0, 0], target_line[target_line_length+1])
             final_target_ln = target_line[:target_line_length]
         else:
-            # TODO: ends up registering a small translation for no translation tasks...
-            distance_travelled = target_line[1]
+            distance_travelled = AsteriskCalculations.t_distance([0, 0], target_line[0])
             final_target_ln = target_line[:1]
 
-        return final_target_ln, distance_travelled[0]
+        # TODO: distance travelled has error because it is built of target line... maybe use last_obj_pose instead?
+        return final_target_ln, distance_travelled
 
     def generate_target_rot(self, n_samples=50):
         """
