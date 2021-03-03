@@ -54,7 +54,7 @@ class AveragedTrial(AsteriskTrialData):
 
     def _rotate_points(self, points, ang):
         """
-        rotate points so they are horizontal
+        Rotate points so they are horizontal, used in averaging
         :param points: points is a dataframe with 'x', 'y', 'rmag' columns
         :param ang: angle to rotate data
         """
@@ -81,6 +81,7 @@ class AveragedTrial(AsteriskTrialData):
         self.names = []  # if rerunning an average with same object, make sure these lists are empty
         self.averaged_trials = []
         for t_n in trials:
+            # TODO: get a list of the last obj poses, will plot them on data
             self.names.append(t_n.generate_name())
             self.averaged_trials.append(t_n)
 
@@ -136,16 +137,17 @@ class AveragedTrial(AsteriskTrialData):
         :param show_plot: flag to show plot. Default is true
         :param save_plot: flat to save plot as a file. Default is False
         """
-        # TODO: show all target line points on plot, and show at least one averaging interval
         # plot the trials
         for i, t in enumerate(self.averaged_trials):
-            # TODO: use a getter for values
-            plt.plot(t.poses['x'], t.poses['y'], label=f"trial {i}", alpha=0.5, color="xkcd:blue grey")
+            t_x, t_y, _ = t.get_poses(use_filtered=False)
+            plt.plot(t_x, t_y, label=f"trial {i}", alpha=0.5, color="xkcd:blue grey")
 
         # plot average
-        # TODO: use a getter for values
-        plt.plot(self.poses['x'], self.poses['y'], label="avg", color="xkcd:burnt orange")
+        a_x, a_y, _ = self.get_poses(use_filtered=False)
+        plt.plot(a_x, a_y, label="avg", color="xkcd:burnt orange")
         self.plot_sd("xkcd:burnt orange")
+
+        # TODO: show all target line points on plot, and show at least one averaging interval
 
         if save_plot:
             plt.savefig(f"pics/avgdebug_{self.subject}_{self.hand.get_name()}_{self.trial_translation}_"
@@ -181,37 +183,6 @@ class AveragedTrial(AsteriskTrialData):
         for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
             pt = [dx - sx, dy - sy]
             poly.append(pt)
-
-        # TODO: figure out correct setup later, it has something to do with the funky confidence intervals
-        # if avg_trial.trial_translation in ["c", "g"]:
-        #     for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
-        #         pt = [dx + sx, dy + sy]
-        #         poly.append(pt)
-        #
-        #     for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
-        #     #for a, v in zip(reversed(asterisk_avg.pose_average), reversed(vec_offset)):
-        #         pt = [dx - sx, dy - sy]
-        #         poly.append(pt)
-        #
-        # elif avg_trial.trial_translation in ["a", "e"]:
-        #     for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
-        #         pt = [dx + sy, dy]
-        #         poly.append(pt)
-        #
-        #     for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
-        #         # for a, v in zip(reversed(asterisk_avg.pose_average), reversed(vec_offset)):
-        #         pt = [dx - sy, dy]
-        #         poly.append(pt)
-        #
-        # else:
-        #     for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
-        #         pt = [dx + sy, dy + sx]
-        #         poly.append(pt)
-        #
-        #     for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
-        #         # for a, v in zip(reversed(asterisk_avg.pose_average), reversed(vec_offset)):
-        #         pt = [dx - sy, dy - sx]
-        #         poly.append(pt)
 
         polyg = plt.Polygon(poly, color=color, alpha=0.4)
         plt.gca().add_patch(polyg)

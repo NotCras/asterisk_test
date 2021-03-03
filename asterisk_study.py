@@ -31,22 +31,49 @@ class AsteriskStudy:
 
         return data_dictionary
 
-    def filter_data(self):
+    def filter_data(self, window_size=15):
+        """
+        Filter all data stored together
+        """
+        for h in self.data.keys():
+            self.data[h].filter_data(window_size=window_size)
+
+    def replace_hand_data(self, hand_obj):
+        """
+        Delete hand data from stored data and replace with new hand data obj.
+        Gets attributes of obj to delete from the obj passed in
+        """
+        # TODO: implement this
         pass
 
     def save_data(self):
-        pass
+        """
+        Save all data. This will save data at the AsteriskTrialData level
+        """
+        for h in self.data.keys():
+            # TODO: make a nice folder structure to help organize the data by hand
+            self.data[h].save_all_data()
+
+    def return_hand(self, hand_name):
+        """
+        Returns specified AsteriskHandData object
+        """
+        return self.data[hand_name]
 
     def plot_hand(self, hand_name):
         """
         Plot data for a specific hand, with averages
         """
-        pass
+        hand_data = self.return_hand(hand_name)
+        hand_data.plot_avg_data()
 
     def plot_all_hands(self):
         """
         Make averaged distance plots for each hand (NOT frechet distance) and plot them in a big subplot array
+        * * * * For now, plots all 8 hands together in subplot array -> make it generalize later
+        * * * *
         """
+
         pass
 
     def plot_all_fd(self):

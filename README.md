@@ -4,9 +4,7 @@ from start to finish.
 
 
 ### Initial Setup
-We use python 3. 
-
-Dependencies to run all of the scripts are:
+We use python 3. We have the following dependencies:
 - *matplotlib*
 - *pandas*
 - *numpy*

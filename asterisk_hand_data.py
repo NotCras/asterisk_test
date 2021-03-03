@@ -141,6 +141,14 @@ class AsteriskHandData:
         average.make_average_line(trials)
         return average
 
+    def replace_trial_data(self, trial_obj):
+        """
+        Delete trial data obj from stored data and replace with new trial data obj
+        Gets attributes of obj to delete from the obj passed in
+        """
+        # TODO: implement this
+        pass
+
     def calc_avg_ast(self, subjects=None, rotation=None):
         """
         calculate and store all averages
