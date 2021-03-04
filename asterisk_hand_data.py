@@ -268,7 +268,11 @@ class AsteriskHandData:
             avgs = self.averages
         else:
             avgs = self.calc_avg_ast(subjects, rotation)
+
         plt = self._make_plot(avgs, use_filtered=False, stds=True)
+
+        for a in avgs:
+            a.plot_line_contributions()
 
         if subjects:
             plt.title(f"{subjects}, {self.hand.get_name()}, {rotation}")
@@ -285,10 +289,10 @@ class AsteriskHandData:
             print(" ")
 
         if show_plot:
-            plt.legend()
+            plt.legend()  # TODO: showing up weird, need to fix
             plt.show()
 
-    def plot_orientation_error(self, translation, subject=None, rotation="n", show_plot=True, save_plot=False):
+    def plot_orientation_errors(self, translation, subject=None, rotation="n", show_plot=True, save_plot=False):
         """
         line plot of orientation error throughout a trial for a specific direction
         :param translation: the type of translation

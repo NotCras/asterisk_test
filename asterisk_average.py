@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from asterisk_trial import AsteriskTrialData
 from asterisk_plotting import AsteriskPlotting
+from asterisk_calculations import AsteriskCalculations
 import pdb
 
 
@@ -131,6 +132,20 @@ class AveragedTrial(AsteriskTrialData):
 
         return correct_avg
 
+    def plot_line_contributions(self):
+        """
+        Plot circles where each trial stops contributing to the line average.
+        """
+        a_x, a_y, _ = self.get_poses(use_filtered=False)
+        for t in self.averaged_trials:
+            last_pose = t.get_last_pose()
+
+            # TODO: test this
+            # find narrow target on average line, index of point on line closest to last pose
+            index = AsteriskCalculations.narrow_target([last_pose[0], last_pose[1]], np.column_stack((a_x, a_y)))
+            # plot a dot there
+            plt.plot(a_x[index], a_y[index], marker='o', fillstyle='none', color="xkcd:dark blue")
+
     def avg_debug_plot(self, show_plot=True, save_plot=False):
         """
         Plots one specific average together with all the data that was averaged for sanity checking the average.
@@ -147,11 +162,13 @@ class AveragedTrial(AsteriskTrialData):
         plt.plot(a_x, a_y, label="avg", color="xkcd:burnt orange")
         self.plot_sd("xkcd:burnt orange")
 
+        self.plot_line_contributions()
+
         # TODO: show all target line points on plot, and show at least one averaging interval
 
         if save_plot:
             plt.savefig(f"pics/avgdebug_{self.subject}_{self.hand.get_name()}_{self.trial_translation}_"
-                        f"{self.trial_rotation}_{self.trial_number}.jpg", format='jpg')
+                        f"{self.trial_rotation}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")

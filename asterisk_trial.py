@@ -295,6 +295,12 @@ class AsteriskTrialData:
             plt.legend()
             plt.show()
 
+    def get_last_pose(self):
+        """
+        Returns last pose as an array. Returns both filtered and unfiltered data if obj is filtered
+        """
+        return self.poses.tail(1).to_numpy()[0]
+
     def generate_target_line(self, n_samples=100):
         """
         Using object trajectory (self.poses), build a line to compare to for frechet distance.
