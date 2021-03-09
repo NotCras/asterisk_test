@@ -194,7 +194,7 @@ class AsteriskHandData:
                 t.save_data()
                 # print(f"Saved: {t.generate_name()}")
 
-    def _make_plot(self, trials, use_filtered=True, stds=False, subplot=None):
+    def _make_plot(self, trials, use_filtered=True, stds=False):
         """
         Function to make our plots.
         :param trials: either a list of AsteriskTrialData or AsteriskAverage objs
@@ -208,13 +208,11 @@ class AsteriskHandData:
         # plot data
         for i, t in enumerate(trials):
             data_x, data_y, theta = t.get_poses(use_filtered)
-            if subplot is None:
-                plt.plot(data_x, data_y, color=colors[i], label='trajectory')
-            else:
-                subplot.plot(data_x, data_y, color=colors[i], label='trajectory')
+
+            plt.plot(data_x, data_y, color=colors[i], label='trajectory')
 
             if stds: # only for AsteriskAverage objs
-                t.plot_sd(colors[i], subplot)
+                t.plot_sd(colors[i])
 
         # plot target lines as dotted lines
         self.plot_all_target_lines(colors)
@@ -259,7 +257,7 @@ class AsteriskHandData:
             plt.legend()
             plt.show()
 
-    def plot_avg_data(self, subjects, rotation="n", show_plot=True, save_plot=False, subplot=None):
+    def plot_avg_data(self, subjects, rotation="n", show_plot=True, save_plot=False):
         """
         Plots the data from one subject, averaging all of the data in each direction
         :param subjects: list of subjects. If none is provided, uses all of them
@@ -272,14 +270,10 @@ class AsteriskHandData:
         else:
             avgs = self.calc_avg_ast(subjects, rotation)
 
-        if subplot is None:
-            plt = self._make_plot(avgs, use_filtered=False, stds=True)
-
-        else:
-            plt = self._make_plot(avgs, use_filtered=False, stds=True, subplot=subplot)
+        plt = self._make_plot(avgs, use_filtered=False, stds=True)
 
         for a in avgs:
-            a.plot_line_contributions(subplot)
+            a.plot_line_contributions()
 
         if subjects:
             plt.title(f"{self.hand.get_name()}, {subjects}, {rotation}")
@@ -296,7 +290,7 @@ class AsteriskHandData:
             print(" ")
 
         if show_plot:
-            plt.legend()  # TODO: showing up weird, need to fix
+            # plt.legend()  # TODO: showing up weird, need to fix
             plt.show()
 
     def plot_orientation_errors(self, translation, subject=None, rotation="n", show_plot=True, save_plot=False):

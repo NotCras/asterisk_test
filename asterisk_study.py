@@ -74,6 +74,9 @@ class AsteriskStudy:
         * * * * For now, plots all 8 hands together in subplot array -> make it generalize later
         * * * *
         """
+
+        plt.figure(figsize=(20, 15))
+
         for i, h in enumerate(self.data.keys()):
             plt.subplot(2, 4, i+1)
             # get hand obj
@@ -90,7 +93,7 @@ class AsteriskStudy:
             print(" ")
 
         if show_plot:
-            plt.legend()
+            # plt.legend()
             plt.show()
 
 
@@ -106,3 +109,8 @@ class AstAnalyzer:
     """
     def __init__(self):
         pass
+
+
+if __name__ == '__main__':
+    study = AsteriskStudy(["sub1", "sub2"], ["2v2", "2v3", "3v3", "barrett"])
+    study.plot_all_hands(rotation="n", show_plot=True, save_plot=True)

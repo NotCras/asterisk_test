@@ -132,7 +132,7 @@ class AveragedTrial(AsteriskTrialData):
 
         return correct_avg
 
-    def plot_line_contributions(self, subplot=None):
+    def plot_line_contributions(self):
         """
         Plot circles where each trial stops contributing to the line average.
         """
@@ -144,10 +144,7 @@ class AveragedTrial(AsteriskTrialData):
             # find narrow target on average line, index of point on line closest to last pose
             index = AsteriskCalculations.narrow_target([last_pose[0], last_pose[1]], np.column_stack((a_x, a_y)))
             # plot a dot there
-            if subplot is None:
-                plt.plot(a_x[index], a_y[index], marker='o', fillstyle='none', color="xkcd:dark blue")
-            else:
-                subplot.plot(a_x[index], a_y[index], marker='o', fillstyle='none', color="xkcd:dark blue")
+            plt.plot(a_x[index], a_y[index], marker='o', fillstyle='none', color="xkcd:dark blue")
 
     def avg_debug_plot(self, show_plot=True, save_plot=False):
         """
