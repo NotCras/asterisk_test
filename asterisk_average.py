@@ -170,7 +170,7 @@ class AveragedTrial(AsteriskTrialData):
         # TODO: show all target line points on plot, and show at least one averaging interval
 
         if save_plot:
-            plt.savefig(f"pics/avgdebug_{self.subject}_{self.hand.get_name()}_{self.trial_translation}_"
+            plt.savefig(f"pics/avgdebug_{self.hand.get_name()}_{self.subject}_{self.trial_translation}_"
                         f"{self.trial_rotation}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")

@@ -247,10 +247,10 @@ class AsteriskHandData:
         """
         dfs = self._get_ast_set(subjects, trial_number)  # TODO: make this work for the hand data object
         plt = self._make_plot(dfs)
-        plt.title(f"Plot: {subjects}_{self.hand.get_name()}, set #{trial_number}")
+        plt.title(f"Plot: {self.hand.get_name()}, {subjects}, set #{trial_number}")
 
         if save_plot:
-            plt.savefig(f"pics/fullplot4_{subjects}_{self.hand.get_name()}_{trial_number}.jpg", format='jpg')
+            plt.savefig(f"pics/fullplot4_{self.hand.get_name()}_{subjects}_{trial_number}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
@@ -282,15 +282,15 @@ class AsteriskHandData:
             a.plot_line_contributions(subplot)
 
         if subjects:
-            plt.title(f"{subjects}, {self.hand.get_name()}, {rotation}")
+            plt.title(f"{self.hand.get_name()}, {subjects}, {rotation}")
         else:
             plt.title(f"Averaged {self.hand.get_name()}, {rotation}")
 
         if save_plot:
             if subjects:
-                plt.savefig(f"pics/avgd_{subjects}_{rotation}_{self.hand.get_name()}.jpg", format='jpg')
+                plt.savefig(f"pics/avgd_{self.hand.get_name()}_{subjects}_{rotation}.jpg", format='jpg')
             else:
-                plt.savefig(f"pics/avgd_all_{rotation}_{self.hand.get_name()}.jpg", format='jpg')
+                plt.savefig(f"pics/avgd_{self.hand.get_name()}_all_{rotation}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
@@ -326,9 +326,9 @@ class AsteriskHandData:
 
         if save_plot:
             if subject:
-                plt.savefig(f"pics/angerror_{subject}_{translation}_{rotation}_{self.hand.get_name()}.jpg", format='jpg')
+                plt.savefig(f"pics/angerror_{self.hand.get_name()}_{subject}_{translation}_{rotation}.jpg", format='jpg')
             else:
-                plt.savefig(f"pics/angerror_all_{translation}_{rotation}_{self.hand.get_name()}.jpg", format='jpg')
+                plt.savefig(f"pics/angerror_{self.hand.get_name()}_all_{translation}_{rotation}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
@@ -351,15 +351,15 @@ class AsteriskHandData:
 
         plt = self._make_fd_plot(trials)
         if subjects:
-            plt.title(f"FD {subjects}, {self.hand.get_name()}, {rotation}")
+            plt.title(f"FD {self.hand.get_name()}, {subjects}, {rotation}")
         else:
             plt.title(f"Frechet Distance {self.hand.get_name()}, {rotation}")
 
         if save_plot:
             if subjects:
-                plt.savefig(f"pics/fds_{subjects}_{rotation}_{self.hand.get_name()}.jpg", format='jpg')
+                plt.savefig(f"pics/fds_{self.hand.get_name()}_{subjects}_{rotation}.jpg", format='jpg')
             else:
-                plt.savefig(f"pics/fds_all_{rotation}_{self.hand.get_name()}.jpg", format='jpg')
+                plt.savefig(f"pics/fds_{self.hand.get_name()}_all_{rotation}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
@@ -381,15 +381,15 @@ class AsteriskHandData:
 
         plt = self._make_fd_plot(trials)
         if subjects:
-            plt.title(f"Avg FD {subjects}, {self.hand.get_name()}, {rotation}")
+            plt.title(f"Avg FD {self.hand.get_name()}, {subjects}, {rotation}")
         else:
             plt.title(f"Avg FD {self.hand.get_name()}, {rotation}")
 
         if save_plot:
             if subjects:
-                plt.savefig(f"pics/fd_avg_{subjects}_{rotation}_{self.hand.get_name()}.jpg", format='jpg')
+                plt.savefig(f"pics/fd_avg_{self.hand.get_name()}_{subjects}_{rotation}.jpg", format='jpg')
             else:
-                plt.savefig(f"pics/fd_avg_all_{rotation}_{self.hand.get_name()}.jpg", format='jpg')
+                plt.savefig(f"pics/fd_avg_{self.hand.get_name()}_all_{rotation}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")

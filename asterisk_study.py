@@ -74,15 +74,7 @@ class AsteriskStudy:
         * * * * For now, plots all 8 hands together in subplot array -> make it generalize later
         * * * *
         """
-        # fig, axs = plt.subplots(2, 4, 1)
-
-        # fig.suptitle(f'All hand avgs for {rotation} trials')
-
         for i, h in enumerate(self.data.keys()):
-            # subplot coordinates
-            ix = int(i/4)
-            iy = np.mod(i, 4)
-
             plt.subplot(2, 4, i+1)
             # get hand obj
             hd = self.data[h]
