@@ -68,7 +68,7 @@ class AsteriskStudy:
         hand_data = self.return_hand(hand_name)
         hand_data.plot_avg_data()
 
-    def plot_all_hands(self, rotation="n"):
+    def plot_all_hands(self, rotation="n", show_plot=True, save_plot=False):
         """
         Make averaged distance plots for each hand (NOT frechet distance) and plot them in a big subplot array
         * * * * For now, plots all 8 hands together in subplot array -> make it generalize later
@@ -80,9 +80,19 @@ class AsteriskStudy:
             hd = self.data[h]
             hd.plot_avg_data(self.subjects, rotation, show_plot=False, save_plot=False)
 
-        plt.show()
-        #for ax in axs.flat:
-        #    ax.label_outer()
+            # TODO: figure out sharing x and y axis labels
+
+        if save_plot:
+            # added the zero to guarantee that it comes first
+            plt.savefig(f"pics/0all_{rotation}.jpg", format='jpg')
+            # name -> tuple: subj, hand  names
+            print("Figure saved.")
+            print(" ")
+
+        if show_plot:
+            plt.legend()
+            plt.show()
+
 
     def plot_all_fd(self):
         """
