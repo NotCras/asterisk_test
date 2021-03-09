@@ -18,6 +18,7 @@ class AsteriskStudy:
         data - list of asterisk hand data objects
         hands - list of hands included in data
         """
+        self.subjects = subjects_to_collect
         self.data = self._gather_data(subjects_to_collect, hands_to_collect)
 
     def _gather_data(self, subjects, hands):
@@ -67,17 +68,39 @@ class AsteriskStudy:
         hand_data = self.return_hand(hand_name)
         hand_data.plot_avg_data()
 
-    def plot_all_hands(self):
+    def plot_all_hands(self, rotation="n"):
         """
         Make averaged distance plots for each hand (NOT frechet distance) and plot them in a big subplot array
         * * * * For now, plots all 8 hands together in subplot array -> make it generalize later
         * * * *
         """
+        # fig, axs = plt.subplots(2, 4, 1)
 
-        pass
+        # fig.suptitle(f'All hand avgs for {rotation} trials')
+
+        for i, h in enumerate(self.data.keys()):
+            # subplot coordinates
+            ix = int(i/4)
+            iy = np.mod(i, 4)
+
+            plt.subplot(2, 4, i+1)
+            # get hand obj
+            hd = self.data[h]
+            hd.plot_avg_data(self.subjects, rotation, show_plot=False, save_plot=False)
+
+        plt.show()
+        #for ax in axs.flat:
+        #    ax.label_outer()
 
     def plot_all_fd(self):
         """
         Make averaged frechet distance plots for each hand and plot them in a big subplot array
         """
+        pass
+
+class AstAnalyzer:
+    """
+    This class takes in two AsteriskHandData objects and provides a direct comparison between them.
+    """
+    def __init__(self):
         pass

@@ -194,7 +194,7 @@ class AsteriskHandData:
                 t.save_data()
                 # print(f"Saved: {t.generate_name()}")
 
-    def _make_plot(self, trials, use_filtered=True, stds=False):
+    def _make_plot(self, trials, use_filtered=True, stds=False, subplot=None):
         """
         Function to make our plots.
         :param trials: either a list of AsteriskTrialData or AsteriskAverage objs
@@ -208,10 +208,13 @@ class AsteriskHandData:
         # plot data
         for i, t in enumerate(trials):
             data_x, data_y, theta = t.get_poses(use_filtered)
-            plt.plot(data_x, data_y, color=colors[i], label='trajectory')
+            if subplot is None:
+                plt.plot(data_x, data_y, color=colors[i], label='trajectory')
+            else:
+                subplot.plot(data_x, data_y, color=colors[i], label='trajectory')
 
-            if stds:
-                t.plot_sd(colors[i])
+            if stds: # only for AsteriskAverage objs
+                t.plot_sd(colors[i], subplot)
 
         # plot target lines as dotted lines
         self.plot_all_target_lines(colors)
@@ -256,7 +259,7 @@ class AsteriskHandData:
             plt.legend()
             plt.show()
 
-    def plot_avg_data(self, subjects, rotation="n", show_plot=True, save_plot=False):
+    def plot_avg_data(self, subjects, rotation="n", show_plot=True, save_plot=False, subplot=None):
         """
         Plots the data from one subject, averaging all of the data in each direction
         :param subjects: list of subjects. If none is provided, uses all of them
@@ -269,10 +272,14 @@ class AsteriskHandData:
         else:
             avgs = self.calc_avg_ast(subjects, rotation)
 
-        plt = self._make_plot(avgs, use_filtered=False, stds=True)
+        if subplot is None:
+            plt = self._make_plot(avgs, use_filtered=False, stds=True)
+
+        else:
+            plt = self._make_plot(avgs, use_filtered=False, stds=True, subplot=subplot)
 
         for a in avgs:
-            a.plot_line_contributions()
+            a.plot_line_contributions(subplot)
 
         if subjects:
             plt.title(f"{subjects}, {self.hand.get_name()}, {rotation}")
