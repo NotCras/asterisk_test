@@ -107,8 +107,23 @@ class AstAnalyzer:
     """
     This class takes in two AsteriskHandData objects and provides a direct comparison between them.
     """
-    def __init__(self):
+    def __init__(self, hand1, hand2):
+
+        self.hand1 = hand1
+        self.hand2 = hand2
+
+
         pass
+
+    def generate_results_report(self):
+        pass
+
+    def plot_direction(self):
+        pass
+
+    def plot_asterisk(self):
+        pass
+
 
 
 if __name__ == '__main__':

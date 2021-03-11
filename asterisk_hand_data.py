@@ -125,7 +125,7 @@ class AsteriskHandData:
         return dfs
 
     def _average_dir(self, translation, rotation, subject=None):
-        """  # TODO: still need to test
+        """
         Averages a set of asterisk_trial paths. We run this on groups of paths of the same direction.
         :param translation: trial direction to average
         :param rotation: trial rotation to average
@@ -229,7 +229,7 @@ class AsteriskHandData:
             # plot the fd values for that direction
             trial_label = f"{t.trial_translation}_{t.trial_rotation}"
             t_fd = t.translation_fd
-            r_fd = t.rotation_fd  # TODO: don't do anything with r_fd
+            r_fd = t.rotation_fd  # TODO: we don't do anything with r_fd but fd will only return max error anyway
 
             plt.bar(trial_label, t_fd)
 

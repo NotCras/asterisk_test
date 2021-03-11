@@ -82,7 +82,6 @@ class AveragedTrial(AsteriskTrialData):
         self.names = []  # if rerunning an average with same object, make sure these lists are empty
         self.averaged_trials = []
         for t_n in trials:
-            # TODO: get a list of the last obj poses, will plot them on data
             self.names.append(t_n.generate_name())
             self.averaged_trials.append(t_n)
 
@@ -207,15 +206,15 @@ class AveragedTrial(AsteriskTrialData):
 
 if __name__ == '__main__':
     # demo and test
-    test1 = AsteriskTrialData('sub1_2v2_c_n_1.csv')
-    test2 = AsteriskTrialData('sub1_2v2_c_n_2.csv')
-    test3 = AsteriskTrialData('sub1_2v2_c_n_3.csv')
+    #test1 = AsteriskTrialData('sub1_2v3_d_n_1.csv')
+    #test2 = AsteriskTrialData('sub1_2v3_d_n_2.csv')
+    #test3 = AsteriskTrialData('sub1_2v3_d_n_3.csv')
 
-    test4 = AsteriskTrialData('sub2_2v2_c_n_1.csv')
-    test5 = AsteriskTrialData('sub2_2v2_c_n_2.csv')
-    test6 = AsteriskTrialData('sub2_2v2_c_n_3.csv')
+    test4 = AsteriskTrialData('sub2_2v3_d_n_1.csv')
+    test5 = AsteriskTrialData('sub2_2v3_d_n_2.csv')
+    test6 = AsteriskTrialData('sub2_2v3_d_n_3.csv')
 
-    lines = [test1, test2, test3, test4, test5, test6]
+    lines = [ test4, test5, test6]
 
     avgln = AveragedTrial()
     avgln.make_average_line(lines)
