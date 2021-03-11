@@ -29,6 +29,7 @@ class AsteriskHandData:
         self.window_size = None
         self.averages = []
 
+
     def _gather_hand_data(self, subjects):
         """
         Returns a dictionary with the data for the hand, sorted by task.

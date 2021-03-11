@@ -22,6 +22,12 @@ class AveragedTrial(AsteriskTrialData):
         # self.pose_average = []  # maybe just use poses
         self.pose_sd = None
 
+        # just reminding that these are here
+        self.translation_fd = None
+        self.rotation_fd = None
+        self.mvt_efficiency = None
+        self.area_btwn = None
+
     def get_poses_sd(self):
         """
         Separates poses into x, y, theta for easy plotting.
@@ -71,6 +77,28 @@ class AveragedTrial(AsteriskTrialData):
 
         return rotated_line
 
+    def _calc_avg_metrics(self):
+        """
+        Calculates the average metric values
+        """  # TODO: do we want to analyze on filtered or unfiltered data here? Should we force it to be one way?
+        # go through each trial, grab relevant values and add them to sum
+        values = {"t_fd": 0, "r_fd": 0, "mvt_eff": 0, "btw": 0}
+
+        for t in self.averaged_trials:
+            values["t_fd"] = values["t_fd"] + t.translation_fd
+            values["r_fd"] = values["r_fd"] + t.rotation_fd
+            values["mvt_eff"] = values["mvt_eff"] + t.mvt_efficiency
+            values["btwn"] = values["btwn"] + t.area_btwn
+
+        num_trials = len(self.averaged_trials)
+
+        self.translation_fd = values["t_fd"] / num_trials
+        self.rotation_fd = values["r_fd"] / num_trials
+        self.mvt_efficiency = values["mvt_eff"] / num_trials
+        self.area_btwn = values["btwn"] / num_trials
+
+        return self.translation_fd, self.rotation_fd, self.mvt_efficiency, self.area_btwn
+
     def make_average_line(self, trials):
         """
         Average the path of 2 or more AsteriskTrialObjects. Produces average and standard deviations.
@@ -104,7 +132,7 @@ class AveragedTrial(AsteriskTrialData):
         rotated_data = self._rotate_points(data_points, self.rotations[self.trial_translation])
 
         avg_line = pd.DataFrame()
-        avg_std = pd.DataFrame()
+        avg_std = pd.DataFrame()  # TODO: implement new way to calculate standard deviations
 
         # now we go through averaging
         for t in rotated_target_line:
@@ -125,11 +153,11 @@ class AveragedTrial(AsteriskTrialData):
 
         print(f"Averaged: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
 
-        # now filter and run fd
+        # now filter and calculate metrics
         self.moving_average()
-        # self.translation_fd, self.rotation_fd = self.calc_frechet_distance()  # TODO: broken for avg, investigate!
+        metric_values = self._calc_avg_metrics()
 
-        return correct_avg
+        return correct_avg, metric_values
 
     def plot_line_contributions(self):
         """

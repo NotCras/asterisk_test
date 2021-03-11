@@ -62,22 +62,23 @@ class AsteriskTrialData:
         self.target_line = None  # the straight path in the direction that this trial is
         self.target_rotation = None
 
+        # metrics
         self.total_distance = None
-        self.dist_along_translation = None
-        self.dist_along_twist = None
+        self.translation_fd = None
+        self.rotation_fd = None
+        self.mvt_efficiency = None
+        self.area_btwn = None
 
         if file_name:
             self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
             self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
-        # frechet distance variables
-        self.translation_fd = None
-        self.rotation_fd = None
-
         self.translation_indices = None
 
         if file_name and do_fd:
             self.translation_fd, self.rotation_fd = self.calc_frechet_distance()
+            self.mvt_efficiency = self.calc_mvt_efficiency()
+            self.area_btwn = self.calc_area_btwn_curves()
 
             # then we reverse engineer target indices
             self.translation_indices = self.get_target_indices()
@@ -386,6 +387,36 @@ class AsteriskTrialData:
         r_fd = sm.frechet_dist(o_path_ang, self.target_rotation)  # just max error right now
 
         return t_fd, r_fd
+
+    def calc_mvt_efficiency(self, use_filtered=True):
+        """
+        Calculates the efficiency of movement of the trial
+        amount of translation in trial direction / arc length of path
+        """  # TODO only occurs with translation
+        total_dist_in_direction = self.total_distance
+        o_x, o_y, o_path_ang = self.get_poses(use_filtered)
+        o_path_t = np.column_stack((o_x, o_y))
+
+        trial_arc_length = sm.get_arc_length(o_path_t)
+
+        return total_dist_in_direction / trial_arc_length
+
+    def calc_area_btwn_curves(self, use_filtered=True):
+        """
+        Returns the area between the trial path and the target line
+        """  # TODO only occurs with translation
+        o_x, o_y, o_path_ang = self.get_poses(use_filtered)
+        o_path_t = np.column_stack((o_x, o_y))
+
+        return sm.area_between_two_curves(o_path_t, self.target_line)
+
+    def update_all_metrics(self, use_filtered=True):
+        """
+        Updates all metric values on the object
+        """
+        self.translation_fd, self.rotation_fd = self.calc_frechet_distance()
+        self.mvt_efficiency = self.calc_mvt_efficiency()
+        self.area_btwn = self.calc_area_btwn_curves()
 
     def get_target_indices(self):
         """
