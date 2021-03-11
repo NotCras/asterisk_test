@@ -107,25 +107,44 @@ class AstAnalyzer:
     """
     This class takes in two AsteriskHandData objects and provides a direct comparison between them.
     """
-    def __init__(self, hand1, hand2):
+    def __init__(self, hands):
+        """
+        A easier way to manage the quantitative results of the asterisk test data you collect.
+        Manages all quantitative metrics in a pandas dataframe
+        """
+        # list of hands to include
+        self.hands = hands
 
-        self.hand1 = hand1
-        self.hand2 = hand2
-
-        # make sure there is averaged data on the hand asterisk trials, otherwise average them
-        # then collect the averaged metrics
-        pass
+        # everything stored as a pandas dataframe
+        self.metrics = self.generate_results_report()
 
     def generate_results_report(self):
-        pass
+        """
+        Generates a dictionary of the averaged metrics each hand has
+        # TODO: maybe also grab the standard deviation and highest value as well?
+        """
+        metric_vals = pd.DataFrame(columns = ["hand", "translation", "rotation", "total_distance", "translation_fd",
+                                              "rotation_fd", "mvt_efficiency", "area_btwn"])
 
-    def plot_direction(self):
+        for h in self.hands:
+            for avg in h.averages:
+                values = pd.Series({"hand": h.hand.get_name(), "translation": avg.trial_translation,
+                    "rotation": avg.trial_rotation, "total_distance": avg.total_distance,
+                    "translation_fd": avg.translation_fd, "rotation_fd": avg.rotation_fd,
+                    "mvt_efficiency": avg.mvt_efficiency, "area_btwn": avg.area_btwn})
+                metric_vals = metric_vals.append(values)
+
+        return metric_vals
+
+    def plot_direction(self, translation, rotation="n", hands_to_include=None):
+        """
+        Plot the average path for each hand data object contained in this object for a specific
+        translation rotation pair. Also has the option to selectively choose hands.
+        """
         pass
 
     def plot_asterisk(self):
         pass
-
-
 
 if __name__ == '__main__':
     study = AsteriskStudy(["sub1", "sub2"], ["2v2", "2v3", "3v3", "barrett"])

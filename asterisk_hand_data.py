@@ -258,6 +258,9 @@ class AsteriskHandData:
             plt.legend()
             plt.show()
 
+            # TODO: add ability to make comparison plot between n, m15, and p15
+            # TODO: have an ability to plot a single average trial
+
     def plot_avg_data(self, subjects, rotation="n", show_plot=True, save_plot=False):
         """
         Plots the data from one subject, averaging all of the data in each direction
