@@ -112,7 +112,8 @@ class AstAnalyzer:
         self.hand1 = hand1
         self.hand2 = hand2
 
-
+        # make sure there is averaged data on the hand asterisk trials, otherwise average them
+        # then collect the averaged metrics
         pass
 
     def generate_results_report(self):

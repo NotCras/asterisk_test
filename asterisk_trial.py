@@ -77,7 +77,7 @@ class AsteriskTrialData:
 
         if file_name and do_fd:
             self.translation_fd, self.rotation_fd = self.calc_frechet_distance()
-            self.mvt_efficiency = self.calc_mvt_efficiency()
+            self.mvt_efficiency, self.arc_length = self.calc_mvt_efficiency()
             self.area_btwn = self.calc_area_btwn_curves()
 
             # then we reverse engineer target indices
@@ -399,7 +399,7 @@ class AsteriskTrialData:
 
         trial_arc_length = sm.get_arc_length(o_path_t)
 
-        return total_dist_in_direction / trial_arc_length
+        return total_dist_in_direction / trial_arc_length[0], trial_arc_length[0]
 
     def calc_area_btwn_curves(self, use_filtered=True):
         """

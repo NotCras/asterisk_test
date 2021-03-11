@@ -84,7 +84,7 @@ class AveragedTrial(AsteriskTrialData):
         # go through each trial, grab relevant values and add them to sum
         values = {"t_fd": 0, "r_fd": 0, "mvt_eff": 0, "btw": 0}
 
-        for t in self.averaged_trials:
+        for t in self.averaged_trials:  # TODO: get standard deviations of these metrics
             values["t_fd"] = values["t_fd"] + t.translation_fd
             values["r_fd"] = values["r_fd"] + t.rotation_fd
             values["mvt_eff"] = values["mvt_eff"] + t.mvt_efficiency
