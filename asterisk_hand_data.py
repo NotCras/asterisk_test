@@ -162,7 +162,7 @@ class AsteriskHandData:
         else:  # if no subjects given, defaults to all subjects
             subjects = self.subjects_containing
 
-        if rotation:
+        if rotation is None:
             for t in ["a", "b", "c", "d", "e", "f", "g", "h"]:
                 avg = self._average_dir(t, rotation, subjects)
                 averages.append(avg)
@@ -261,7 +261,7 @@ class AsteriskHandData:
             # TODO: add ability to make comparison plot between n, m15, and p15
             # TODO: have an ability to plot a single average trial
 
-    def plot_avg_data(self, subjects, rotation="n", show_plot=True, save_plot=False):
+    def plot_avg_data(self, rotation="n", subjects=None, show_plot=True, save_plot=False):
         """
         Plots the data from one subject, averaging all of the data in each direction
         :param subjects: list of subjects. If none is provided, uses all of them
@@ -269,26 +269,26 @@ class AsteriskHandData:
         :param show_plot: flag to show plot. Default is true
         :param save_plot: flat to save plot as a file. Default is False
         """
-        if self.averages:
-            avgs = self.averages
-        else:
+        if subjects is None:
+            subjects = self.subjects_containing
+
+        # TODO: check that specifying subjects works ok
+        if self.averages is None:
             avgs = self.calc_avg_ast(subjects, rotation)
+
+        else:
+            avgs = self.averages
 
         plt = self._make_plot(avgs, use_filtered=False, stds=True)
 
         for a in avgs:
             a.plot_line_contributions()
 
-        if subjects:
-            plt.title(f"{self.hand.get_name()}, {subjects}, {rotation}")
-        else:
-            plt.title(f"Averaged {self.hand.get_name()}, {rotation}")
+        plt.title(f"Avg {self.hand.get_name()}, {subjects}, {rotation}")
 
         if save_plot:
-            if subjects:
-                plt.savefig(f"pics/avgd_{self.hand.get_name()}_{subjects}_{rotation}.jpg", format='jpg')
-            else:
-                plt.savefig(f"pics/avgd_{self.hand.get_name()}_all_{rotation}.jpg", format='jpg')
+            plt.savefig(f"pics/avgd_{self.hand.get_name()}_{subjects}_{rotation}.jpg", format='jpg')
+
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
@@ -422,26 +422,26 @@ if __name__ == '__main__':
     h.filter_data()
 
     # subject 1 averages
-    h.plot_avg_data(subjects="sub1", rotation="n", show_plot=False, save_plot=True)
+    h.plot_avg_data(rotation="n", subjects="sub1", show_plot=False, save_plot=True)
     plt.clf()
-    h.plot_avg_data(subjects="sub1", rotation="m15", show_plot=False, save_plot=True)
+    h.plot_avg_data(rotation="m15", subjects="sub1", show_plot=False, save_plot=True)
     plt.clf()
-    h.plot_avg_data(subjects="sub1", rotation="p15", show_plot=False, save_plot=True)
+    h.plot_avg_data(rotation="p15", subjects="sub1", show_plot=False, save_plot=True)
     plt.clf()
 
     # subject 2 averages
-    h.plot_avg_data(subjects="sub2", rotation="n", show_plot=False, save_plot=True)
+    h.plot_avg_data(rotation="n", subjects="sub2", show_plot=False, save_plot=True)
     plt.clf()
-    h.plot_avg_data(subjects="sub2", rotation="m15", show_plot=False, save_plot=True)
+    h.plot_avg_data(rotation="m15", subjects="sub2", show_plot=False, save_plot=True)
     plt.clf()
-    h.plot_avg_data(subjects="sub2", rotation="p15", show_plot=False, save_plot=True)
+    h.plot_avg_data(rotation="p15", subjects="sub2", show_plot=False, save_plot=True)
     plt.clf()
 
     # all subjects
-    h.plot_avg_data(subjects=None, rotation="p15", show_plot=False, save_plot=True)
+    h.plot_avg_data(rotation="p15", subjects=None, show_plot=False, save_plot=True)
     plt.clf()
-    h.plot_avg_data(subjects=None, rotation="m15", show_plot=False, save_plot=True)
+    h.plot_avg_data(rotation="m15", subjects=None,  show_plot=False, save_plot=True)
     plt.clf()
-    h.plot_avg_data(subjects=None, rotation="n", show_plot=True, save_plot=True)
+    h.plot_avg_data(rotation="n", subjects=None, show_plot=True, save_plot=True)
 
 

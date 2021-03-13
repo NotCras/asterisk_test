@@ -175,10 +175,11 @@ class AsteriskTrialData:
         Saves pose data as a new csv file
         :param file_name_overwrite: optional parameter, will save as generate_name unless a different name is specified
         """
-        if file_name_overwrite:
-            new_file_name = file_name_overwrite + ".csv"
-        else:
+        if file_name_overwrite is None:
             new_file_name = self.generate_name() + ".csv"
+
+        else:
+            new_file_name = file_name_overwrite + ".csv"
 
         # if data has been filtered, we also want to include that in csv generation,
         # otherwise the filtered columns won't exist
