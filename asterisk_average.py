@@ -11,7 +11,7 @@ import pdb
 
 class AveragedTrial(AsteriskTrialData):
     rotations = {"a": 270, "b": 315, "c": 0, "d": 45, "e": 90,
-                 "f": 135, "g": 180, "h": 225}
+                 "f": 135, "g": 180, "h": 225, "n": 0}
 
     def __init__(self):
         super(AveragedTrial, self).__init__()  # makes an empty AsteriskTrialData object
@@ -173,7 +173,7 @@ class AveragedTrial(AsteriskTrialData):
         correct_std = self._rotate_points(avg_std, -1 * self.rotations[self.trial_translation])
 
         self.poses = correct_avg
-        self.pose_sd = correct_std  # TODO: std confidence intervals don't seem to match up well, need to investigate
+        self.pose_sd = correct_std
 
         print(f"Averaged: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
 
@@ -187,7 +187,7 @@ class AveragedTrial(AsteriskTrialData):
         """
         Plot circles where each trial stops contributing to the line average.
         """
-        circle_colors = {"sub1":"xkcd:dark blue", "sub2":"xkcd:dark blue", "sub3":"xkcd:dark blue"}
+        circle_colors = {"sub1":"xkcd:dark blue", "sub2":"xkcd:dark lavender", "sub3":"xkcd:forrest green"}
 
         a_x, a_y, _ = self.get_poses(use_filtered=False)
         for t in self.averaged_trials:

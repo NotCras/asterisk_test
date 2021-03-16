@@ -164,13 +164,11 @@ class AsteriskHandData:
         :param rotation: refers to the rotation type ("n", "m15", "p15"). Defaults to all
         """
         averages = []
-        if subjects:
-            pass
-        else:  # if no subjects given, defaults to all subjects
+        if subjects is None:  # if no subjects given, defaults to all subjects
             subjects = self.subjects_containing
 
         if rotation is None:
-            # TODO: make this smarter, so that we base the list on what exists
+            # TODO: make this smarter, so that we base the list on what exists on object
             for t, r in datamanager.generate_t_r_pairs(self.hand.get_name()):
                 avg = self._average_dir(t, r, subjects)
                 averages.append(avg)
