@@ -1,6 +1,6 @@
 
 import numpy as np
-from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan, radians
+from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan, radians, mean, std
 import pandas as pd
 import matplotlib.pyplot as plt
 from asterisk_trial import AsteriskTrialData
@@ -23,10 +23,17 @@ class AveragedTrial(AsteriskTrialData):
         self.pose_sd = None
 
         # just reminding that these are here
+        self.total_distance = None
         self.translation_fd = None
         self.rotation_fd = None
         self.mvt_efficiency = None
         self.area_btwn = None
+
+        self.total_distance_sd = None
+        self.translation_fd_sd = None
+        self.rotation_fd_sd = None
+        self.mvt_efficiency_sd = None
+        self.area_btwn_sd = None
 
     def get_poses_sd(self):
         """
@@ -82,22 +89,39 @@ class AveragedTrial(AsteriskTrialData):
         Calculates the average metric values
         """  # TODO: do we want to analyze on filtered or unfiltered data here? Should we force it to be one way?
         # go through each trial, grab relevant values and add them to sum
-        values = {"t_fd": 0, "r_fd": 0, "mvt_eff": 0, "btw": 0}
+        # first index is the value, second is the standard deviation of the value
+        values = {"dist": (0, 0), "t_fd": (0, 0), "r_fd": (0, 0), "mvt_eff": (0, 0), "btwn": (0, 0)}
+        dist_vals = []
+        t_fd_vals = []
+        r_fd_vals = []
+        mvt_eff_vals = []
+        btwn_vals = []
 
         for t in self.averaged_trials:  # TODO: get standard deviations of these metrics
-            values["t_fd"] = values["t_fd"] + t.translation_fd
-            values["r_fd"] = values["r_fd"] + t.rotation_fd
-            values["mvt_eff"] = values["mvt_eff"] + t.mvt_efficiency
-            values["btwn"] = values["btwn"] + t.area_btwn
+            dist_vals.append(t.total_distance)
+            t_fd_vals.append(t.translation_fd)
+            r_fd_vals.append(t.rotation_fd)
+            mvt_eff_vals.append(t.mvt_efficiency)
+            btwn_vals.append(t.area_btwn)
 
-        num_trials = len(self.averaged_trials)
+        values["dist"] = (mean(dist_vals), std(dist_vals))
+        values["t_fd"] = (mean(t_fd_vals), std(t_fd_vals))
+        values["r_fd"] = (mean(r_fd_vals), std(r_fd_vals))
+        values["mvt_eff"] = (mean(mvt_eff_vals), std(mvt_eff_vals))
+        values["btwn"] = (mean(btwn_vals), std(btwn_vals))
 
-        self.translation_fd = values["t_fd"] / num_trials
-        self.rotation_fd = values["r_fd"] / num_trials
-        self.mvt_efficiency = values["mvt_eff"] / num_trials
-        self.area_btwn = values["btwn"] / num_trials
+        self.total_distance = values["dist"][0]
+        self.total_distance_sd = values["dist"][1]
+        self.translation_fd = values["t_fd"][0]
+        self.translation_fd_sd = values["t_fd"][1]
+        self.rotation_fd = values["r_fd"][0]
+        self.rotation_fd_sd = values["r_fd"][1]
+        self.mvt_efficiency = values["mvt_eff"][0]
+        self.mvt_efficiency_sd = values["mvt_eff"][1]
+        self.area_btwn = values["btwn"][0]
+        self.area_btwn_sd = values["btwn"][1]
 
-        return self.translation_fd, self.rotation_fd, self.mvt_efficiency, self.area_btwn
+        return self.total_distance, self.translation_fd, self.rotation_fd, self.mvt_efficiency, self.area_btwn
 
     def make_average_line(self, trials):
         """
@@ -163,15 +187,19 @@ class AveragedTrial(AsteriskTrialData):
         """
         Plot circles where each trial stops contributing to the line average.
         """
+        circle_colors = {"sub1":"xkcd:dark blue", "sub2":"xkcd:dark blue", "sub3":"xkcd:dark blue"}
+
         a_x, a_y, _ = self.get_poses(use_filtered=False)
         for t in self.averaged_trials:
             last_pose = t.get_last_pose()
 
-            # TODO: test this
+            subject = t.subject
+            subject_color = circle_colors[subject]
+
             # find narrow target on average line, index of point on line closest to last pose
             index = AsteriskCalculations.narrow_target([last_pose[0], last_pose[1]], np.column_stack((a_x, a_y)))
             # plot a dot there
-            plt.plot(a_x[index], a_y[index], marker='o', fillstyle='none', color="xkcd:dark blue")
+            plt.plot(a_x[index], a_y[index], marker='o', fillstyle='none', color=subject_color)
 
     def avg_debug_plot(self, show_plot=True, save_plot=False):
         """

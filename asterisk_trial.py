@@ -408,7 +408,7 @@ class AsteriskTrialData:
         """  # TODO only occurs with translation, fails for no translation trials
         o_x, o_y, o_path_ang = self.get_poses(use_filtered)
         o_path_t = np.column_stack((o_x, o_y))
-        pdb.set_trace()
+        # pdb.set_trace()
 
         return sm.area_between_two_curves(o_path_t, self.target_line)
 

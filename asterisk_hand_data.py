@@ -15,7 +15,7 @@ from asterisk_plotting import AsteriskPlotting as aplt
 
 class AsteriskHandData:
     # TODO: add ability to add trials after the fact?
-    def __init__(self, subjects, hand_name):
+    def __init__(self, subjects, hand_name, rotation=None):
         """
         Class to hold all the data pertaining to a specific hand.
         Combines data from all subjects
@@ -24,13 +24,13 @@ class AsteriskHandData:
         """
         self.hand = HandObj(hand_name)
         self.subjects_containing = subjects
-        self.data = self._gather_hand_data(subjects)
+        self.data = self._gather_hand_data(subjects, rotation)
         self.filtered = False
         self.window_size = None
         self.averages = []
 
 
-    def _gather_hand_data(self, subjects):
+    def _gather_hand_data(self, subjects, rotation=None):
         """
         Returns a dictionary with the data for the hand, sorted by task.
         Each key,value pair of dictionary is:
@@ -39,9 +39,15 @@ class AsteriskHandData:
         :param subjects: list of subjects to get
         """
         data_dictionary = dict()
-        for t, r in datamanager.generate_t_r_pairs(self.hand.get_name()):
-            key = f"{t}_{r}"
-            data_dictionary[key] = self._make_asterisk_trials(subjects, t, r, [1, 2, 3])
+        if rotation is None:
+            for t, r in datamanager.generate_t_r_pairs(self.hand.get_name()):
+                key = f"{t}_{r}"
+                data_dictionary[key] = self._make_asterisk_trials(subjects, t, r, [1, 2, 3])
+
+        else:  # TODO: also add a check for just cw and ccw
+            for t in ["a", "b", "c", "d", "e", "f", "g", "h"]:
+                key = f"{t}_{rotation}"
+                data_dictionary[key] = self._make_asterisk_trials(subjects, t, rotation, [1, 2, 3])
 
         return data_dictionary
 
@@ -133,10 +139,11 @@ class AsteriskHandData:
         :param subject: subject or list of subjects to average, optional. If not provided, defaults to all subjects
         :return returns averaged path
         """
-        if subject:  # get batches of data by trial type
-            trials = self._get_ast_dir(translation, subject, rotation)
-        else:  # if no subjects given, defaults to all subjects
+        if subject is None:  # get batches of data by trial type, if no subjects given, defaults to all subjects
             trials = self._get_ast_dir(translation, self.subjects_containing, rotation)
+
+        else:
+            trials = self._get_ast_dir(translation, subject, rotation)
 
         average = AveragedTrial()
         average.make_average_line(trials)
@@ -163,12 +170,13 @@ class AsteriskHandData:
             subjects = self.subjects_containing
 
         if rotation is None:
-            for t in ["a", "b", "c", "d", "e", "f", "g", "h"]:
-                avg = self._average_dir(t, rotation, subjects)
-                averages.append(avg)
-        else:
+            # TODO: make this smarter, so that we base the list on what exists
             for t, r in datamanager.generate_t_r_pairs(self.hand.get_name()):
                 avg = self._average_dir(t, r, subjects)
+                averages.append(avg)
+        else:
+            for t in ["a", "b", "c", "d", "e", "f", "g", "h"]:
+                avg = self._average_dir(t, rotation, subjects)
                 averages.append(avg)
 
         self.averages = averages
@@ -195,7 +203,7 @@ class AsteriskHandData:
                 t.save_data()
                 # print(f"Saved: {t.generate_name()}")
 
-    def _make_plot(self, trials, use_filtered=True, stds=False):
+    def _make_plot(self, trials, use_filtered=True, stds=False, linestyle="solid"):
         """
         Function to make our plots.
         :param trials: either a list of AsteriskTrialData or AsteriskAverage objs
@@ -210,7 +218,7 @@ class AsteriskHandData:
         for i, t in enumerate(trials):
             data_x, data_y, theta = t.get_poses(use_filtered)
 
-            plt.plot(data_x, data_y, color=colors[i], label='trajectory')
+            plt.plot(data_x, data_y, color=colors[i], label='trajectory', linestyle=linestyle)
 
             if stds: # only for AsteriskAverage objs
                 t.plot_sd(colors[i])
@@ -261,7 +269,7 @@ class AsteriskHandData:
             # TODO: add ability to make comparison plot between n, m15, and p15
             # TODO: have an ability to plot a single average trial
 
-    def plot_avg_data(self, rotation="n", subjects=None, show_plot=True, save_plot=False):
+    def plot_avg_data(self, rotation="n", subjects=None, show_plot=True, save_plot=False, linestyle="solid", plot_contributions=True):
         """
         Plots the data from one subject, averaging all of the data in each direction
         :param subjects: list of subjects. If none is provided, uses all of them
@@ -273,16 +281,17 @@ class AsteriskHandData:
             subjects = self.subjects_containing
 
         # TODO: check that specifying subjects works ok
-        if self.averages is None:
-            avgs = self.calc_avg_ast(subjects, rotation)
-
-        else:
+        if self.averages:
             avgs = self.averages
 
-        plt = self._make_plot(avgs, use_filtered=False, stds=True)
+        else:
+            avgs = self.calc_avg_ast(subjects, rotation)
 
-        for a in avgs:
-            a.plot_line_contributions()
+        plt = self._make_plot(avgs, use_filtered=False, stds=True, linestyle=linestyle)
+
+        if plot_contributions:
+            for a in avgs:
+                a.plot_line_contributions()
 
         plt.title(f"Avg {self.hand.get_name()}, {subjects}, {rotation}")
 
