@@ -170,6 +170,13 @@ class AstAnalyzer:
 
         self.comparison_results.to_csv(new_file_name, index=True)
 
+    def plot_metric_comparisons(self):
+        """
+        Plot the metrics in a bar chart. Each metric will have each hand side by side.
+        :return:
+        """
+        pass
+
     def plot_direction(self, translation, rotation="n", show_plot=True, save_plot=False):
         """
         Plot the average path for each hand data object contained in this object for a specific

@@ -404,13 +404,19 @@ class AsteriskTrialData:
 
     def calc_area_btwn_curves(self, use_filtered=True):
         """
-        Returns the area between the trial path and the target line
+        Returns the area between the trial path and the target line, only with respect to translation.
+        Currently returns None for non-translation trials
         """  # TODO only occurs with translation, fails for no translation trials
         o_x, o_y, o_path_ang = self.get_poses(use_filtered)
         o_path_t = np.column_stack((o_x, o_y))
         # pdb.set_trace()
 
-        return sm.area_between_two_curves(o_path_t, self.target_line)
+        try:
+            val = sm.area_between_two_curves(o_path_t, self.target_line)
+        except ValueError:  # TODO: is there a better way to handle this?
+            val = None
+
+        return val
 
     def update_all_metrics(self, use_filtered=True):
         """
