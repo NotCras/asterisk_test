@@ -39,7 +39,7 @@ class AsteriskArucoVision:
 
     def inverse_perspective(self, rvec, tvec):
         # print(rvec)
-        # print(np.matrix(rvec[0]).T)  #TODO: Something wrong is going on here... need to look into the rodrigues function
+        # print(np.matrix(rvec[0]).T)
         R, _ = cv2.Rodrigues(rvec)
         R = np.matrix(R).T
         invTvec = np.dot(-R, np.matrix(tvec))
@@ -219,6 +219,7 @@ if __name__ == "__main__":
             1 - view a set of images like a video
             2 - aruco analyze one specific set of data
             3 - aruco analyze a batch of data
+            4 - validate aruco analysis on video
         """)
 
     ans = datamanager.smart_input("Enter a function", "mode", ["1", "2", "3"])
@@ -268,3 +269,13 @@ if __name__ == "__main__":
 
         print("Completed Batch Aruco Analysis!")
         print(files_covered)
+
+    elif ans == "4":
+        translation = datamanager.smart_input("Enter type of translation: ", "translations")
+        rotation = datamanager.smart_input("Enter type of rotation: ", "rotations")
+        trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
+
+
+
+
+        pass
