@@ -112,6 +112,7 @@ class AsteriskStudy:
         """
         pass
 
+
 class AstAnalyzer:
     """
     This class takes in two AsteriskHandData objects and provides a direct comparison between them.
@@ -252,6 +253,7 @@ class AstAnalyzer:
             plt.show()
 
         return plt
+
 
 if __name__ == '__main__':
     study = AsteriskStudy(["sub1", "sub2"], ["2v2", "2v3", "3v3", "barrett"])

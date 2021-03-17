@@ -147,6 +147,7 @@ class AveragedTrial(AsteriskTrialData):
         # first take attributes of first asterisktrialdata object and take its attributes
         trial = self.averaged_trials[0]
         self.subject = trial.subject  # TODO: add more subjects, make this a list? -> will affect other func too
+        self.hand = trial.hand
         self.trial_translation = trial.trial_translation
         self.trial_rotation = trial.trial_rotation
         self.trial_num = trial.trial_num
@@ -170,12 +171,11 @@ class AveragedTrial(AsteriskTrialData):
         # now we go through averaging
         for t in rotated_target_line:
             t_x = t[0]
-            points = self._get_points(rotated_data, t_x, 0.05)
             # TODO: 0.05 is arbitrary... make bounds scale with resolution of target_line?
+            points = self._get_points(rotated_data, t_x, 0.05)
 
             averaged_point = points.mean(axis=0)  # averages each column in DataFrame
 
-            # pdb.set_trace()
             # average deviation -> get y coordinate errors for each point, average that, and that's what you should get
             # err_x = points['x'] - averaged_point['x']  # TODO: do I also need to do x average deviation?
             err_y = points['y'] - averaged_point['y']
@@ -190,9 +190,11 @@ class AveragedTrial(AsteriskTrialData):
             ad_point_up['y'] = err_y_up.mean(axis=0) + averaged_point['y']
             ad_point_down['y'] = err_y_down.mean(axis=0) + averaged_point['y']
 
-            ad_point_up["rmag"] = err_rmag.mean(axis=0)  # TODO: get both sides of zero
+            ad_point_up["rmag"] = err_rmag.mean(axis=0) 
             ad_point_down["rmag"] = err_rmag.mean(axis=0)
             # std_point = points.std(axis=0)
+
+            print(f"num points averaged: {len(points)}, num up: {len(err_y_up)}, num down: {len(err_y_down)}")
 
             avg_line = avg_line.append(averaged_point, ignore_index=True)
             avg_ad_up = avg_ad_up.append(ad_point_up, ignore_index=True)
@@ -250,6 +252,8 @@ class AveragedTrial(AsteriskTrialData):
         self.plot_sd("xkcd:burnt orange")
 
         self.plot_line_contributions()
+
+        plt.title(f"Avg Debug Plot: {self.hand.get_name()}, {self.trial_translation}_{self.trial_rotation}")
 
         # TODO: show all target line points on plot, and show at least one averaging interval
 
