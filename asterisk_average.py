@@ -20,7 +20,8 @@ class AveragedTrial(AsteriskTrialData):
         self.names = []  # names of trials averaged
         self.averaged_trials = []  # actual AsteriskTrialData objects that were averaged
         # self.pose_average = []  # maybe just use poses
-        self.pose_sd = None
+        self.pose_ad_up = None
+        self.pose_ad_down = None
 
         # just reminding that these are here
         self.total_distance = None
@@ -35,14 +36,20 @@ class AveragedTrial(AsteriskTrialData):
         self.mvt_efficiency_sd = None
         self.area_btwn_sd = None
 
-    def get_poses_sd(self):
+    def get_poses_ad(self, direction=0):
         """
         Separates poses into x, y, theta for easy plotting.
+        direction is 0 for up, 1 for down
         """
         # get the poses
-        x = self.pose_sd["x"]
-        y = self.pose_sd["y"]
-        twist = self.pose_sd["rmag"]
+        if direction == 0:
+            x = self.pose_ad_up["x"]
+            y = self.pose_ad_up["y"]
+            twist = self.pose_ad_up["rmag"]
+        elif direction == 1:
+            x = self.pose_ad_down["x"]
+            y = self.pose_ad_down["y"]
+            twist = self.pose_ad_down["rmag"]
 
         return_x = pd.Series.to_list(x.dropna())
         return_y = pd.Series.to_list(y.dropna())
@@ -154,26 +161,51 @@ class AveragedTrial(AsteriskTrialData):
         r_target_x, r_target_y = AsteriskPlotting.get_c(100)
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
         rotated_data = self._rotate_points(data_points, self.rotations[self.trial_translation])
+        # TODO: do it out without rotating?
 
         avg_line = pd.DataFrame()
-        avg_std = pd.DataFrame()  # TODO: implement new way to calculate standard deviations
+        avg_ad_up = pd.DataFrame()
+        avg_ad_down = pd.DataFrame()
 
         # now we go through averaging
         for t in rotated_target_line:
             t_x = t[0]
             points = self._get_points(rotated_data, t_x, 0.05)
             # TODO: 0.05 is arbitrary... make bounds scale with resolution of target_line?
+
             averaged_point = points.mean(axis=0)  # averages each column in DataFrame
-            std_point = points.std(axis=0)
+
+            # pdb.set_trace()
+            # average deviation -> get y coordinate errors for each point, average that, and that's what you should get
+            # err_x = points['x'] - averaged_point['x']  # TODO: do I also need to do x average deviation?
+            err_y = points['y'] - averaged_point['y']
+            err_rmag = points['rmag'] - averaged_point['rmag']
+
+            ad_point_up = pd.Series({"x": averaged_point['x'], "y": None, "rmag": None})
+            ad_point_down = pd.Series({"x": averaged_point['x'], "y": None, "rmag": None})
+
+            err_y_up = err_y[err_y >= averaged_point['y']]
+            err_y_down = err_y[err_y < averaged_point['y']]  # this doesn't work
+
+            ad_point_up['y'] = err_y_up.mean(axis=0) + averaged_point['y']
+            ad_point_down['y'] = err_y_down.mean(axis=0) + averaged_point['y']
+
+            ad_point_up["rmag"] = err_rmag.mean(axis=0)  # TODO: get both sides of zero
+            ad_point_down["rmag"] = err_rmag.mean(axis=0)
+            # std_point = points.std(axis=0)
+
             avg_line = avg_line.append(averaged_point, ignore_index=True)
-            avg_std = avg_std.append(std_point, ignore_index=True)
+            avg_ad_up = avg_ad_up.append(ad_point_up, ignore_index=True)
+            avg_ad_down = avg_ad_down.append(ad_point_down, ignore_index=True)
 
         # rotate everything back
         correct_avg = self._rotate_points(avg_line, -1 * self.rotations[self.trial_translation])
-        correct_std = self._rotate_points(avg_std, -1 * self.rotations[self.trial_translation])
+        correct_ad_up = self._rotate_points(avg_ad_up, -1 * self.rotations[self.trial_translation])
+        correct_ad_down = self._rotate_points(avg_ad_down, -1 * self.rotations[self.trial_translation])
 
         self.poses = correct_avg
-        self.pose_sd = correct_std
+        self.pose_ad_up = correct_ad_up
+        self.pose_ad_down = correct_ad_down
 
         print(f"Averaged: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
 
@@ -238,22 +270,20 @@ class AveragedTrial(AsteriskTrialData):
         :param color: color for sd polygon, must be compatible with matplotlib.
         :param use_filtered: enables option to use filtered or unfiltered data. Defaults to False
         """
-        data_x, data_y, data_t = self.get_poses(use_filtered)
-        sd_x, sd_y, sd_t = self.get_poses_sd()
+        sd_x_up, sd_y_up, sd_t = self.get_poses_ad(direction=0)  # the points are already made in relation to the data
+        sd_x_down, sd_y_down, _ = self.get_poses_ad(direction=1)
 
         # necessary for building the polygon
-        r_x = list(reversed(data_x))
-        r_y = list(reversed(data_y))
-        r_sx = list(reversed(sd_x))
-        r_sy = list(reversed(sd_y))
+        r_sx_down = list(reversed(sd_x_down))
+        r_sy_down = list(reversed(sd_y_down))
 
         poly = []
-        for dx, dy, sx, sy in zip(data_x, data_y, sd_x, sd_y):
-            pt = [dx + sx, dy + sy]
+        for sx, sy in zip(sd_x_up, sd_y_up):
+            pt = [sx, sy]
             poly.append(pt)
 
-        for dx, dy, sx, sy in zip(r_x, r_y, r_sx, r_sy):
-            pt = [dx - sx, dy - sy]
+        for sx, sy in zip(r_sx_down, r_sy_down):
+            pt = [sx, sy]
             poly.append(pt)
 
         polyg = plt.Polygon(poly, color=color, alpha=0.4)
@@ -262,15 +292,15 @@ class AveragedTrial(AsteriskTrialData):
 
 if __name__ == '__main__':
     # demo and test
-    #test1 = AsteriskTrialData('sub1_2v3_d_n_1.csv')
-    #test2 = AsteriskTrialData('sub1_2v3_d_n_2.csv')
-    #test3 = AsteriskTrialData('sub1_2v3_d_n_3.csv')
+    test1 = AsteriskTrialData('sub1_2v3_c_n_1.csv')
+    test2 = AsteriskTrialData('sub1_2v3_c_n_2.csv')
+    test3 = AsteriskTrialData('sub1_2v3_c_n_3.csv')
 
-    test4 = AsteriskTrialData('sub2_2v3_d_n_1.csv')
-    test5 = AsteriskTrialData('sub2_2v3_d_n_2.csv')
-    test6 = AsteriskTrialData('sub2_2v3_d_n_3.csv')
+    test4 = AsteriskTrialData('sub2_2v3_c_n_1.csv')
+    test5 = AsteriskTrialData('sub2_2v3_c_n_2.csv')
+    test6 = AsteriskTrialData('sub2_2v3_c_n_3.csv')
 
-    lines = [ test4, test5, test6]
+    lines = [test1, test2, test3, test4, test5, test6]
 
     avgln = AveragedTrial()
     avgln.make_average_line(lines)

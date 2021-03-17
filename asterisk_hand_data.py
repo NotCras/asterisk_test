@@ -278,7 +278,7 @@ class AsteriskHandData:
         if subjects is None:
             subjects = self.subjects_containing
 
-        # TODO: check that specifying subjects works ok
+        # TODO: check that specifying subjects works ok when an average was already calculated
         if self.averages:
             avgs = self.averages
 
@@ -425,30 +425,30 @@ class AsteriskHandData:
 
 
 if __name__ == '__main__':
-    h = AsteriskHandData(["sub1", "sub2"], "2v2")
+    h = AsteriskHandData(["sub1", "sub2"], "2v3", rotation="n")
     h.filter_data()
 
-    # subject 1 averages
-    h.plot_avg_data(rotation="n", subjects="sub1", show_plot=False, save_plot=True)
-    plt.clf()
-    h.plot_avg_data(rotation="m15", subjects="sub1", show_plot=False, save_plot=True)
-    plt.clf()
-    h.plot_avg_data(rotation="p15", subjects="sub1", show_plot=False, save_plot=True)
-    plt.clf()
-
-    # subject 2 averages
-    h.plot_avg_data(rotation="n", subjects="sub2", show_plot=False, save_plot=True)
-    plt.clf()
-    h.plot_avg_data(rotation="m15", subjects="sub2", show_plot=False, save_plot=True)
-    plt.clf()
-    h.plot_avg_data(rotation="p15", subjects="sub2", show_plot=False, save_plot=True)
-    plt.clf()
-
-    # all subjects
-    h.plot_avg_data(rotation="p15", subjects=None, show_plot=False, save_plot=True)
-    plt.clf()
-    h.plot_avg_data(rotation="m15", subjects=None,  show_plot=False, save_plot=True)
-    plt.clf()
-    h.plot_avg_data(rotation="n", subjects=None, show_plot=True, save_plot=True)
+    # # subject 1 averages
+    # h.plot_avg_data(rotation="n", subjects="sub1", show_plot=False, save_plot=True)
+    # plt.clf()
+    # h.plot_avg_data(rotation="m15", subjects="sub1", show_plot=False, save_plot=True)
+    # plt.clf()
+    # h.plot_avg_data(rotation="p15", subjects="sub1", show_plot=False, save_plot=True)
+    # plt.clf()
+    #
+    # # subject 2 averages
+    # h.plot_avg_data(rotation="n", subjects="sub2", show_plot=False, save_plot=True)
+    # plt.clf()
+    # h.plot_avg_data(rotation="m15", subjects="sub2", show_plot=False, save_plot=True)
+    # plt.clf()
+    # h.plot_avg_data(rotation="p15", subjects="sub2", show_plot=False, save_plot=True)
+    # plt.clf()
+    #
+    # # all subjects
+    # h.plot_avg_data(rotation="p15", subjects=None, show_plot=False, save_plot=True)
+    # plt.clf()
+    # h.plot_avg_data(rotation="m15", subjects=None,  show_plot=False, save_plot=True)
+    # plt.clf()
+    h.plot_avg_data(rotation="n", subjects=None, show_plot=True, save_plot=False)
 
 
