@@ -156,13 +156,13 @@ class AveragedTrial(AsteriskTrialData):
         # get all the data
         data_points = pd.DataFrame()  # makes an empty dataframe
         for t in self.averaged_trials:
-            data_points = data_points.append(t.poses)
+            data_points = data_points.append(t.poses)  # put all poses in one dataframe for easy access
 
         # rotate the line so we can do everything based on the x axis. Yes, I know this is hacky
-        r_target_x, r_target_y = AsteriskPlotting.get_c(100)
+        r_target_x, r_target_y = AsteriskPlotting.get_c(50)
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
         rotated_data = self._rotate_points(data_points, self.rotations[self.trial_translation])
-        # TODO: do it out without rotating?
+        # TODO: implement averaging without rotating
 
         avg_line = pd.DataFrame()
         avg_ad_up = pd.DataFrame()
@@ -185,12 +185,12 @@ class AveragedTrial(AsteriskTrialData):
             ad_point_down = pd.Series({"x": averaged_point['x'], "y": None, "rmag": None})
 
             err_y_up = err_y[err_y >= averaged_point['y']]
-            err_y_down = err_y[err_y < averaged_point['y']]  # this doesn't work
+            err_y_down = err_y[err_y < averaged_point['y']]
 
             ad_point_up['y'] = err_y_up.mean(axis=0) + averaged_point['y']
             ad_point_down['y'] = err_y_down.mean(axis=0) + averaged_point['y']
 
-            ad_point_up["rmag"] = err_rmag.mean(axis=0) 
+            ad_point_up["rmag"] = err_rmag.mean(axis=0)
             ad_point_down["rmag"] = err_rmag.mean(axis=0)
             # std_point = points.std(axis=0)
 
@@ -221,7 +221,7 @@ class AveragedTrial(AsteriskTrialData):
         """
         Plot circles where each trial stops contributing to the line average.
         """
-        circle_colors = {"sub1":"xkcd:dark blue", "sub2":"xkcd:dark lavender", "sub3":"xkcd:forrest green"}
+        circle_colors = {"sub1":"xkcd:dark blue", "sub2":"xkcd:bordeaux", "sub3":"xkcd:forrest green"}
 
         a_x, a_y, _ = self.get_poses(use_filtered=False)
         for t in self.averaged_trials:
@@ -233,6 +233,7 @@ class AveragedTrial(AsteriskTrialData):
             # find narrow target on average line, index of point on line closest to last pose
             index = AsteriskCalculations.narrow_target([last_pose[0], last_pose[1]], np.column_stack((a_x, a_y)))
             # plot a dot there
+            # TODO: if dots are on the same place, jiggle them a little to the side so all are visible?
             plt.plot(a_x[index], a_y[index], marker='o', fillstyle='none', color=subject_color)
 
     def avg_debug_plot(self, show_plot=True, save_plot=False):
@@ -255,7 +256,11 @@ class AveragedTrial(AsteriskTrialData):
 
         plt.title(f"Avg Debug Plot: {self.hand.get_name()}, {self.trial_translation}_{self.trial_rotation}")
 
-        # TODO: show all target line points on plot, and show at least one averaging interval
+        # TODO: show at least one averaging interval
+        # show target line dots... comes out a little obnoxious
+        # t_l_x, t_l_y = AsteriskPlotting.get_direction(self.trial_translation)
+        # for tl_x, tl_y in zip(t_l_x, t_l_y):
+        #     plt.plot(tl_x, tl_y, marker='o', fillstyle='none', color="k")
 
         if save_plot:
             plt.savefig(f"pics/avgdebug_{self.hand.get_name()}_{self.subject}_{self.trial_translation}_"
