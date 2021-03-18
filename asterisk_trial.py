@@ -426,36 +426,6 @@ class AsteriskTrialData:
         self.mvt_efficiency = self.calc_mvt_efficiency()
         self.area_btwn = self.calc_area_btwn_curves()
 
-    def get_target_indices(self):
-        """
-        Get the points that each data point was associated with in the frechet distance calculations
-        using the frechet distance values
-        TODO: We don't do it this way anyway
-        """
-        target_indices = []
-        # print(self.translation_fd)
-
-        for p in np.column_stack((self.get_poses())):
-            associated_target_index = None
-            prev_d = 1000  # arbitrarily high number
-
-            for i, t in enumerate(self.target_line):
-                # print(f"pose: {p[0]},{p[1]} | target: {t[0]},{t[1]}")
-
-                # get euclidean distance
-                d = np.sqrt((t[0]-p[0])**2 + (t[1]-p[1])**2)
-                # print(f"dist: {d}, fd: {self.translation_fd}, best d: {prev_d}")
-
-                if d < self.translation_fd and d < prev_d:
-                    # print(f"better dist: {d} vs {prev_d}")
-                    associated_target_index = i
-                    prev_d = d
-
-            target_indices.append(associated_target_index)
-
-        # TODO: for now just implementing translation, do I need rotation too?
-        return target_indices
-
 
 if __name__ == '__main__':
     test = AsteriskTrialData("sub1_3v3_n_cw_2.csv")

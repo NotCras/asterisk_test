@@ -156,7 +156,6 @@ class AveragedTrial(AsteriskTrialData):
         r_target_x, r_target_y = AsteriskPlotting.get_c(100)
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
         rotated_data = self._rotate_points(data_points, self.rotations[self.trial_translation])
-        # TODO: implement averaging without rotating?
 
         avg_line = pd.DataFrame()
         avg_ad = pd.DataFrame()
