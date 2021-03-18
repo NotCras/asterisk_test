@@ -10,6 +10,7 @@ from cv2 import aruco
 from pathlib import Path
 import os
 import time
+import pandas as pd
 import asterisk_data_manager as datamanager
 
 if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
@@ -36,6 +37,9 @@ class AsteriskArucoVision:
                         (0, 0, 1)))
         # k1,k2,p1,p2 ie radial dist and tangential dist
         self.dist = np.array((0.1611730644, -0.3392379107, 0.0010744837,	0.000905697))
+
+        self.origin = None
+        self.path = None
 
     def inverse_perspective(self, rvec, tvec):
         # print(rvec)
@@ -82,6 +86,7 @@ class AsteriskArucoVision:
 
         else:
             print("Could not find marker in frame.")
+            rvec, tvec = None, None
             # TODO: fix reference before assignment here
             # quit()
 
@@ -131,11 +136,20 @@ class AsteriskArucoVision:
 
     # ================================================================
     def analyze_images(self, data_path, subject_name, hand_name, t_label, r_label, trial_number):
+        # make empty dataframe
+        estimated_poses = pd.DataFrame()
+
         frame = cv2.imread(os.path.join(data_path, 'left0000.jpg'))
         orig_rvec, orig_tvec, orig_corners = self.estimate_pose(
             frame, marker_side, self.mtx, self.dist)
         orig_corners = orig_corners[0].squeeze()
         # print("Tag found in initial image.")
+
+        # put original value in dataframe as first index
+        orig_pose = np.concatenate((orig_rvec, orig_tvec))
+        orig_df = pd.Series({"roll": orig_pose[0], "pitch": orig_pose[1], "yaw":orig_pose[2], "x":orig_pose[3],
+                             "y": orig_pose[4], "z": orig_pose[5], "tmag": 0, "rmag": 0})
+        estimated_poses = estimated_poses.append(orig_df)
 
         analyzed_successfully = 0
         total_counter = 0
@@ -181,27 +195,39 @@ class AsteriskArucoVision:
                 total_counter += 1
                 analyzed_successfully += 1
 
-                rel_pose = np.concatenate((rel_rvec,rel_tvec))
+                rel_pose = np.concatenate((rel_rvec, rel_tvec))
 
-                with open(csv_loc,'a') as fd:
-                    for i in rel_pose:
-                        # for y in i:
-                        fd.write(str(i[0]))
-                        fd.write(',')
-                        # print('here')
+                rel_df = pd.Series(
+                    {"roll": rel_pose[0], "pitch": rel_pose[1], "yaw": rel_pose[2], "x": rel_pose[3],
+                     "y": rel_pose[4], "z": rel_pose[5], "tmag": translation, "rmag": rotation})
+                estimated_poses = estimated_poses.append(rel_df)
 
-                    fd.write(str(translation))
-                    fd.write(',')
-                    fd.write(str(rotation))
-                    fd.write('\n')
+                # with open(csv_loc,'a') as fd:
+                #     for i in rel_pose:
+                #         # for y in i:
+                #         fd.write(str(i[0]))
+                #         fd.write(',')
+                #         # print('here')
+                #
+                #     fd.write(str(translation))
+                #     fd.write(',')
+                #     fd.write(str(rotation))
+                #     fd.write('\n')
     #                    print(rel_pose)
 
                 # print('Total: ' + str(total) +' Done '+ image_)
 
+            self.save_data(estimated_poses, csv_loc)
             print('Completed ' + data_file)
             print("Finished: " + str(analyzed_successfully) + "/" + str(total_counter))
             print("          ")
             break
+
+    def save_data(self, data_df, location):
+        """
+        Saves most recent data
+        """
+        data_df.to_csv(location)
 
 
 if __name__ == "__main__":
