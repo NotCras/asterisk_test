@@ -153,7 +153,7 @@ class AveragedTrial(AsteriskTrialData):
             data_points = data_points.append(t.poses)  # put all poses in one dataframe for easy access
 
         # rotate the line so we can do everything based on the x axis. Yes, I know this is hacky
-        r_target_x, r_target_y = AsteriskPlotting.get_c(50)
+        r_target_x, r_target_y = AsteriskPlotting.get_c(100)
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
         rotated_data = self._rotate_points(data_points, self.rotations[self.trial_translation])
         # TODO: implement averaging without rotating?
@@ -162,10 +162,10 @@ class AveragedTrial(AsteriskTrialData):
         avg_ad = pd.DataFrame()
 
         # now we go through averaging
-        for t in rotated_target_line:
+        for i, t in enumerate(rotated_target_line):
             t_x = t[0]
             # TODO: 0.05 is arbitrary... make bounds scale with resolution of target_line?
-            points = self._get_points(rotated_data, t_x, 0.05)
+            points = self._get_points(rotated_data, t_x, 0.03)
 
             averaged_point = points.mean(axis=0)  # averages each column in DataFrame
 
@@ -177,24 +177,40 @@ class AveragedTrial(AsteriskTrialData):
 
             # calculate vector magnitudes
             for x, y in zip(err_x, err_y):
-                err_tmag.append(sqrt(x**2, y**2))
+                tmag = sqrt(x**2 + y**2)
+                err_tmag.append(tmag)
 
             ad_data = pd.DataFrame({"x": err_x, "y": err_y, "rmag": err_rmag, "tmag": err_tmag})
             avg_tmag = ad_data["tmag"].mean(axis=0)
 
             # get calculate normal point
 
-            # get previous point
-            prev_avg = avg_line.iloc(-1)
+            # get previous point, maybe make the current one be the next one, and then grab two back
+            try:
+                prev_avg = avg_line.iloc(-1)
+            except:
+                prev_avg = pd.Series({"x": 0., "y": 0.,
+                                  "rmag": 0., "tmag": 0.})
 
+            # TODO: go back 2 in order to get a better approximation, but it will be one step behind
 
+            # this took me forever... I'm embarrassed:
+            # https://math.stackexchange.com/questions/656500/given-a-point-slope-and-a-distance-along-that-slope-easily-find-a-second-p
+            slope_x = averaged_point['x'] - prev_avg['x']
+            slope_y = averaged_point['y'] - prev_avg['y']
+            reciprocal_slope = - slope_x / slope_y
+            dx_ad = avg_tmag / sqrt(1+reciprocal_slope**2)
+            dy_ad = (avg_tmag * reciprocal_slope) / sqrt(1+reciprocal_slope**2)
+            # just need to add/subtract them to the average point and it should work
 
-            ad_point = pd.Series({"x": None, "y": None,
+            ad_point = pd.Series({"x": dx_ad, "y": dy_ad,
                                   "rmag": err_rmag.mean(axis=0), "tmag": avg_tmag})
 
             # std_point = points.std(axis=0)
+            # print(f"num points averaged: {len(points)}")
 
-            print(f"num points averaged: {len(points)}")
+            if i == 10:
+                pdb.set_trace()
 
             avg_line = avg_line.append(averaged_point, ignore_index=True)
             avg_ad = avg_ad.append(ad_point, ignore_index=True)
@@ -205,7 +221,6 @@ class AveragedTrial(AsteriskTrialData):
 
         self.poses = correct_avg
         self.pose_ad = correct_ad
-
 
         print(f"Averaged: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
 
@@ -277,20 +292,22 @@ class AveragedTrial(AsteriskTrialData):
         :param color: color for sd polygon, must be compatible with matplotlib.
         :param use_filtered: enables option to use filtered or unfiltered data. Defaults to False
         """
-        sd_x_up, sd_y_up, sd_t = self.get_poses_ad(direction=0)  # the points are already made in relation to the data
-        sd_x_down, sd_y_down, _ = self.get_poses_ad(direction=1)
+        avg_x, avg_y, _ = self.get_poses()
+        ad_x, ad_y, ad_t = self.get_poses_ad()  # the points are already made in relation to the data
 
         # necessary for building the polygon
-        r_sx_down = list(reversed(sd_x_down))
-        r_sy_down = list(reversed(sd_y_down))
+        r_avg_x = list(reversed(avg_x))
+        r_avg_y = list(reversed(avg_y))
+        r_ad_x = list(reversed(ad_x))
+        r_ad_y = list(reversed(ad_y))
 
         poly = []
-        for sx, sy in zip(sd_x_up, sd_y_up):
-            pt = [sx, sy]
+        for ax, ay, dx, dy in zip(avg_x, avg_y, ad_x, ad_y):
+            pt = [ax+dx, ay+dy]
             poly.append(pt)
 
-        for sx, sy in zip(r_sx_down, r_sy_down):
-            pt = [sx, sy]
+        for ax, ay, dx, dy in zip(r_avg_x, r_avg_y, r_ad_x, r_ad_y):
+            pt = [ax-dx, ay-dy]
             poly.append(pt)
 
         polyg = plt.Polygon(poly, color=color, alpha=0.4)
