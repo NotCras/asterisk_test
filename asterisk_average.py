@@ -20,8 +20,7 @@ class AveragedTrial(AsteriskTrialData):
         self.names = []  # names of trials averaged
         self.averaged_trials = []  # actual AsteriskTrialData objects that were averaged
         # self.pose_average = []  # maybe just use poses
-        self.pose_ad_up = None
-        self.pose_ad_down = None
+        self.pose_ad = None
 
         # just reminding that these are here
         self.total_distance = None
@@ -36,20 +35,15 @@ class AveragedTrial(AsteriskTrialData):
         self.mvt_efficiency_sd = None
         self.area_btwn_sd = None
 
-    def get_poses_ad(self, direction=0):
+    def get_poses_ad(self):
         """
         Separates poses into x, y, theta for easy plotting.
         direction is 0 for up, 1 for down
         """
         # get the poses
-        if direction == 0:
-            x = self.pose_ad_up["x"]
-            y = self.pose_ad_up["y"]
-            twist = self.pose_ad_up["rmag"]
-        elif direction == 1:
-            x = self.pose_ad_down["x"]
-            y = self.pose_ad_down["y"]
-            twist = self.pose_ad_down["rmag"]
+        x = self.pose_ad["x"]
+        y = self.pose_ad["y"]
+        twist = self.pose_ad["rmag"]
 
         return_x = pd.Series.to_list(x.dropna())
         return_y = pd.Series.to_list(y.dropna())
@@ -162,11 +156,10 @@ class AveragedTrial(AsteriskTrialData):
         r_target_x, r_target_y = AsteriskPlotting.get_c(50)
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
         rotated_data = self._rotate_points(data_points, self.rotations[self.trial_translation])
-        # TODO: implement averaging without rotating
+        # TODO: implement averaging without rotating?
 
         avg_line = pd.DataFrame()
-        avg_ad_up = pd.DataFrame()
-        avg_ad_down = pd.DataFrame()
+        avg_ad = pd.DataFrame()
 
         # now we go through averaging
         for t in rotated_target_line:
@@ -176,38 +169,43 @@ class AveragedTrial(AsteriskTrialData):
 
             averaged_point = points.mean(axis=0)  # averages each column in DataFrame
 
-            # average deviation -> get y coordinate errors for each point, average that, and that's what you should get
-            # err_x = points['x'] - averaged_point['x']  # TODO: do I also need to do x average deviation?
+            # now average deviation calculation
+            err_x = points['x'] - averaged_point['x']
             err_y = points['y'] - averaged_point['y']
             err_rmag = points['rmag'] - averaged_point['rmag']
+            err_tmag = []
 
-            ad_point_up = pd.Series({"x": averaged_point['x'], "y": None, "rmag": None})
-            ad_point_down = pd.Series({"x": averaged_point['x'], "y": None, "rmag": None})
+            # calculate vector magnitudes
+            for x, y in zip(err_x, err_y):
+                err_tmag.append(sqrt(x**2, y**2))
 
-            err_y_up = err_y[err_y >= averaged_point['y']]
-            err_y_down = err_y[err_y < averaged_point['y']]
+            ad_data = pd.DataFrame({"x": err_x, "y": err_y, "rmag": err_rmag, "tmag": err_tmag})
+            avg_tmag = ad_data["tmag"].mean(axis=0)
 
-            ad_point_up['y'] = err_y_up.mean(axis=0) + averaged_point['y']
-            ad_point_down['y'] = err_y_down.mean(axis=0) + averaged_point['y']
+            # get calculate normal point
 
-            ad_point_up["rmag"] = err_rmag.mean(axis=0)
-            ad_point_down["rmag"] = err_rmag.mean(axis=0)
+            # get previous point
+            prev_avg = avg_line.iloc(-1)
+
+
+
+            ad_point = pd.Series({"x": None, "y": None,
+                                  "rmag": err_rmag.mean(axis=0), "tmag": avg_tmag})
+
             # std_point = points.std(axis=0)
 
-            print(f"num points averaged: {len(points)}, num up: {len(err_y_up)}, num down: {len(err_y_down)}")
+            print(f"num points averaged: {len(points)}")
 
             avg_line = avg_line.append(averaged_point, ignore_index=True)
-            avg_ad_up = avg_ad_up.append(ad_point_up, ignore_index=True)
-            avg_ad_down = avg_ad_down.append(ad_point_down, ignore_index=True)
+            avg_ad = avg_ad.append(ad_point, ignore_index=True)
 
         # rotate everything back
         correct_avg = self._rotate_points(avg_line, -1 * self.rotations[self.trial_translation])
-        correct_ad_up = self._rotate_points(avg_ad_up, -1 * self.rotations[self.trial_translation])
-        correct_ad_down = self._rotate_points(avg_ad_down, -1 * self.rotations[self.trial_translation])
+        correct_ad = self._rotate_points(avg_ad, -1 * self.rotations[self.trial_translation])
 
         self.poses = correct_avg
-        self.pose_ad_up = correct_ad_up
-        self.pose_ad_down = correct_ad_down
+        self.pose_ad = correct_ad
+
 
         print(f"Averaged: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
 
