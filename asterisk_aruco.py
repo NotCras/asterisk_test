@@ -86,7 +86,7 @@ class AsteriskArucoVision:
 
         else:
             print("Could not find marker in frame.")
-            rvec, tvec = None, None
+            rvec, tvec = (None, None, None), (None, None, None)
             # TODO: fix reference before assignment here
             # quit()
 
@@ -105,6 +105,7 @@ class AsteriskArucoVision:
                 0.0
                 example 3) angle_between((1, 0, 0), (-1, 0, 0))
                 3.141592653589793
+                *ahem* https://stackoverflow.com/questions/2827393/angles-between-two-n-dimensional-vectors-in-python
         """
         v1_u = self.unit_vector(v1)
         v2_u = self.unit_vector(v2)

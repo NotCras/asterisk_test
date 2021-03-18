@@ -194,14 +194,18 @@ class AveragedTrial(AsteriskTrialData):
 
             # TODO: go back 2 in order to get a better approximation, but it will be one step behind
 
-            # this took me forever... I'm embarrassed:
-            # https://math.stackexchange.com/questions/656500/given-a-point-slope-and-a-distance-along-that-slope-easily-find-a-second-p
+            # # this took me forever... I'm embarrassed:
+            # # https://math.stackexchange.com/questions/656500/given-a-point-slope-and-a-distance-along-that-slope-easily-find-a-second-p
             slope_x = averaged_point['x'] - prev_avg['x']
             slope_y = averaged_point['y'] - prev_avg['y']
-            reciprocal_slope = - slope_x / slope_y
-            dx_ad = avg_tmag / sqrt(1+reciprocal_slope**2)
-            dy_ad = (avg_tmag * reciprocal_slope) / sqrt(1+reciprocal_slope**2)
-            # just need to add/subtract them to the average point and it should work
+            # reciprocal_slope = - slope_x / slope_y
+            # dx_ad = avg_tmag / sqrt(1+reciprocal_slope**2)
+            # dy_ad = (avg_tmag * reciprocal_slope) / sqrt(1+reciprocal_slope**2)
+            # # just need to add/subtract them to the average point and it should work
+
+            dlen = sqrt(slope_x * slope_x + slope_y * slope_y)
+            dx_ad = avg_tmag * -slope_y / dlen
+            dy_ad = avg_tmag * slope_x / dlen
 
             ad_point = pd.Series({"x": dx_ad, "y": dy_ad,
                                   "rmag": err_rmag.mean(axis=0), "tmag": avg_tmag})
@@ -234,7 +238,7 @@ class AveragedTrial(AsteriskTrialData):
         """
         Plot circles where each trial stops contributing to the line average.
         """
-        circle_colors = {"sub1":"xkcd:dark blue", "sub2":"xkcd:bordeaux", "sub3":"xkcd:forrest green"}
+        circle_colors = {"sub1": "xkcd:dark blue", "sub2": "xkcd:bordeaux", "sub3": "xkcd:forrest green"}
 
         a_x, a_y, _ = self.get_poses(use_filtered=False)
         for t in self.averaged_trials:
