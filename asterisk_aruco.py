@@ -13,9 +13,6 @@ import time
 import pandas as pd
 import asterisk_data_manager as datamanager
 
-if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
-    sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
-
 # === IMPORTANT ATTRIBUTES ===
 marker_side = 0.03
 processing_freq = 1  # analyze every 1 image
@@ -246,7 +243,7 @@ if __name__ == "__main__":
             1 - view a set of images like a video
             2 - aruco analyze one specific set of data
             3 - aruco analyze a batch of data
-            4 - validate aruco analysis on video
+            4 - validate aruco pose on images
         """)
 
     ans = datamanager.smart_input("Enter a function", "mode", ["1", "2", "3"])
