@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from asterisk_calculations import AsteriskCalculations
 import similaritymeasures as sm
 from asterisk_plotting import AsteriskPlotting as aplt
+from asterisk_metrics import AsteriskMetrics as am
 import pdb
 from asterisk_hand import HandObj
 from scipy import stats
@@ -50,7 +51,7 @@ class AsteriskTrialData:
 
         self.subject = s
         self.trial_translation = t
-        self.trial_rotation = r  # TODO: still failing on cw and ccw trials with out of bounds error. Investigate
+        self.trial_rotation = r
         self.trial_num = n
 
         if file_name:
@@ -73,15 +74,8 @@ class AsteriskTrialData:
             self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
             self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
-        self.translation_indices = None
-
-        if file_name and do_fd:
-            self.translation_fd, self.rotation_fd = self.calc_frechet_distance()
-            self.mvt_efficiency, self.arc_length = self.calc_mvt_efficiency()
-            self.area_btwn = self.calc_area_btwn_curves()
-
-            # then we reverse engineer target indices
-            self.translation_indices = self.get_target_indices()
+            if do_fd:
+                self.update_all_metrics()
 
     def add_hand(self, hand_name):
         """
@@ -263,12 +257,16 @@ class AsteriskTrialData:
         """
         data_x, data_y, theta = self.get_poses(use_filtered)
 
-        plt.plot(data_x, data_y, color='tab:red', label='trajectory')
+        # experimenting...
+        # junk = 70
+        # data_x = data_x[0:(len(data_x)-junk)]
+        # data_y = data_y[0:(len(data_y)-junk)]
+
+        plt.plot(data_x, data_y, color='black', label='trajectory')
 
         # plot data points separately to show angle error with marker size
         for n in range(len(data_x)):
             # TODO: rn having difficulty doing marker size in a batch, so plotting each point separately
-            # TODO: also rn having difficulty getting this to work at all, commenting out right now
             plt.plot(data_x[n], data_y[n], 'r.',
                      alpha=0.5, markersize=5*theta[n])
 
@@ -282,8 +280,14 @@ class AsteriskTrialData:
 
         # gives a realistic view of what the path looks like
         plt.xticks(np.linspace(aplt.round_half_down(min_x, decimals=2),
-                               aplt.round_half_up(max_x, decimals=2), 10), rotation=30)
+                              aplt.round_half_up(max_x, decimals=2), 10), rotation=30)
         plt.yticks(np.linspace(0, aplt.round_half_up(max_y, decimals=2), 10))
+
+        # experimenting...
+        # plt.xticks(np.linspace(-10,
+        #                        80, 10), rotation=30)
+        # plt.yticks(np.linspace(-10, 80, 10))
+        plt.gca().set_aspect('equal', adjustable='box')
 
         plt.title(f"Plot: {self.generate_name()}")
 
@@ -373,59 +377,17 @@ class AsteriskTrialData:
 
         return pd.Series.to_list(rots)
 
-    def calc_frechet_distance(self):
-        """
-        Calculate the frechet distance between self.poses and a target path
-        Uses frechet distance calculation from asterisk_calculations object
-        """
-        # o_path = self._get_pose_array(use_filtered=False)
-        # o_path_t = o_path[:, [0, 1]]  # just want first and second columns for translation
-        # o_path_ang = o_path[:, [2]]
-        o_x, o_y, o_path_ang = self.get_poses(use_filtered=False)
-        o_path_t = np.column_stack((o_x, o_y))
-
-        t_fd = sm.frechet_dist(o_path_t, self.target_line)
-        r_fd = sm.frechet_dist(o_path_ang, self.target_rotation)  # just max error right now
-
-        return t_fd, r_fd
-
-    def calc_mvt_efficiency(self, use_filtered=True):
-        """
-        Calculates the efficiency of movement of the trial
-        amount of translation in trial direction / arc length of path
-        """  # TODO only occurs with translation
-        total_dist_in_direction = self.total_distance
-        o_x, o_y, o_path_ang = self.get_poses(use_filtered)
-        o_path_t = np.column_stack((o_x, o_y))
-
-        trial_arc_length = sm.get_arc_length(o_path_t)
-
-        return total_dist_in_direction / trial_arc_length[0], trial_arc_length[0]
-
-    def calc_area_btwn_curves(self, use_filtered=True):
-        """
-        Returns the area between the trial path and the target line, only with respect to translation.
-        Currently returns None for non-translation trials
-        """  # TODO only occurs with translation, fails for no translation trials
-        o_x, o_y, o_path_ang = self.get_poses(use_filtered)
-        o_path_t = np.column_stack((o_x, o_y))
-        # pdb.set_trace()
-
-        try:
-            val = sm.area_between_two_curves(o_path_t, self.target_line)
-        except ValueError:  # TODO: is there a better way to handle this?
-            val = None
-
-        return val
-
     def update_all_metrics(self, use_filtered=True):
         """
         Updates all metric values on the object
         """
-        self.translation_fd, self.rotation_fd = self.calc_frechet_distance()
-        self.mvt_efficiency = self.calc_mvt_efficiency()
-        self.area_btwn = self.calc_area_btwn_curves()
+        self.translation_fd, self.rotation_fd = am.calc_frechet_distance(self)
+        self.mvt_efficiency = am.calc_mvt_efficiency(self)
+        self.area_btwn = am.calc_area_btwn_curves(self)
+
+        # TODO: return anything?
 
 
 if __name__ == '__main__':
-    test = AsteriskTrialData("sub1_3v3_n_cw_2.csv")
+    test = AsteriskTrialData("sub1_2v2_c_n_1.csv")
+    test.plot_trial(use_filtered=False)

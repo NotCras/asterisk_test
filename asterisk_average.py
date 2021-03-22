@@ -14,7 +14,7 @@ class AveragedTrial(AsteriskTrialData):
                  "f": 135, "g": 180, "h": 225, "n": 0}
 
     def __init__(self):
-        super(AveragedTrial, self).__init__()  # makes an empty AsteriskTrialData object
+        super(AveragedTrial, self).__init__()  # for making an empty AsteriskTrialData object
 
         self.subject = []
         self.names = []  # names of trials averaged
@@ -168,43 +168,14 @@ class AveragedTrial(AsteriskTrialData):
 
             averaged_point = points.mean(axis=0)  # averages each column in DataFrame
 
-            # now average deviation calculation
-            err_x = points['x'] - averaged_point['x']
-            err_y = points['y'] - averaged_point['y']
-            err_rmag = points['rmag'] - averaged_point['rmag']
-            err_tmag = []
-
-            # calculate vector magnitudes
-            for x, y in zip(err_x, err_y):
-                tmag = sqrt(x**2 + y**2)
-                err_tmag.append(tmag)
-
-            ad_data = pd.DataFrame({"x": err_x, "y": err_y, "rmag": err_rmag, "tmag": err_tmag})
-            avg_tmag = ad_data["tmag"].mean(axis=0)
-
-            # get calculate normal point
-
             # get previous point, maybe make the current one be the next one, and then grab two back
             try:
                 prev_avg = avg_line.iloc(-1)
             except:
                 prev_avg = pd.Series({"x": 0., "y": 0.,
-                                  "rmag": 0., "tmag": 0.})
+                                      "rmag": 0., "tmag": 0.})
 
-            # TODO: go back 2 in order to get a better approximation, but it will be one step behind
-
-            # # this took me forever... I'm embarrassed:
-            # # https://math.stackexchange.com/questions/656500/given-a-point-slope-and-a-distance-along-that-slope-easily-find-a-second-p
-            slope_x = averaged_point['x'] - prev_avg['x']
-            slope_y = averaged_point['y'] - prev_avg['y']
-            # reciprocal_slope = - slope_x / slope_y
-            # dx_ad = avg_tmag / sqrt(1+reciprocal_slope**2)
-            # dy_ad = (avg_tmag * reciprocal_slope) / sqrt(1+reciprocal_slope**2)
-            # # just need to add/subtract them to the average point and it should work
-
-            dlen = sqrt(slope_x * slope_x + slope_y * slope_y)
-            dx_ad = avg_tmag * -slope_y / dlen
-            dy_ad = avg_tmag * slope_x / dlen
+            dx_ad, dy_ad, avg_tmag, err_rmag = self.calc_point_ad(points, averaged_point, prev_avg)
 
             ad_point = pd.Series({"x": dx_ad, "y": dy_ad,
                                   "rmag": err_rmag.mean(axis=0), "tmag": avg_tmag})
@@ -232,6 +203,43 @@ class AveragedTrial(AsteriskTrialData):
         metric_values = self._calc_avg_metrics()
 
         return correct_avg, metric_values
+
+    def calc_point_ad(self, points, averaged_point, prev_avg):
+        """
+        Given the points used to average a point, and the averaged point itself,
+        determine the average deviation for that point
+        """
+
+        err_x = points['x'] - averaged_point['x']
+        err_y = points['y'] - averaged_point['y']
+        err_rmag = points['rmag'] - averaged_point['rmag']
+        err_tmag = []
+
+        # calculate vector magnitudes
+        for x, y in zip(err_x, err_y):
+            tmag = sqrt(x ** 2 + y ** 2)
+            err_tmag.append(tmag)
+
+        ad_data = pd.DataFrame({"x": err_x, "y": err_y, "rmag": err_rmag, "tmag": err_tmag})
+        avg_tmag = ad_data["tmag"].mean(axis=0)
+
+        # get calculate normal point
+        # TODO: go back 2 in order to get a better approximation, but it will be one step behind
+
+        # # this took me forever... I'm embarrassed:
+        # # https://math.stackexchange.com/questions/656500/given-a-point-slope-and-a-distance-along-that-slope-easily-find-a-second-p
+        slope_x = averaged_point['x'] - prev_avg['x']
+        slope_y = averaged_point['y'] - prev_avg['y']
+        # reciprocal_slope = - slope_x / slope_y
+        # dx_ad = avg_tmag / sqrt(1+reciprocal_slope**2)
+        # dy_ad = (avg_tmag * reciprocal_slope) / sqrt(1+reciprocal_slope**2)
+        # # just need to add/subtract them to the average point and it should work
+
+        dlen = sqrt(slope_x * slope_x + slope_y * slope_y)
+        dx_ad = avg_tmag * -slope_y / dlen
+        dy_ad = avg_tmag * slope_x / dlen
+
+        return dx_ad, dy_ad, err_tmag, err_rmag
 
     def plot_line_contributions(self):
         """
