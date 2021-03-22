@@ -4,19 +4,250 @@
 @author: kartik (original), john (major edits, cleaning)
 """
 import numpy as np
-import sys
+import sys, os, time, pdb
 import cv2
 from cv2 import aruco
 from pathlib import Path
-import os
-import time
 import pandas as pd
+import matplotlib.pyplot as plt
 import asterisk_data_manager as datamanager
 
 # === IMPORTANT ATTRIBUTES ===
 marker_side = 0.03
 processing_freq = 1  # analyze every 1 image
 # ============================
+
+class ArucoVision:
+    def __init__(self, folder, side_dims=0.03, freq=1):
+        """
+        """
+        self.home = Path(__file__).parent.absolute()
+        self.data_folder = self.home / "viz" / folder
+        self.marker_side = side_dims
+        self.processing_freq = freq
+
+        # camera calibration
+        self.mtx = np.array(((617.0026849655, -0.153855356, 315.5900337131),  # fx, s,cx
+                             (0, 614.4461785395, 243.0005874753),  # 0,fy,cy
+                             (0, 0, 1)))
+        # k1,k2,p1,p2 ie radial dist and tangential dist
+        self.dist = np.array((0.1611730644, -0.3392379107, 0.0010744837, 0.000905697))
+
+        os.chdir(self.data_folder)
+        self.corners = self.analyze_images()
+
+    def corner_to_series(self, i, c):
+        """
+        Convert standard numpy array of corners into pd.Series (to add to corners dataframe)
+        """
+        c1 = c[0]
+        c2 = c[1]
+        c3 = c[2]
+        c4 = c[3]
+        corner_series = pd.Series({"frame": i, "c1_x": c1[0], "c1_y": c1[1],
+                                 "c2_x": c2[0], "c2_y": c2[1],
+                                 "c3_x": c3[0], "c3_y": c3[1],
+                                 "c4_x": c4[0], "c4_y": c4[1]})
+        return corner_series
+
+    def row_to_corner(self, c):
+        """
+        Convert one row of dataframe into standard corner numpy array
+        """
+        c1 = [c["c1_x"], c["c1_y"]]
+        c2 = [c["c2_x"], c["c2_y"]]
+        c3 = [c["c3_x"], c["c3_y"]]
+        c4 = [c["c4_x"], c["c4_y"]]
+
+        return np.array([c1, c2, c3, c4], dtype=np.dtype("float32"))
+
+    def _moving_average(self, window_size=3):
+        """
+        Runs a moving average on the corner data. Saves moving average data into new columns with f_ prefix.
+        Overwrites previous moving average calculations.
+        :param window_size: size of moving average. Defaults to 3.
+        """
+        # TODO: makes a bunch of nan values at end of data
+        filtered_df = pd.DataFrame()
+        # pdb.set_trace()
+        filtered_df["frame"] = self.corners.index
+
+        filtered_df["c1_x"] = self.corners["c1_x"].rolling(
+            window=window_size, min_periods=1).mean()
+        filtered_df["c1_y"] = self.corners["c1_y"].rolling(
+            window=window_size, min_periods=1).mean()
+
+        filtered_df["c2_x"] = self.corners["c2_x"].rolling(
+            window=window_size, min_periods=1).mean()
+        filtered_df["c2_y"] = self.corners["c2_y"].rolling(
+            window=window_size, min_periods=1).mean()
+
+        filtered_df["c3_x"] = self.corners["c3_x"].rolling(
+            window=window_size, min_periods=1).mean()
+        filtered_df["c3_y"] = self.corners["c3_y"].rolling(
+            window=window_size, min_periods=1).mean()
+
+        filtered_df["c4_x"] = self.corners["c4_x"].rolling(
+            window=window_size, min_periods=1).mean()
+        filtered_df["c4_y"] = self.corners["c4_y"].rolling(
+            window=window_size, min_periods=1).mean()
+
+        filtered_df = filtered_df.round(4)
+        filtered_df = filtered_df.set_index("frame")
+        return filtered_df
+
+    def filter_corners(self, window_size=3):
+        """
+        Overwrite the corner data with filtered version
+        """
+        self.corners = self._moving_average(window_size)
+
+    def save_corners(self, file_name_overwrite=None):
+        """
+        Saves pose data as a new csv file
+        :param file_name_overwrite: optional parameter, will save as generate_name unless a different name is specified
+        """
+        if file_name_overwrite is None:
+            file_name = self.data_folder.stem
+            file_name = file_name.replace("/", "_")
+            new_file_name = file_name + ".csv"
+
+        else:
+            new_file_name = file_name_overwrite + ".csv"
+
+        self.corners.to_csv(new_file_name, index=True)
+        # print(f"CSV File generated with name: {new_file_name}")
+
+    def get_images(self):
+        """
+        Retrieve list of image names, sorted
+        """
+        os.chdir(self.data_folder)
+        files = [f for f in os.listdir('.') if f[-3:] == 'jpg']
+        files.sort()
+        #print(f"Num of image files in folder: {len(files)}")
+        return files
+
+    def analyze_images(self):
+        corner_data = pd.DataFrame()
+        files = self.get_images()
+
+        # set up aruco dict and parameters
+        aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_4X4_250)
+        aruco_params = aruco.DetectorParameters_create()
+
+        for i, f in enumerate(files):
+            image = cv2.imread(f)
+
+            # make image black and white
+            image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+            # get estimated aruco pose
+            corners, ids, _ = aruco.detectMarkers(image=image_gray, dictionary=aruco_dict,
+                                                  parameters=aruco_params, cameraMatrix=self.mtx,
+                                                  distCoeff=self.dist)
+
+            # print(ids)
+            try:
+                if len(ids) > 1:
+                    # TODO: so this works, but maybe add some better tracking of this by considering ids and their index
+                    # print("More than one aruco tag found!")
+                    corners = corners[0]
+            except:
+                # print("Failed to find an aruco code!")
+                # make corners of None to make sure that we log the failed attempt to find aruco code
+                corners = np.array([[None, None], [None, None], [None, None], [None, None]])
+
+            # pdb.set_trace()
+            c = corners[0].squeeze()
+            corner_series = self.corner_to_series(i, c)
+            corner_data = corner_data.append(corner_series, ignore_index=True)
+
+        corner_data = corner_data.set_index("frame")
+
+        os.chdir(self.home)
+        return corner_data
+
+    def plot_corners(self, frame_num):
+        colors = ["r", "b", "g", "gray"]
+
+        point = self.corners.loc[frame_num]
+
+        # plot image with point plotted on top
+        for i in range(4):
+            x = point[f"c{i+1}_x"]
+            y = point[f"c{i+1}_y"]
+
+            plt.plot(x, y, marker="o", color=colors[i], fillstyle='none')
+
+    def validate_corners(self, delay=0.1, take_input=True):
+        """
+        Draws corners on image for visual debugging
+        """
+        files = self.get_images()
+        for i, f in enumerate(files):
+            plt.clf()
+            image = plt.imread(f)
+            plt.imshow(image)
+            self.plot_corners(i)
+
+            plt.pause(delay)
+            plt.draw()
+
+        os.chdir(self.home)
+        if take_input:
+            repeat = datamanager.smart_input("Show again? [y/n]", "consent")
+            if repeat == "y":
+                # run again
+                self.validate_corners(delay, take_input)
+            else:
+                # stop running
+                quit()
+
+
+class ArucoPoseDetect:
+    def __init__(self, ar_viz_obj):
+        """
+        Object for running pose analysis on data
+        """
+        self.vision_data = ar_viz_obj
+        # camera calibration
+        self.mtx = ar_viz_obj.mtx
+        # k1,k2,p1,p2 ie radial dist and tangential dist
+        self.dist = ar_viz_obj.dist
+
+    def unit_vector(self, vector):
+        """ Returns the unit vector of the vector.  """
+        return vector / np.linalg.norm(vector)
+
+    def angle_between(self, v1, v2):
+        """ Returns the angle in radians between vectors 'v1' and 'v2'::
+
+                example 1) angle_between((1, 0, 0), (0, 1, 0))
+                1.5707963267948966
+                example 2) angle_between((1, 0, 0), (1, 0, 0))
+                0.0
+                example 3) angle_between((1, 0, 0), (-1, 0, 0))
+                3.141592653589793
+                *ahem* https://stackoverflow.com/questions/2827393/angles-between-two-n-dimensional-vectors-in-python
+        """
+        v1_u = self.unit_vector(v1)
+        v2_u = self.unit_vector(v2)
+        return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
+    def inverse_perspective(self, rvec, tvec):
+        # print(rvec)
+        # print(np.matrix(rvec[0]).T)
+        R, _ = cv2.Rodrigues(rvec)
+        R = np.matrix(R).T
+        invTvec = np.dot(-R, np.matrix(tvec))
+        invRvec, _ = cv2.Rodrigues(R)
+        return invRvec, invTvec
+
+    
+
+
+
 
 
 class AsteriskArucoVision:
@@ -29,6 +260,7 @@ class AsteriskArucoVision:
         self.processing_freq = freq
         self.home_directory = Path(__file__).parent.absolute()
 
+        # camera calibration
         self.mtx = np.array(((617.0026849655, -0.153855356, 315.5900337131),  # fx, s,cx
                         (0, 614.4461785395, 243.0005874753),  # 0,fy,cy
                         (0, 0, 1)))
@@ -246,7 +478,7 @@ if __name__ == "__main__":
             4 - validate aruco pose on images
         """)
 
-    ans = datamanager.smart_input("Enter a function", "mode", ["1", "2", "3"])
+    ans = datamanager.smart_input("Enter a function", "mode", ["1", "2", "3", "4"])
     subject = datamanager.smart_input("Enter subject name: ", "subjects")
     hand = datamanager.smart_input("Enter name of hand: ", "hands")
 
@@ -299,7 +531,8 @@ if __name__ == "__main__":
         rotation = datamanager.smart_input("Enter type of rotation: ", "rotations")
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
 
+        folder = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}/"
 
-
-
-        pass
+        test = ArucoVision(folder)
+        test.filter_corners(window_size=4)  # window size 4 might be better? Very small lag
+        test.validate_corners()

@@ -163,10 +163,12 @@ class AveragedTrial(AsteriskTrialData):
         # now we go through averaging
         for i, t in enumerate(rotated_target_line):
             t_x = t[0]
-            # TODO: 0.05 is arbitrary... make bounds scale with resolution of target_line?
+            # TODO: 0.03 is arbitrary... make bounds scale with resolution of target_line?
             points = self._get_points(rotated_data, t_x, 0.03)
 
             averaged_point = points.mean(axis=0)  # averages each column in DataFrame
+            # std_point = points.std(axis=0)  # doesn't really show up right
+            # print(f"num points averaged: {len(points)}")
 
             # get previous point, maybe make the current one be the next one, and then grab two back
             try:
@@ -179,9 +181,6 @@ class AveragedTrial(AsteriskTrialData):
 
             ad_point = pd.Series({"x": dx_ad, "y": dy_ad,
                                   "rmag": err_rmag.mean(axis=0), "tmag": avg_tmag})
-
-            # std_point = points.std(axis=0)
-            # print(f"num points averaged: {len(points)}")
 
             if i == 10:
                 pdb.set_trace()
