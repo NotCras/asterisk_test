@@ -231,6 +231,7 @@ class ArucoPoseDetect:
         Object for running pose analysis on data
         """
         if filter_corners:
+            # makes easier workflow between aruco vision and posedetect objects
             ar_viz_obj.filter_corners(window_size=3)
 
         self.vision_data = ar_viz_obj
@@ -239,7 +240,7 @@ class ArucoPoseDetect:
         # k1,k2,p1,p2 ie radial dist and tangential dist
         self.dist = ar_viz_obj.dist
 
-        self.est_poses = None
+        self.est_poses = self.estimate_pose()  # TODO: put estimate pose function (or whatever I do) here
 
     def unit_vector(self, vector):
         """ Returns the unit vector of the vector.  """
@@ -288,17 +289,19 @@ class ArucoPoseDetect:
         """
 
         """
-
         estimated_poses = pd.DataFrame()
 
-        frame = cv2.imread(os.path.join(data_path, 'left0000.jpg'))
-        orig_rvec, orig_tvec, orig_corners = self.estimate_pose(
-            frame, marker_side, self.mtx, self.dist)
-        orig_corners = orig_corners[0].squeeze()
+        # get the first set of corners
+        init_corners = self.vision_data.corners.iloc(0)
+        init_rvec, init_tvec, _ = aruco.estimatePoseSingleMarkers(init_corners, self.vision_data.marker_side,
+                                                                             self.mtx, self.dist)
+        # orig_corners = orig_corners[0].squeeze()
 
-        for i, corners in self.vision_data.yield_corners():
+        total_successes = 0
+        final_i = 0
+        for i, next_corners in self.vision_data.yield_corners():
             try:
-                rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, self.vision_data.marker_side,
+                next_rvec, next_tvec, _ = aruco.estimatePoseSingleMarkers(next_corners, self.vision_data.marker_side,
                                                                 self.mtx, self.dist)
 
                 next_corners = next_corners[0].squeeze()
@@ -315,21 +318,24 @@ class ArucoPoseDetect:
                 rotM = np.zeros(shape=(3, 3))
                 cv2.Rodrigues(rel_rvec, rotM, jacobian=0)
                 ypr = cv2.RQDecomp3x3(rotM)
-
-                rel_pose = np.concatenate((rel_rvec, rel_tvec))
-
-                rel_df = pd.Series(
-                    {"roll": rel_pose[0], "pitch": rel_pose[1], "yaw": rel_pose[2], "x": rel_pose[3],
-                     "y": rel_pose[4], "z": rel_pose[5], "tmag": translation, "rmag": rotation})
-                estimated_poses = estimated_poses.append(rel_df)
-
+                total_successes += 1
             except:
-                rvec, tvec = (None, None, None), (None, None, None)
-                # TODO: finish filling this out
+                print(f"Error with ARuco corners in image {i}.")
+                rel_rvec, rel_tvec = (None, None, None), (None, None, None)
+                translation_val = None
+                rotation_val = None
 
-            # count how many successes
-            # return the data frame
-            # can save it as a csv with another function
+            rel_pose = np.concatenate((rel_rvec, rel_tvec))
+
+            rel_df = pd.Series(
+                {"frame": i, "roll": rel_pose[0], "pitch": rel_pose[1], "yaw": rel_pose[2], "x": rel_pose[3],
+                 "y": rel_pose[4], "z": rel_pose[5], "tmag": translation_val, "rmag": rotation_val})
+            estimated_poses = estimated_poses.append(rel_df, ignore_index=True)
+            final_i = i
+
+        print(f"Successfully analyzed: {total_successes} / {final_i} corners")
+        estimated_poses = estimated_poses.set_index("frame")
+        return estimated_poses
 
     def save_poses(self, file_name_overwrite=None):
         """
@@ -347,7 +353,12 @@ class ArucoPoseDetect:
         self.est_poses.to_csv(new_file_name, index=True)
         # print(f"CSV File generated with name: {new_file_name}")
 
-    # TODO: provide option to plot est_pose data
+    def plot_est_pose(self):
+        """
+
+        """
+        pass
+        # TODO: provide option to plot est_pose data
 
 
 class AsteriskArucoVision:
