@@ -12,9 +12,6 @@ class AsteriskMetrics:
         Calculate the frechet distance between self.poses and a target path
         Uses frechet distance calculation from asterisk_calculations object
         """
-        # o_path = self._get_pose_array(use_filtered=False)
-        # o_path_t = o_path[:, [0, 1]]  # just want first and second columns for translation
-        # o_path_ang = o_path[:, [2]]
         o_x, o_y, o_path_ang = ast_trial.get_poses(use_filtered=False)
         o_path_t = np.column_stack((o_x, o_y))
 
@@ -22,6 +19,29 @@ class AsteriskMetrics:
         r_fd = sm.frechet_dist(o_path_ang, ast_trial.target_rotation)  # just max error right now
 
         return t_fd, r_fd
+
+    @staticmethod
+    def calc_frechet_distance_all(ast_trial):
+        """ TODO: NOT TESTED YET
+        Calculate the frechet distance between self.poses and a target path, combining both translation and rotation
+        Uses frechet distance calculation from asterisk_calculations object
+        """
+        o_x, o_y, o_path_ang = ast_trial.get_poses(use_filtered=False)
+        o_path = np.column_stack((o_x, o_y, o_path_ang))
+
+        t_rots = [ast_trial.target_rotation * len(ast_trial.target_line)]
+        combined_target = np.column_stack((ast_trial.target_line, t_rots))
+
+        fd = sm.frechet_dist(o_path, combined_target)
+
+        return fd
+
+    @staticmethod
+    def calc_max_error(ast_trial):
+        """
+        calculates the max error between the ast_trial path and its target line
+        """
+        pass
 
     @staticmethod
     def calc_mvt_efficiency(ast_trial, use_filtered=True):
@@ -53,5 +73,12 @@ class AsteriskMetrics:
             val = None
 
         return val
+
+    @staticmethod
+    def calc_max_area_region(ast_trial):
+        """
+        Calculates the area of max error by sliding a window of 10% normalized length along the target line
+        """
+        pass
 
 
