@@ -17,6 +17,7 @@ marker_side = 0.03
 processing_freq = 1  # analyze every 1 image
 # ============================
 
+
 class ArucoVision:
     def __init__(self, folder, side_dims=0.03, freq=1):
         """
@@ -54,12 +55,13 @@ class ArucoVision:
         """
         Convert one row of dataframe into standard corner numpy array
         """
+        i = c.index
         c1 = [c["c1_x"], c["c1_y"]]
         c2 = [c["c2_x"], c["c2_y"]]
         c3 = [c["c3_x"], c["c3_y"]]
         c4 = [c["c4_x"], c["c4_y"]]
 
-        return np.array([c1, c2, c3, c4], dtype=np.dtype("float32"))
+        return i, np.array([c1, c2, c3, c4], dtype=np.dtype("float32"))
 
     def _moving_average(self, window_size=3):
         """
@@ -117,6 +119,14 @@ class ArucoVision:
 
         self.corners.to_csv(new_file_name, index=True)
         # print(f"CSV File generated with name: {new_file_name}")
+
+    def yield_corners(self):
+        """
+        yields corners as numpy array
+        """
+        pdb.set_trace()
+        for row in self.corners:
+            yield self.row_to_corner(row)
 
     def get_images(self):
         """
@@ -206,15 +216,20 @@ class ArucoVision:
 
 
 class ArucoPoseDetect:
-    def __init__(self, ar_viz_obj):
+    def __init__(self, ar_viz_obj, filter_corners=False):
         """
         Object for running pose analysis on data
         """
+        if filter_corners:
+            ar_viz_obj.filter_corners(window_size=3)
+
         self.vision_data = ar_viz_obj
         # camera calibration
         self.mtx = ar_viz_obj.mtx
         # k1,k2,p1,p2 ie radial dist and tangential dist
         self.dist = ar_viz_obj.dist
+
+        self.est_poses = None
 
     def unit_vector(self, vector):
         """ Returns the unit vector of the vector.  """
@@ -244,10 +259,83 @@ class ArucoPoseDetect:
         invRvec, _ = cv2.Rodrigues(R)
         return invRvec, invTvec
 
-    
+    def relative_position(self, rvec1, tvec1, rvec2, tvec2):
+        rvec1, tvec1 = np.expand_dims(rvec1.squeeze(),1), np.expand_dims(tvec1.squeeze(),1)
+        rvec2, tvec2 = np.expand_dims(rvec2.squeeze(),1), np.expand_dims(tvec2.squeeze(),1)
+        invRvec, invTvec = self.inverse_perspective(rvec2, tvec2)
 
+        orgRvec, orgTvec = self.inverse_perspective(invRvec, invTvec)
 
+        info = cv2.composeRT(rvec1, tvec1, invRvec, invTvec)
+        composedRvec, composedTvec = info[0], info[1]
 
+        composedRvec = composedRvec.reshape((3, 1))
+        composedTvec = composedTvec.reshape((3, 1))
+
+        return composedRvec, composedTvec
+
+    def estimate_pose(self):
+        """
+
+        """
+
+        estimated_poses = pd.DataFrame()
+
+        frame = cv2.imread(os.path.join(data_path, 'left0000.jpg'))
+        orig_rvec, orig_tvec, orig_corners = self.estimate_pose(
+            frame, marker_side, self.mtx, self.dist)
+        orig_corners = orig_corners[0].squeeze()
+
+        for i, corners in self.vision_data.yield_corners():
+            try:
+                rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, self.vision_data.marker_side,
+                                                                self.mtx, self.dist)
+
+                next_corners = next_corners[0].squeeze()
+
+                # print(f"calculating angle, {next_corners}")
+                rel_angle = self.angle_between(
+                    init_corners[0] - init_corners[2], next_corners[0] - next_corners[2])
+                rel_rvec, rel_tvec = self.relative_position(
+                    init_rvec, init_tvec, next_rvec, next_tvec)
+
+                translation_val = np.round(np.linalg.norm(rel_tvec), 4)
+                rotation_val = rel_angle * 180 / np.pi
+
+                rotM = np.zeros(shape=(3, 3))
+                cv2.Rodrigues(rel_rvec, rotM, jacobian=0)
+                ypr = cv2.RQDecomp3x3(rotM)
+
+                rel_pose = np.concatenate((rel_rvec, rel_tvec))
+
+                rel_df = pd.Series(
+                    {"roll": rel_pose[0], "pitch": rel_pose[1], "yaw": rel_pose[2], "x": rel_pose[3],
+                     "y": rel_pose[4], "z": rel_pose[5], "tmag": translation, "rmag": rotation})
+                estimated_poses = estimated_poses.append(rel_df)
+
+            except:
+                rvec, tvec = (None, None, None), (None, None, None)
+                # TODO: finish filling this out
+
+            # count how many successes
+            # return the data frame
+            # can save it as a csv with another function
+
+    def save_poses(self, file_name_overwrite=None):
+        """
+        Saves pose data as a new csv file
+        :param file_name_overwrite: optional parameter, will save as generate_name unless a different name is specified
+        """
+        if file_name_overwrite is None:
+            file_name = self.vision_data.data_folder.stem
+            file_name = file_name.replace("/", "_")
+            new_file_name = f"est_{file_name}.csv"
+
+        else:
+            new_file_name = file_name_overwrite + ".csv"
+
+        self.est_poses.to_csv(new_file_name, index=True)
+        # print(f"CSV File generated with name: {new_file_name}")
 
 
 class AsteriskArucoVision:
@@ -262,8 +350,8 @@ class AsteriskArucoVision:
 
         # camera calibration
         self.mtx = np.array(((617.0026849655, -0.153855356, 315.5900337131),  # fx, s,cx
-                        (0, 614.4461785395, 243.0005874753),  # 0,fy,cy
-                        (0, 0, 1)))
+                            (0, 614.4461785395, 243.0005874753),  # 0,fy,cy
+                            (0, 0, 1)))
         # k1,k2,p1,p2 ie radial dist and tangential dist
         self.dist = np.array((0.1611730644, -0.3392379107, 0.0010744837,	0.000905697))
 
@@ -316,7 +404,6 @@ class AsteriskArucoVision:
         else:
             print("Could not find marker in frame.")
             rvec, tvec = (None, None, None), (None, None, None)
-            # TODO: fix reference before assignment here
             # quit()
 
         return rvec, tvec, corners
