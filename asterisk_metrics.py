@@ -1,10 +1,50 @@
 import similaritymeasures as sm
 import numpy as np
+import pandas as pd
 
 
 class AsteriskMetrics:
+    rotations = {"a": 270, "b": 315, "c": 0, "d": 45, "e": 90,
+                 "f": 135, "g": 180, "h": 225, "n": 0}
+
     def __init__(self):
         pass
+
+    @staticmethod
+    def get_points(points, x_val, bounds):
+        """
+        Function which gets all the points that fall in a specific value range
+        :param points: list of all points to sort
+        :param x_val: x value to look around
+        :param bounds: bounds around x value to look around
+        """
+        hi_val = x_val + bounds
+        lo_val = x_val - bounds
+
+        #print(f"t_pose: {x_val} +/- {bounds}")
+
+        points_in_bounds = points[(points['x'] > lo_val) & (points['x'] < hi_val)]
+
+        return points_in_bounds
+
+    @staticmethod
+    def rotate_points(points, ang):
+        """
+        Rotate points so they are horizontal, used in averaging
+        :param points: points is a dataframe with 'x', 'y', 'rmag' columns
+        :param ang: angle to rotate data
+        """
+        rad = np.radians(ang)
+        rotated_line = pd.DataFrame(columns=['x', 'y', 'rmag'])
+
+        for p in points.iterrows():
+            x = p[1]['x']
+            y = p[1]['y']
+            new_x = x*np.cos(rad) - y*np.sin(rad)
+            new_y = y*np.cos(rad) + x*np.sin(rad)
+            rotated_line = rotated_line.append({"x": new_x, "y": new_y, "rmag": p[1]['rmag']}, ignore_index=True)
+
+        return rotated_line
 
     @staticmethod
     def calc_frechet_distance(ast_trial):
@@ -48,14 +88,15 @@ class AsteriskMetrics:
         """
         Calculates the efficiency of movement of the trial
         amount of translation in trial direction / arc length of path
-        """  # TODO only occurs with translation
+        returns mvt_eff, arc_length
+        """  # TODO only occurs with translation, add in rotation?
         total_dist_in_direction = ast_trial.total_distance
         o_x, o_y, o_path_ang = ast_trial.get_poses(use_filtered)
         o_path_t = np.column_stack((o_x, o_y))
 
-        trial_arc_length = sm.get_arc_length(o_path_t)
+        trial_arc_length, _ = sm.get_arc_length(o_path_t)
 
-        return total_dist_in_direction / trial_arc_length[0], trial_arc_length[0]
+        return total_dist_in_direction / trial_arc_length, trial_arc_length
 
     @staticmethod
     def calc_area_btwn_curves(ast_trial, use_filtered=True):

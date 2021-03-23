@@ -208,6 +208,7 @@ class ArucoVision:
         """
         Draws corners on image for visual debugging
         """
+        # TODO: add more onto the plot: title, data numbers?, center?, frame number?
         files = self.get_images()
         for i, f in enumerate(files):
             plt.clf()
@@ -386,7 +387,7 @@ if __name__ == "__main__":
             1 - view a set of images like a video
             2 - aruco analyze one specific set of data
             3 - aruco analyze a batch of data
-            4 - validate aruco pose on images
+            4 - validate aruco corner detection on images in slow-mo video
         """)
 
     ans = datamanager.smart_input("Enter a function", "mode", ["1", "2", "3", "4"])
