@@ -23,6 +23,7 @@ class ArucoVision:
         """
         """
         self.home = Path(__file__).parent.absolute()
+        self.folder_name = folder
         self.data_folder = self.home / "viz" / folder
         self.marker_side = side_dims
         self.processing_freq = freq
@@ -38,31 +39,32 @@ class ArucoVision:
         self.corners = self.analyze_images()
         os.chdir(self.home)
 
-    def corner_to_series(self, i, c):
+    def corner_to_series(self, i, corn):
         """
         Convert standard numpy array of corners into pd.Series (to add to corners dataframe)
         """
-        c1 = c[0]
-        c2 = c[1]
-        c3 = c[2]
-        c4 = c[3]
+        c1 = corn[0]
+        c2 = corn[1]
+        c3 = corn[2]
+        c4 = corn[3]
         corner_series = pd.Series({"frame": i, "c1_x": c1[0], "c1_y": c1[1],
                                  "c2_x": c2[0], "c2_y": c2[1],
                                  "c3_x": c3[0], "c3_y": c3[1],
                                  "c4_x": c4[0], "c4_y": c4[1]})
         return corner_series
 
-    def row_to_corner(self, c):
+    def row_to_corner(self, corn):
         """
         Convert one row of dataframe into standard corner numpy array
         """
-        i = c.index
-        c1 = [c["c1_x"], c["c1_y"]]
-        c2 = [c["c2_x"], c["c2_y"]]
-        c3 = [c["c3_x"], c["c3_y"]]
-        c4 = [c["c4_x"], c["c4_y"]]
+        i = corn.name
+        #pdb.set_trace()
+        c1 = [corn["c1_x"], corn["c1_y"]]
+        c2 = [corn["c2_x"], corn["c2_y"]]
+        c3 = [corn["c3_x"], corn["c3_y"]]
+        c4 = [corn["c4_x"], corn["c4_y"]]
 
-        return i, np.array([c1, c2, c3, c4], dtype=np.dtype("float32"))
+        return int(i), np.array([c1, c2, c3, c4], dtype=np.dtype("float32"))
 
     def _moving_average(self, window_size=3):
         """
@@ -125,13 +127,14 @@ class ArucoVision:
         """
         yields corners as numpy array
         """
-        pdb.set_trace()
-        for row in self.corners:
+        # pdb.set_trace()
+        for i, row in self.corners.iterrows():
             yield self.row_to_corner(row)
 
     def get_images(self, idx_limit=None, idx_bot=0):
         """
-        Retrieve list of image names, sorted
+        Retrieve list of image names, sorted.
+        NOTE: Need to manually change directory back to self.home
         """
         # TODO: have option to set a limit, include images up to index idx_limit
         os.chdir(self.data_folder)
@@ -227,13 +230,13 @@ class ArucoVision:
 
 
 class ArucoPoseDetect:
-    def __init__(self, ar_viz_obj, filter_corners=False):
+    def __init__(self, ar_viz_obj, filter_corners=False, filter_window=3):
         """
         Object for running pose analysis on data
         """
         if filter_corners:
             # makes easier workflow between aruco vision and posedetect objects
-            ar_viz_obj.filter_corners(window_size=3)
+            ar_viz_obj.filter_corners(window_size=filter_window)
 
         self.vision_data = ar_viz_obj
         # camera calibration
@@ -241,7 +244,7 @@ class ArucoPoseDetect:
         # k1,k2,p1,p2 ie radial dist and tangential dist
         self.dist = ar_viz_obj.dist
 
-        self.est_poses = self.estimate_pose()
+        self.init_pose, self.est_poses = self.estimate_pose()
 
     def unit_vector(self, vector):
         """ Returns the unit vector of the vector.  """
@@ -293,21 +296,23 @@ class ArucoPoseDetect:
         estimated_poses = pd.DataFrame()
 
         # get the first set of corners
-        init_corners = self.vision_data.corners.iloc(0)
-        init_rvec, init_tvec, _ = aruco.estimatePoseSingleMarkers(init_corners, self.vision_data.marker_side,
-                                                                             self.mtx, self.dist)
+        ic = self.vision_data.corners.iloc[0]
+        _ , init_corners = self.vision_data.row_to_corner(ic)
+        init_rvec, init_tvec, _ = aruco.estimatePoseSingleMarkers([init_corners], self.vision_data.marker_side,
+                                                                  self.mtx, self.dist)
+        init_pose = np.concatenate((init_rvec, init_tvec))
         # orig_corners = orig_corners[0].squeeze()
 
         total_successes = 0
         final_i = 0
         for i, next_corners in self.vision_data.yield_corners():
             try:
-                next_rvec, next_tvec, _ = aruco.estimatePoseSingleMarkers(next_corners, self.vision_data.marker_side,
-                                                                self.mtx, self.dist)
+                # print(f"Estimating pose in image {i}")
+                next_rvec, next_tvec, _ = aruco.estimatePoseSingleMarkers([next_corners], self.vision_data.marker_side,
+                                                                          self.mtx, self.dist)
+                # next_corners = next_corners[0].squeeze()
 
-                next_corners = next_corners[0].squeeze()
-
-                # print(f"calculating angle, {next_corners}")
+                #print(f"calculating angle, {next_corners}")
                 rel_angle = self.angle_between(
                     init_corners[0] - init_corners[2], next_corners[0] - next_corners[2])
                 rel_rvec, rel_tvec = self.relative_position(
@@ -316,6 +321,8 @@ class ArucoPoseDetect:
                 translation_val = np.round(np.linalg.norm(rel_tvec), 4)
                 rotation_val = rel_angle * 180 / np.pi
 
+                # found the stack overflow for it?
+                # https://stackoverflow.com/questions/51270649/aruco-marker-world-coordinates
                 rotM = np.zeros(shape=(3, 3))
                 cv2.Rodrigues(rel_rvec, rotM, jacobian=0)
                 ypr = cv2.RQDecomp3x3(rotM)  # TODO: not sure what we did with this earlier... need to check
@@ -329,15 +336,18 @@ class ArucoPoseDetect:
                 rotation_val = None
 
             rel_pose = np.concatenate((rel_rvec, rel_tvec))
+            rel_pose = rel_pose.squeeze()
             rel_df = pd.Series(
                 {"frame": i, "roll": rel_pose[0], "pitch": rel_pose[1], "yaw": rel_pose[2], "x": rel_pose[3],
                  "y": rel_pose[4], "z": rel_pose[5], "tmag": translation_val, "rmag": rotation_val})
             estimated_poses = estimated_poses.append(rel_df, ignore_index=True)
             final_i = i
 
-        print(f"Successfully analyzed: {total_successes} / {final_i} corners")
+        # print(" ")
+        print(f"Successfully analyzed: {total_successes} / {final_i+1} corners")
         estimated_poses = estimated_poses.set_index("frame")
-        return estimated_poses
+        estimated_poses = estimated_poses.round(4)
+        return init_pose, estimated_poses
 
     def save_poses(self, file_name_overwrite=None):
         """
@@ -345,9 +355,9 @@ class ArucoPoseDetect:
         :param file_name_overwrite: optional parameter, will save as generate_name unless a different name is specified
         """
         if file_name_overwrite is None:
-            file_name = self.vision_data.data_folder.stem
-            file_name = file_name.replace("/", "_")
-            new_file_name = f"est_{file_name}.csv"
+            data_name = self.vision_data.folder_name
+            folder = "aruco_data"  # "csv"
+            new_file_name = f"{folder}/{data_name}.csv"
 
         else:
             new_file_name = file_name_overwrite + ".csv"
@@ -357,10 +367,10 @@ class ArucoPoseDetect:
 
     def plot_est_pose(self):
         """
-
+        Plots translation data (x, y)
         """
-        pass
-        # TODO: provide option to plot est_pose data
+        # pdb.set_trace()
+        self.est_poses.plot(x="x", y="y")
 
 
 class AsteriskArucoVision:
@@ -575,7 +585,7 @@ class AsteriskArucoVision:
 if __name__ == "__main__":
     home_directory = Path(__file__).parent.absolute()
 
-    vision = AsteriskArucoVision()  # using defaults
+    # vision = AsteriskArucoVision()  # using defaults
 
     print("""
             ========= ASTERISK TEST ARUCO ANALYSIS ==========
@@ -604,7 +614,6 @@ if __name__ == "__main__":
         viewer.view_images(subject, hand, translation, rotation, trial_num)
 
     elif ans == "2":
-        # TODO: redo for new implementation
         translation = datamanager.smart_input("Enter type of translation: ", "translations")
         rotation = datamanager.smart_input("Enter type of rotation: ", "rotations")
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
@@ -613,14 +622,17 @@ if __name__ == "__main__":
         folder_path = f"viz/{file_name}/"
 
         try:
-            vision.analyze_images(folder_path, subject, hand, translation, rotation, trial_num)
+            # vision.analyze_images(folder_path, subject, hand, translation, rotation, trial_num)
+            trial = ArucoVision(file_name)
+            trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
+            trial_pose.save_poses()
+
         except Exception as e:
             print(e)
 
         print(f"Completed Aruco Analysis for: {file_name}")
 
     elif ans == "3":
-        # TODO: redo for new implementation
         files_covered = list()
 
         for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand):
@@ -632,7 +644,11 @@ if __name__ == "__main__":
             print(folder_path)
 
             try:
-                vision.analyze_images(folder_path, s, h, t, r, n)
+                # vision.analyze_images(folder_path, s, h, t, r, n)
+                trial = ArucoVision(file_name)
+                trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
+                trial_pose.save_poses()
+
                 files_covered.append(file_name)
             except Exception as e:
                 print(e)
@@ -648,6 +664,12 @@ if __name__ == "__main__":
 
         folder = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}/"
 
-        test = ArucoVision(folder)
-        test.filter_corners(window_size=4)  # window size 4 might be better? Very small lag
-        test.validate_corners()
+        trial = ArucoVision(folder)
+        trial.filter_corners(window_size=4)  # window size 4 might be better? Very small lag
+        trial.validate_corners()
+
+        # extra debugging stuff
+        # trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
+        # print(f"Missing: {trial_pose.est_poses['x'].isna().sum()}")
+        # trial_pose.plot_est_pose()
+        # plt.show()
