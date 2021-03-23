@@ -36,6 +36,7 @@ class ArucoVision:
 
         os.chdir(self.data_folder)
         self.corners = self.analyze_images()
+        os.chdir(self.home)
 
     def corner_to_series(self, i, c):
         """
@@ -240,7 +241,7 @@ class ArucoPoseDetect:
         # k1,k2,p1,p2 ie radial dist and tangential dist
         self.dist = ar_viz_obj.dist
 
-        self.est_poses = self.estimate_pose()  # TODO: put estimate pose function (or whatever I do) here
+        self.est_poses = self.estimate_pose()
 
     def unit_vector(self, vector):
         """ Returns the unit vector of the vector.  """
@@ -287,7 +288,7 @@ class ArucoPoseDetect:
 
     def estimate_pose(self):
         """
-
+        Estimate the pose of each image using the corners from the aruco vision object
         """
         estimated_poses = pd.DataFrame()
 
@@ -317,16 +318,17 @@ class ArucoPoseDetect:
 
                 rotM = np.zeros(shape=(3, 3))
                 cv2.Rodrigues(rel_rvec, rotM, jacobian=0)
-                ypr = cv2.RQDecomp3x3(rotM)
+                ypr = cv2.RQDecomp3x3(rotM)  # TODO: not sure what we did with this earlier... need to check
                 total_successes += 1
-            except:
+
+            except Exception as e:
                 print(f"Error with ARuco corners in image {i}.")
+                print(e)
                 rel_rvec, rel_tvec = (None, None, None), (None, None, None)
                 translation_val = None
                 rotation_val = None
 
             rel_pose = np.concatenate((rel_rvec, rel_tvec))
-
             rel_df = pd.Series(
                 {"frame": i, "roll": rel_pose[0], "pitch": rel_pose[1], "yaw": rel_pose[2], "x": rel_pose[3],
                  "y": rel_pose[4], "z": rel_pose[5], "tmag": translation_val, "rmag": rotation_val})
