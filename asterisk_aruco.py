@@ -128,7 +128,7 @@ class ArucoVision:
         for row in self.corners:
             yield self.row_to_corner(row)
 
-    def get_images(self, idx_limit=None):
+    def get_images(self, idx_limit=None, idx_bot=0):
         """
         Retrieve list of image names, sorted
         """
@@ -136,7 +136,16 @@ class ArucoVision:
         os.chdir(self.data_folder)
         files = [f for f in os.listdir('.') if f[-3:] == 'jpg']
         files.sort()
+
         #print(f"Num of image files in folder: {len(files)}")
+        if idx_limit is not None:
+            try:
+                files = files[idx_bot:idx_limit]
+
+            except Exception as e:
+                print("get_images error: ")
+                print(e)
+
         return files
 
     def analyze_images(self):
