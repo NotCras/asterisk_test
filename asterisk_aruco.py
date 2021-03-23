@@ -128,10 +128,11 @@ class ArucoVision:
         for row in self.corners:
             yield self.row_to_corner(row)
 
-    def get_images(self):
+    def get_images(self, idx_limit=None):
         """
         Retrieve list of image names, sorted
         """
+        # TODO: have option to set a limit, include images up to index idx_limit
         os.chdir(self.data_folder)
         files = [f for f in os.listdir('.') if f[-3:] == 'jpg']
         files.sort()
@@ -336,6 +337,8 @@ class ArucoPoseDetect:
 
         self.est_poses.to_csv(new_file_name, index=True)
         # print(f"CSV File generated with name: {new_file_name}")
+
+    # TODO: provide option to plot est_pose data
 
 
 class AsteriskArucoVision:
@@ -570,6 +573,7 @@ if __name__ == "__main__":
     hand = datamanager.smart_input("Enter name of hand: ", "hands")
 
     if ans == "1":
+        # TODO: redo for new implementation
         translation = datamanager.smart_input("Enter type of translation: ", "translations")
         rotation = datamanager.smart_input("Enter type of rotation: ", "rotations")
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
@@ -578,6 +582,7 @@ if __name__ == "__main__":
         viewer.view_images(subject, hand, translation, rotation, trial_num)
 
     elif ans == "2":
+        # TODO: redo for new implementation
         translation = datamanager.smart_input("Enter type of translation: ", "translations")
         rotation = datamanager.smart_input("Enter type of rotation: ", "rotations")
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
@@ -593,6 +598,7 @@ if __name__ == "__main__":
         print(f"Completed Aruco Analysis for: {file_name}")
 
     elif ans == "3":
+        # TODO: redo for new implementation
         files_covered = list()
 
         for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand):
