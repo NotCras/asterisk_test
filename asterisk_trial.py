@@ -139,6 +139,9 @@ class AsteriskTrialData:
         inlier_df = self._remove_outliers(df, ["x", "y", "rmag"])
         return inlier_df.round(4)
 
+    def is_ast_trial(self):
+        return isinstance(self, AsteriskTrialData)
+
     def is_trial(self, subject_name, hand_name, translation_name, rotation_name, trial_num=None):
         """  TODO: not tested yet
         a function that returns whether this trial is equivalent to the parameters listed

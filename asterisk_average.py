@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from asterisk_trial import AsteriskTrialData
 from asterisk_plotting import AsteriskPlotting
+from asterisk_metrics import AsteriskMetrics
 from asterisk_calculations import AsteriskCalculations
 import pdb
 
@@ -124,7 +125,7 @@ class AveragedTrial(AsteriskTrialData):
 
         return self.total_distance, self.translation_fd, self.rotation_fd, self.mvt_efficiency, self.area_btwn
 
-    def make_average_line(self, trials):
+    def make_average_line(self, trials, show_rot_debug=False):
         """
         Average the path of 2 or more AsteriskTrialObjects. Produces average and standard deviations.
         Saves this data on the object itself.
@@ -182,8 +183,8 @@ class AveragedTrial(AsteriskTrialData):
             ad_point = pd.Series({"x": dx_ad, "y": dy_ad,
                                   "rmag": err_rmag.mean(axis=0), "tmag": avg_tmag})
 
-            if i == 10:
-                pdb.set_trace()
+            # if i == 10:
+            #     pdb.set_trace()
 
             avg_line = avg_line.append(averaged_point, ignore_index=True)
             avg_ad = avg_ad.append(ad_point, ignore_index=True)
@@ -194,6 +195,9 @@ class AveragedTrial(AsteriskTrialData):
 
         self.poses = correct_avg
         self.pose_ad = correct_ad
+
+        if show_rot_debug:
+            AsteriskMetrics.debug_rotation(self)
 
         print(f"Averaged: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
 
@@ -326,18 +330,18 @@ class AveragedTrial(AsteriskTrialData):
 
 if __name__ == '__main__':
     # demo and test
-    test1 = AsteriskTrialData('sub1_2v3_c_n_1.csv')
-    test2 = AsteriskTrialData('sub1_2v3_c_n_2.csv')
-    test3 = AsteriskTrialData('sub1_2v3_c_n_3.csv')
+    test1 = AsteriskTrialData('sub1_2v3_b_n_1.csv')
+    test2 = AsteriskTrialData('sub1_2v3_b_n_2.csv')
+    test3 = AsteriskTrialData('sub1_2v3_b_n_3.csv')
 
-    test4 = AsteriskTrialData('sub2_2v3_c_n_1.csv')
-    test5 = AsteriskTrialData('sub2_2v3_c_n_2.csv')
-    test6 = AsteriskTrialData('sub2_2v3_c_n_3.csv')
+    test4 = AsteriskTrialData('sub2_2v3_b_n_1.csv')
+    test5 = AsteriskTrialData('sub2_2v3_b_n_2.csv')
+    test6 = AsteriskTrialData('sub2_2v3_b_n_3.csv')
 
     lines = [test1, test2, test3, test4, test5, test6]
 
     avgln = AveragedTrial()
-    avgln.make_average_line(lines)
+    avgln.make_average_line(lines, show_rot_debug=True)
 
     avgln.avg_debug_plot()
 

@@ -90,9 +90,14 @@ class AsteriskMetrics:
         """
         Plot what the values look like when rotated, debugging tool
         """
-
-        rotated_points = AsteriskMetrics.rotate_points(ast_trial.poses,
-                                                       AsteriskMetrics.rotations[ast_trial.trial_translation])
+        try:
+            if ast_trial.is_ast_trial:
+                rotated_points = AsteriskMetrics.rotate_points(ast_trial.poses,
+                                                               AsteriskMetrics.rotations[ast_trial.trial_translation])
+            else:
+                rotated_points = ast_trial
+        except:
+            rotated_points = ast_trial
 
         # plot the points
         x = pd.Series.to_list(rotated_points["x"].dropna())
@@ -189,6 +194,8 @@ class AsteriskMetrics:
         t_x, t_y = AsteriskPlotting.get_c(100)  # TODO: maybe make target_line a pandas dataframe
         targets = np.column_stack((t_x, t_y))
 
+        #AsteriskMetrics.debug_rotation(points)
+
         # prepare bound size
         bound_size = 0.5 * (percent_window_size * ast_trial.total_distance)
         x_center = bound_size + 0  # just being explicit here -> x_min is 0
@@ -207,8 +214,14 @@ class AsteriskMetrics:
 
             # if x_max > 0.13:
             #     pdb.set_trace()
-
-            area_calculated = sm.area_between_two_curves(bounded_points_not_df, target_points)
+            try:
+                area_calculated = sm.area_between_two_curves(bounded_points_not_df, target_points)
+            except:
+                print(f"Failed to calculate area at {x_center}")  # TODO: seems like one point is caught in the bounds
+                # TODO: maybe grab one point previous and one ahead? How does area get calculated this way?
+                print(bounded_points)
+                AsteriskMetrics.debug_rotation(points)
+                area_calculated = 0
 
             x_center = x_center + 0.1 * bound_size  # want to step in 1% increments
             x_max = x_center + bound_size
@@ -220,5 +233,5 @@ class AsteriskMetrics:
         x_center_at_max_r = AsteriskMetrics.rotate_point([x_center_at_max, 0],
                                                          -1 * AsteriskMetrics.rotations[ast_trial.trial_translation])
 
-        print(f"{max_area_calculated}, {x_center_at_max_r}")
+        # print(f"{max_area_calculated}, {x_center_at_max_r}")
         return max_area_calculated, x_center_at_max_r
