@@ -184,6 +184,75 @@ class AsteriskMetrics:
         return val
 
     @staticmethod
+    def interpolate_point(point_1, point_2, bound_val):
+        """
+        Linearly interpolate what the y value is at bound between the two points
+        point 1 and point 2 are pandas series
+        """
+        # calculate slope
+        slope_x = point_1['x'] - point_2['x']
+        slope_y = point_1['y'] - point_2['y']
+        slope = slope_y / slope_x
+
+        # calculate y-intercept
+        b_line = point_1['y'] - point_1['x'] * slope
+        new_y = slope * bound_val + b_line
+        new_y_index = new_y.index[0]
+        # TODO: for right now, gonna ignore interpolating rmag
+        interpolated_value = pd.Series({'x': bound_val, 'y': new_y.loc[new_y_index], 'rmag': None})
+
+        return interpolated_value
+
+    @staticmethod
+    def interpolate_points(points, x_center, bounded_points, bound_size, target_points):
+        print(f"Failed to calculate area at {x_center}. Trying to interpolate values.")
+
+        # in case the next indices are not sequential in the dataframe
+        indices = points.index.to_list()
+        current_index = bounded_points.index[0]
+        loc_in_indices = indices.index(current_index)
+
+        try:
+            # get lower bound val
+            lower_index = loc_in_indices - 1
+            lower_val = AsteriskMetrics.interpolate_point(bounded_points, points.iloc[lower_index],
+                                                          x_center - bound_size)
+            bounded_points = bounded_points.append(lower_val, ignore_index=True)
+            # plt.plot(lower_val['x'], lower_val['y'], color="r", marker='o', fillstyle='none')
+
+        except Exception as e:
+            print("low failed")
+            print(e)
+            print("")
+
+        try:
+            # get upper bound val
+            higher_index = loc_in_indices + 1
+            higher_val = AsteriskMetrics.interpolate_point(bounded_points, points.iloc[higher_index],
+                                                           x_center + bound_size)
+            bounded_points = bounded_points.append(higher_val, ignore_index=True)
+            # plt.plot(higher_val['x'], higher_val['y'], color="r", marker='o', fillstyle='none')
+
+        except Exception as e:
+            print("high failed")
+            print(e)
+            print("")
+
+        try:
+            b_x = pd.Series.to_list(bounded_points["x"].dropna())
+            b_y = pd.Series.to_list(bounded_points["y"].dropna())
+            bounded_points_not_df = np.column_stack((b_x, b_y))
+            area_calculated = sm.area_between_two_curves(bounded_points_not_df, target_points)
+
+        except:
+            print("Interpolation completely failed.")
+            area_calculated = 0
+
+        # plt.axvline(x=x_center, color='r')
+        # AsteriskMetrics.debug_rotation(points)
+        return area_calculated
+
+    @staticmethod
     def calc_max_area_region(ast_trial, percent_window_size=0.2):
         """
         Calculates the area of max error by sliding a window of 20% normalized length along the target line
@@ -216,13 +285,13 @@ class AsteriskMetrics:
             #     pdb.set_trace()
             try:
                 area_calculated = sm.area_between_two_curves(bounded_points_not_df, target_points)
-            except:
-                print(f"Failed to calculate area at {x_center}")
-                # TODO: seems like one point is caught in the bounds when there are failures
-                # TODO: maybe grab one point previous and one ahead? How does area get calculated this way?
-                print(bounded_points)
-                AsteriskMetrics.debug_rotation(points)
-                area_calculated = 0
+            except ValueError:
+                # usually this triggers if there aren't enough points (more than one) in the window
+                # if there aren't enough points, make enough points!
+                area_calculated = AsteriskMetrics.interpolate_points(points, x_center,
+                                                                     bounded_points, bound_size,
+                                                                     target_points)
+                print("Successful interpolation!")
 
             x_center = x_center + 0.1 * bound_size  # want to step in 1% increments
             x_max = x_center + bound_size

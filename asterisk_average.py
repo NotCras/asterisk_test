@@ -341,7 +341,7 @@ if __name__ == '__main__':
     lines = [test1, test2, test3, test4, test5, test6]
 
     avgln = AveragedTrial()
-    avgln.make_average_line(lines, show_rot_debug=True)
+    avgln.make_average_line(lines, show_rot_debug=False)
 
     avgln.avg_debug_plot()
 
