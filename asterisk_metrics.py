@@ -2,6 +2,8 @@ import similaritymeasures as sm
 import numpy as np
 import pandas as pd
 
+from asterisk_plotting import AsteriskPlotting
+
 
 class AsteriskMetrics:
     rotations = {"a": 270, "b": 315, "c": 0, "d": 45, "e": 90,
@@ -26,6 +28,22 @@ class AsteriskMetrics:
         points_in_bounds = points[(points['x'] > lo_val) & (points['x'] < hi_val)]
 
         return points_in_bounds
+
+    @staticmethod
+    def rotate_point(point, ang):
+        """
+        Rotate points so they are horizontal, used in averaging
+        :param point: points is a list with [x, y]
+        :param ang: angle to rotate data
+        """
+        rad = np.radians(ang)
+
+        x = point[0]
+        y = point[1]
+        new_x = x * np.cos(rad) - y * np.sin(rad)
+        new_y = y * np.cos(rad) + x * np.sin(rad)
+
+        return [new_x,new_y]
 
     @staticmethod
     def rotate_points(points, ang):
@@ -116,10 +134,35 @@ class AsteriskMetrics:
         return val
 
     @staticmethod
-    def calc_max_area_region(ast_trial):
+    def calc_max_area_region(ast_trial, percent_window_size=0.1):
         """
         Calculates the area of max error by sliding a window of 10% normalized length along the target line
         """
-        pass
+        # TODO: cheating again by rotating points
+        points = AsteriskMetrics.rotate_points(ast_trial.poses, AsteriskMetrics.rotations[ast_trial.trial_translation])
+        targets = AsteriskPlotting.get_c(100)
 
+        # prepare bound size
+        bound_size = 0.5 * (percent_window_size * ast_trial.total_distance)
+        x_center = bound_size + 0  # just being explicit here -> x_min is 0
+        x_max = 2 * bound_size
+        max_area_calculated = 0
+        x_center_at_max = x_center
 
+        while x_max <= ast_trial.total_distance:
+            points = AsteriskMetrics.get_points(points, x_center, bound_size)
+            target_points = AsteriskMetrics.get_points(targets, x_center, bound_size)
+
+            area_calculated = sm.area_between_two_curves(points, target_points)
+
+            x_center = x_center + 0.1 * bound_size  # want to step in 1% increments
+            x_max = x_center + bound_size
+
+            if area_calculated > max_area_calculated:
+                max_area_calculated = area_calculated
+                x_center_at_max = x_center
+
+        x_center_at_max_r = AsteriskMetrics.rotate_point([x_center_at_max, 0],
+                                                         AsteriskMetrics.rotations[-1 * ast_trial.trial_translation])
+
+        return max_area_calculated, x_center_at_max_r
