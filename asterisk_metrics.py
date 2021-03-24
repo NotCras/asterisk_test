@@ -1,6 +1,8 @@
 import similaritymeasures as sm
 import numpy as np
 import pandas as pd
+import pdb
+import matplotlib.pyplot as plt
 
 from asterisk_plotting import AsteriskPlotting
 
@@ -13,9 +15,9 @@ class AsteriskMetrics:
         pass
 
     @staticmethod
-    def get_points(points, x_val, bounds):
+    def get_points_df(points, x_val, bounds):
         """
-        Function which gets all the points that fall in a specific value range
+        Function which gets all the points that fall in a specific value range in a dataframe
         :param points: list of all points to sort
         :param x_val: x value to look around
         :param bounds: bounds around x value to look around
@@ -25,9 +27,28 @@ class AsteriskMetrics:
 
         #print(f"t_pose: {x_val} +/- {bounds}")
 
-        points_in_bounds = points[(points['x'] > lo_val) & (points['x'] < hi_val)]
+        points_in_bounds = points[(points['x'] >= lo_val) & (points['x'] <= hi_val)]
 
         return points_in_bounds
+
+    @staticmethod
+    def get_points_list(points, x_val, bounds):
+        """
+        Get points in a list that fall within the bounds
+        """
+        hi_val = x_val + bounds
+        lo_val = x_val - bounds
+        points_in_bounds = []
+
+        for point in points:
+            p_x = point[0]
+            p_y = point[1]
+
+            if lo_val <= p_x <= hi_val:
+                points_in_bounds.append([p_x, p_y])
+
+        #print(np.asarray(points_in_bounds))
+        return np.asarray(points_in_bounds)
 
     @staticmethod
     def rotate_point(point, ang):
@@ -43,7 +64,7 @@ class AsteriskMetrics:
         new_x = x * np.cos(rad) - y * np.sin(rad)
         new_y = y * np.cos(rad) + x * np.sin(rad)
 
-        return [new_x,new_y]
+        return [new_x, new_y]
 
     @staticmethod
     def rotate_points(points, ang):
@@ -63,6 +84,28 @@ class AsteriskMetrics:
             rotated_line = rotated_line.append({"x": new_x, "y": new_y, "rmag": p[1]['rmag']}, ignore_index=True)
 
         return rotated_line
+
+    @staticmethod
+    def debug_rotation(ast_trial):
+        """
+        Plot what the values look like when rotated, debugging tool
+        """
+
+        rotated_points = AsteriskMetrics.rotate_points(ast_trial.poses,
+                                                       AsteriskMetrics.rotations[ast_trial.trial_translation])
+
+        # plot the points
+        x = pd.Series.to_list(rotated_points["x"].dropna())
+        y = pd.Series.to_list(rotated_points["y"].dropna())
+
+        plt.plot(x, y, color="xkcd:dark orange")
+
+        # plot the target line
+        tar_x, tar_y = AsteriskPlotting.get_c(100)
+        plt.plot(tar_x, tar_y, color="xkcd:dark blue")
+
+        # show plot
+        plt.show()
 
     @staticmethod
     def calc_frechet_distance(ast_trial):
@@ -136,13 +179,15 @@ class AsteriskMetrics:
         return val
 
     @staticmethod
-    def calc_max_area_region(ast_trial, percent_window_size=0.1):
+    def calc_max_area_region(ast_trial, percent_window_size=0.2):
         """
-        Calculates the area of max error by sliding a window of 10% normalized length along the target line
+        Calculates the area of max error by sliding a window of 20% normalized length along the target line
+        Seems that 10% is too small in regions of fast movement
         """
-        # TODO: cheating again by rotating points
+        # TODO: cheating again by rotating points... what about negative values?
         points = AsteriskMetrics.rotate_points(ast_trial.poses, AsteriskMetrics.rotations[ast_trial.trial_translation])
-        targets = AsteriskPlotting.get_c(100)
+        t_x, t_y = AsteriskPlotting.get_c(100)  # TODO: maybe make target_line a pandas dataframe
+        targets = np.column_stack((t_x, t_y))
 
         # prepare bound size
         bound_size = 0.5 * (percent_window_size * ast_trial.total_distance)
@@ -152,19 +197,28 @@ class AsteriskMetrics:
         x_center_at_max = x_center
 
         while x_max <= ast_trial.total_distance:
-            points = AsteriskMetrics.get_points(points, x_center, bound_size)
-            target_points = AsteriskMetrics.get_points(targets, x_center, bound_size)
+            # print(f"Now at {x_center} || {x_max}/{ast_trial.total_distance}")
+            bounded_points = AsteriskMetrics.get_points_df(points, x_center, bound_size)
+            b_x = pd.Series.to_list(bounded_points["x"].dropna())
+            b_y = pd.Series.to_list(bounded_points["y"].dropna())
+            bounded_points_not_df = np.column_stack((b_x, b_y))
 
-            area_calculated = sm.area_between_two_curves(points, target_points)
+            target_points = AsteriskMetrics.get_points_list(targets, x_center, bound_size)
+
+            # if x_max > 0.13:
+            #     pdb.set_trace()
+
+            area_calculated = sm.area_between_two_curves(bounded_points_not_df, target_points)
 
             x_center = x_center + 0.1 * bound_size  # want to step in 1% increments
             x_max = x_center + bound_size
 
-            if area_calculated > max_area_calculated:
-                max_area_calculated = area_calculated
+            if np.abs(area_calculated) > max_area_calculated:
+                max_area_calculated = np.abs(area_calculated)
                 x_center_at_max = x_center
 
         x_center_at_max_r = AsteriskMetrics.rotate_point([x_center_at_max, 0],
-                                                         AsteriskMetrics.rotations[-1 * ast_trial.trial_translation])
+                                                         -1 * AsteriskMetrics.rotations[ast_trial.trial_translation])
 
+        print(f"{max_area_calculated}, {x_center_at_max_r}")
         return max_area_calculated, x_center_at_max_r

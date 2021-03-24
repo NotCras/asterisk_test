@@ -63,7 +63,7 @@ class AveragedTrial(AsteriskTrialData):
 
         #print(f"t_pose: {x_val} +/- {bounds}")
 
-        points_in_bounds = points[(points['x'] > lo_val) & (points['x'] < hi_val)]
+        points_in_bounds = points[(points['x'] >= lo_val) & (points['x'] <= hi_val)]
 
         return points_in_bounds
 

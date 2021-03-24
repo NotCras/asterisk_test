@@ -13,7 +13,7 @@ from scipy import stats
 
 
 class AsteriskTrialData:
-    def __init__(self, file_name=None, do_fd=True):
+    def __init__(self, file_name=None, do_metrics=True):
         """
         Class to represent a single asterisk test trial.
         :param file_name: - name of the file that you want to import data from
@@ -63,18 +63,22 @@ class AsteriskTrialData:
         self.target_line = None  # the straight path in the direction that this trial is
         self.target_rotation = None
 
-        # metrics
+        # metrics - predefining them
         self.total_distance = None
+        self.max_error = None
         self.translation_fd = None
         self.rotation_fd = None
+        self.fd = None
         self.mvt_efficiency = None
         self.area_btwn = None
+        self.max_area_region = None
+        self.max_area_loc = None
 
         if file_name:
             self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
             self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
-            if do_fd:
+            if do_metrics:
                 self.update_all_metrics()
 
     def add_hand(self, hand_name):
@@ -84,7 +88,7 @@ class AsteriskTrialData:
         """
         self.hand = HandObj(hand_name)
 
-    def _read_file(self, file_name, folder="csv/"):
+    def _read_file(self, file_name, folder="csv/"):  # TODO: soon default folder will be aruco_data
         """
         Function to read file and save relevant data in the object
         :param file_name: name of file to read in
@@ -112,6 +116,7 @@ class AsteriskTrialData:
         2) normalize translational data by hand span/depth
         3) remove extreme outlier values in data
         """
+        # TODO: move to aruco pose detection object?
         df_numeric = df.apply(pd.to_numeric)
 
         # saving for later: ["row", "x", "y", "rmag", "f_x", "f_y", "f_rot_mag"]
@@ -273,6 +278,7 @@ class AsteriskTrialData:
         max_x = max(data_x)
         max_y = max(data_y)
         min_x = min(data_x)
+        min_y = min(data_y)
 
         plt.xlabel('X')
         plt.ylabel('Y')
@@ -281,13 +287,17 @@ class AsteriskTrialData:
         # gives a realistic view of what the path looks like
         plt.xticks(np.linspace(aplt.round_half_down(min_x, decimals=2),
                               aplt.round_half_up(max_x, decimals=2), 10), rotation=30)
-        plt.yticks(np.linspace(0, aplt.round_half_up(max_y, decimals=2), 10))
+        if self.trial_translation in ["a", "b", "c", "g", "h"]:
+            plt.yticks(np.linspace(0, aplt.round_half_up(max_y, decimals=2), 10))
+        else:
+            plt.yticks(np.linspace(aplt.round_half_down(min_y, decimals=2), 0, 10))
 
         # experimenting...
         # plt.xticks(np.linspace(-10,
         #                        80, 10), rotation=30)
         # plt.yticks(np.linspace(-10, 80, 10))
-        plt.gca().set_aspect('equal', adjustable='box')
+
+        # plt.gca().set_aspect('equal', adjustable='box')
 
         plt.title(f"Plot: {self.generate_name()}")
 
@@ -379,15 +389,23 @@ class AsteriskTrialData:
 
     def update_all_metrics(self, use_filtered=True):
         """
-        Updates all metric values on the object
-        """
+        Updates all metric values on the object.
+        """ # TODO: make a pandas dataframe that contains the metrics? Easier to organize
         self.translation_fd, self.rotation_fd = am.calc_frechet_distance(self)
+        # self.fd = am.calc_frechet_distance_all(self)
+        self.max_error = am.calc_max_error(self)
         self.mvt_efficiency = am.calc_mvt_efficiency(self)
         self.area_btwn = am.calc_area_btwn_curves(self)
+        self.max_area_region, self.max_area_loc = am.calc_max_area_region(self)
 
         # TODO: return anything?
 
+    def print_metrics(self):
+        """
+        Print out a report with all the metrics, useful for debugging
+        """
+
 
 if __name__ == '__main__':
-    test = AsteriskTrialData("sub1_2v2_c_n_1.csv")
+    test = AsteriskTrialData("sub1_2v2_d_n_1.csv")
     test.plot_trial(use_filtered=False)
