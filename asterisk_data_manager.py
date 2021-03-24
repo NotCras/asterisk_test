@@ -101,7 +101,7 @@ def generate_options(key):
     return options[key]
 
 
-def generate_t_r_pairs(hand_name):
+def generate_t_r_pairs(hand_name, no_rotations=False):
     """
     Generator that feeds all trial combinations pertaining to a specific hand
     :param hand_name: name of hand specified
@@ -118,7 +118,7 @@ def generate_t_r_pairs(hand_name):
             else:
                 rot = n_trans_rot_opts
         else:
-            if hand_name in ["basic", "m2stiff", "modelvf"]:
+            if hand_name in ["basic", "m2stiff", "modelvf"] or no_rotations:
                 rot = "n"
             else:
                 rot = rotations
@@ -127,7 +127,7 @@ def generate_t_r_pairs(hand_name):
             yield t, r
 
 
-def generate_names_with_s_h(subject_name, hand_name):
+def generate_names_with_s_h(subject_name, hand_name, no_rotations=False):
     """
     Generates all trial combinations with a specific hand name
     :param subject_name: name of subject
@@ -136,12 +136,12 @@ def generate_names_with_s_h(subject_name, hand_name):
     """
     num = ["1", "2", "3"]  # , "4", "5"]  #for now
 
-    for t, r in generate_t_r_pairs(hand_name):
+    for t, r in generate_t_r_pairs(hand_name, no_rotations=no_rotations):
         for n in num:
             yield subject_name, hand_name, t, r, n
 
 
-def generate_all_names(subject=None, hand_name=None):
+def generate_all_names(subject=None, hand_name=None, no_rotations=False):
     """
     Generate all combinations of all parameters
     :param subject: list of subjects to provide, if none provided defaults to all subjects
@@ -149,20 +149,16 @@ def generate_all_names(subject=None, hand_name=None):
     :return: yields all combinations specified
     """
     # TODO: make smart version so you can be picky with your options... make the constant lists as default parameters
-    if subject:
-        pass
-    else:
-        subjects = ["sub1", "sub2", "sub3"]
+    if subject is None:
+        subject = ["sub1", "sub2", "sub3"]
 
-    if hand_name:
-        pass
-    else:
-        hands = ["human", "basic",  "m2stiff", "m2active",
-             "2v2", "3v3", "2v3", "barrett", "modelvf"]
+    if hand_name is None:
+        hand_name = ["basic",  "m2stiff", "m2active",
+                     "2v2", "3v3", "2v3", "barrett", "modelvf"]  # human
 
-    for s in subjects:
-        for h in hands:
-            yield generate_names_with_s_h(s, h)
+    for s in subject:
+        for h in hand_name:
+            yield generate_names_with_s_h(s, h, no_rotations=no_rotations)
 
 
 def smart_input(prompt, option, valid_options=None):
