@@ -300,8 +300,10 @@ class AsteriskMetrics:
                 max_area_calculated = np.abs(area_calculated)
                 x_center_at_max = x_center
 
-        x_center_at_max_r = AsteriskMetrics.rotate_point([x_center_at_max, 0],
-                                                         -1 * AsteriskMetrics.rotations[ast_trial.trial_translation])
+        # percentage along the target_line line that the center of max error was located
+        x_center_perc = x_center_at_max / ast_trial.total_distance
+        # x_center_at_max_r = AsteriskMetrics.rotate_point([x_center_at_max, 0],
+        #                                                  -1 * AsteriskMetrics.rotations[ast_trial.trial_translation])
 
         # print(f"{max_area_calculated}, {x_center_at_max_r}")
-        return max_area_calculated, x_center_at_max_r
+        return max_area_calculated, x_center_perc

@@ -70,15 +70,17 @@ class AsteriskTrialData:
         self.rotation_fd = None
         self.fd = None
         self.mvt_efficiency = None
+        self.arc_len = None
         self.area_btwn = None
         self.max_area_region = None
         self.max_area_loc = None
+        self.metrics = None  # pd series that contains all metrics in it... TODO: to replace the rest later
 
         if file_name:
             self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
             self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
-            if do_metrics:
+            if do_metrics and self.poses is not None:
                 self.update_all_metrics()
 
     def add_hand(self, hand_name):
@@ -105,7 +107,7 @@ class AsteriskTrialData:
         except Exception as e:  # TODO: add more specific except clauses
             # print(e)
             df = None
-            # print(f"{total_path} has failed to read csv")
+            print(f"{total_path} has failed to read csv")
         return df
 
     def _condition_df(self, df):
@@ -270,13 +272,21 @@ class AsteriskTrialData:
         # data_x = data_x[0:(len(data_x)-junk)]
         # data_y = data_y[0:(len(data_y)-junk)]
 
-        plt.plot(data_x, data_y, color='black', label='trajectory')
+        plt.plot(data_x, data_y, color="xkcd:dark blue", label='trajectory')
 
         # plot data points separately to show angle error with marker size
         for n in range(len(data_x)):
             # TODO: rn having difficulty doing marker size in a batch, so plotting each point separately
             plt.plot(data_x[n], data_y[n], 'r.',
                      alpha=0.5, markersize=5*theta[n])
+
+        target_x, target_y = [], []
+        for t in self.target_line:
+            target_x.append(t[0])
+            target_y.append(t[1])
+
+        #target_x, target_y = aplt.get_direction(self.trial_translation)
+        plt.plot(target_x, target_y, color="xkcd:pastel blue", label="target_line", linestyle="-")
 
         max_x = max(data_x)
         max_y = max(data_y)
@@ -397,11 +407,17 @@ class AsteriskTrialData:
         self.translation_fd, self.rotation_fd = am.calc_frechet_distance(self)
         # self.fd = am.calc_frechet_distance_all(self)
         self.max_error = am.calc_max_error(self)
-        self.mvt_efficiency = am.calc_mvt_efficiency(self)
+        self.mvt_efficiency, self.arc_len = am.calc_mvt_efficiency(self)
         self.area_btwn = am.calc_area_btwn_curves(self)
         self.max_area_region, self.max_area_loc = am.calc_max_area_region(self)
 
-        # TODO: return anything?
+        metric_dict = {"trial": self.generate_name(),
+                       "t_fd": self.translation_fd, "r_fd": self.rotation_fd,  # "fd": self.fd
+                       "max_err": self.max_error, "mvt_eff": self.mvt_efficiency, "arc_len": self.arc_len,
+                       "area_btwn": self.area_btwn, "max_a_reg": self.max_area_region, "max_a_loc": self.max_area_loc}
+
+        self.metrics = pd.Series(metric_dict)
+        return self.metrics
 
     def print_metrics(self):
         """
@@ -410,5 +426,6 @@ class AsteriskTrialData:
 
 
 if __name__ == '__main__':
-    test = AsteriskTrialData("sub1_2v2_d_n_1.csv")
+    test = AsteriskTrialData("sub1_3v3_c_n_1.csv")
+    print(test.metrics)
     test.plot_trial(use_filtered=False)

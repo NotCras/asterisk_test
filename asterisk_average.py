@@ -25,16 +25,26 @@ class AveragedTrial(AsteriskTrialData):
 
         # just reminding that these are here
         self.total_distance = None
+        self.max_error = None
         self.translation_fd = None
         self.rotation_fd = None
+        self.fd = None
         self.mvt_efficiency = None
+        self.arc_len = None
         self.area_btwn = None
+        self.max_area_region, self.max_area_loc = None, None
+        self.metrics = None
 
         self.total_distance_sd = None
+        self.max_error_sd = None
         self.translation_fd_sd = None
+        self.fd_sd = None
         self.rotation_fd_sd = None
         self.mvt_efficiency_sd = None
+        self.arc_len_sd = None
         self.area_btwn_sd = None
+        self.max_area_region_sd, self.max_area_loc_sd = None, None
+        self.metrics_sd = None
 
     def get_poses_ad(self):
         """
@@ -92,25 +102,41 @@ class AveragedTrial(AsteriskTrialData):
         """  # TODO: do we want to analyze on filtered or unfiltered data here? Should we force it to be one way?
         # go through each trial, grab relevant values and add them to sum
         # first index is the value, second is the standard deviation of the value
-        values = {"dist": (0, 0), "t_fd": (0, 0), "r_fd": (0, 0), "mvt_eff": (0, 0), "btwn": (0, 0)}
+        values = {"dist": (0, 0), "t_fd": (0, 0), "r_fd": (0, 0), "mvt_eff": (0, 0), "btwn": (0, 0), # "fd": self.fd
+                  "max_err": (0, 0), "max_a_reg": (0, 0), "max_a_loc": (0, 0), "arc_len": (0,0)}
         dist_vals = []
         t_fd_vals = []
         r_fd_vals = []
+        # fd_vals = []
         mvt_eff_vals = []
         btwn_vals = []
+        err_vals = []
+        reg_vals = []
+        loc_vals = []
+        arc_lens = []
 
-        for t in self.averaged_trials:  # TODO: get standard deviations of these metrics
+        for t in self.averaged_trials:
             dist_vals.append(t.total_distance)
             t_fd_vals.append(t.translation_fd)
             r_fd_vals.append(t.rotation_fd)
             mvt_eff_vals.append(t.mvt_efficiency)
             btwn_vals.append(t.area_btwn)
+            # fd_vals.append(t.fd)
+            err_vals.append(t.max_error)
+            reg_vals.append(t.max_area_region)
+            loc_vals.append(t.max_area_loc)
+            arc_lens.append(t.arc_len)
 
         values["dist"] = (mean(dist_vals), std(dist_vals))
         values["t_fd"] = (mean(t_fd_vals), std(t_fd_vals))
         values["r_fd"] = (mean(r_fd_vals), std(r_fd_vals))
         values["mvt_eff"] = (mean(mvt_eff_vals), std(mvt_eff_vals))
         values["btwn"] = (mean(btwn_vals), std(btwn_vals))
+        # values["fd"] = (mean(fd_vals), std(fd_vals))
+        values["max_err"] = (mean(err_vals), std(err_vals))
+        values["max_a_reg"] = (mean(reg_vals), std(reg_vals))
+        values["max_a_loc"] = (mean(loc_vals), std(loc_vals))
+        values["arc_len"] = (mean(arc_lens), std(arc_lens))
 
         self.total_distance = values["dist"][0]
         self.total_distance_sd = values["dist"][1]
@@ -122,6 +148,31 @@ class AveragedTrial(AsteriskTrialData):
         self.mvt_efficiency_sd = values["mvt_eff"][1]
         self.area_btwn = values["btwn"][0]
         self.area_btwn_sd = values["btwn"][1]
+        self.max_error = values["max_err"][0]
+        self.max_error_sd = values["max_err"][1]
+        # self.fd = values["fd"][0]
+        # self.fd_sd =  = values["fd"][1]
+        self.max_area_region = values["max_a_reg"][0]
+        self.max_area_region_sd = values["max_a_reg"][1]
+        self.max_area_loc = values["max_a_loc"][0]
+        self.max_area_loc_sd = values["max_a_loc"][1]
+        self.arc_len = values["arc_len"][0]
+        self.arc_len_sd = values["arc_len"][1]
+
+        metric_dict = {"trial": self.generate_name(),
+                       "t_fd": self.translation_fd, "r_fd": self.rotation_fd,  # "fd": self.fd
+                       "max_err": self.max_error, "mvt_eff": self.mvt_efficiency, "arc_len": self.arc_len,
+                       "area_btwn": self.area_btwn, "max_a_reg": self.max_area_region, "max_a_loc": self.max_area_loc}
+
+        self.metrics = pd.Series(metric_dict)
+
+        metric_sd_dict = {"trial": self.generate_name(),
+                          "t_fd_sd": self.translation_fd_sd, "r_fd_sd": self.rotation_fd_sd,  # "fd_sd": self.fd
+                          "max_err_sd": self.max_error_sd, "mvt_eff_sd": self.mvt_efficiency_sd,
+                          "arc_len": self.arc_len_sd, "area_btwn_sd": self.area_btwn_sd,
+                          "max_a_reg_sd": self.max_area_region_sd, "max_a_loc_sd": self.max_area_loc_sd}
+
+        self.metric_sds = pd.Series(metric_sd_dict)
 
         return self.total_distance, self.translation_fd, self.rotation_fd, self.mvt_efficiency, self.area_btwn
 
@@ -342,6 +393,8 @@ if __name__ == '__main__':
 
     avgln = AveragedTrial()
     avgln.make_average_line(lines, show_rot_debug=False)
+    print(avgln.metrics)
+    print(avgln.metric_sds)
 
     avgln.avg_debug_plot()
 
