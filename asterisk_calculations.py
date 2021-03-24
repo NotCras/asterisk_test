@@ -9,9 +9,7 @@ class AsteriskCalculations:
 
     def __init__(self, translation=None, rotation=None):
         """
-        This object contains the calculations necessary for
-        line averaging and frechet distance calculations.
-        Deals primarily in Pose2D due to legacy code
+        This object contains the basic calculations and metrics.
         """
 
     @staticmethod
