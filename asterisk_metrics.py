@@ -217,7 +217,8 @@ class AsteriskMetrics:
             try:
                 area_calculated = sm.area_between_two_curves(bounded_points_not_df, target_points)
             except:
-                print(f"Failed to calculate area at {x_center}")  # TODO: seems like one point is caught in the bounds
+                print(f"Failed to calculate area at {x_center}")
+                # TODO: seems like one point is caught in the bounds when there are failures
                 # TODO: maybe grab one point previous and one ahead? How does area get calculated this way?
                 print(bounded_points)
                 AsteriskMetrics.debug_rotation(points)
