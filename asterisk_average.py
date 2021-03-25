@@ -22,6 +22,8 @@ class AveragedTrial(AsteriskTrialData):
         self.averaged_trials = []  # actual AsteriskTrialData objects that were averaged
         # self.pose_average = []  # maybe just use poses
         self.pose_ad = None
+        self.pose_ad_up = None
+        self.pose_ad_down = None
 
         # just reminding that these are here
         self.total_distance = None
@@ -46,15 +48,25 @@ class AveragedTrial(AsteriskTrialData):
         self.max_area_region_sd, self.max_area_loc_sd = None, None
         self.metrics_sd = None
 
-    def get_poses_ad(self):
+    def get_poses_ad(self, which_set=0):
         """
         Separates poses into x, y, theta for easy plotting.
         direction is 0 for up, 1 for down
         """
         # get the poses
-        x = self.pose_ad["x"]
-        y = self.pose_ad["y"]
-        twist = self.pose_ad["rmag"]
+        if which_set == 1:
+            x = self.pose_ad_up["x"]
+            y = self.pose_ad_up["y"]
+            twist = self.pose_ad_up["rmag"]
+
+        elif which_set == 2:
+            x = self.pose_ad_down["x"]
+            y = self.pose_ad_down["y"]
+            twist = self.pose_ad_down["rmag"]
+        else:
+            x = self.pose_ad["x"]
+            y = self.pose_ad["y"]
+            twist = self.pose_ad["rmag"]
 
         return_x = pd.Series.to_list(x.dropna())
         return_y = pd.Series.to_list(y.dropna())
@@ -74,7 +86,10 @@ class AveragedTrial(AsteriskTrialData):
 
         #print(f"t_pose: {x_val} +/- {bounds}")
 
-        points_in_bounds = points[(points['x'] >= lo_val) & (points['x'] <= hi_val)]
+        if lo_val <= 0:
+            points_in_bounds = points[(points['x'] >= 0) & (points['x'] <= hi_val)]
+        else:
+            points_in_bounds = points[(points['x'] >= lo_val) & (points['x'] <= hi_val)]
 
         return points_in_bounds
 
@@ -205,12 +220,15 @@ class AveragedTrial(AsteriskTrialData):
             data_points = data_points.append(t.poses)  # put all poses in one dataframe for easy access
 
         # rotate the line so we can do everything based on the x axis. Yes, I know this is hacky
-        r_target_x, r_target_y = AsteriskPlotting.get_c(100)
+        r_target_x, r_target_y = AsteriskPlotting.get_c(50)
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
         rotated_data = self._rotate_points(data_points, self.rotations[self.trial_translation])
 
         avg_line = pd.DataFrame()
         avg_ad = pd.DataFrame()
+
+        avg_ad_up = pd.DataFrame()
+        avg_ad_down = pd.DataFrame()
 
         # now we go through averaging
         for i, t in enumerate(rotated_target_line):
@@ -224,7 +242,7 @@ class AveragedTrial(AsteriskTrialData):
 
             # get previous point, maybe make the current one be the next one, and then grab two back
             try:
-                prev_avg = avg_line.iloc(-1)
+                prev_avg = avg_line.iloc[-1]
             except:
                 prev_avg = pd.Series({"x": 0., "y": 0.,
                                       "rmag": 0., "tmag": 0.})
@@ -233,21 +251,38 @@ class AveragedTrial(AsteriskTrialData):
 
             ad_point = pd.Series({"x": dx_ad, "y": dy_ad,
                                   "rmag": err_rmag.mean(axis=0), "tmag": avg_tmag})
+            ad_point_up = pd.Series({"x": averaged_point['x']+dx_ad, "y": averaged_point['x']+dy_ad,
+                                  "rmag": err_rmag.mean(axis=0), "tmag": avg_tmag})
+            ad_point_down = pd.Series({"x": averaged_point['x']-dx_ad, "y": averaged_point['x']-dy_ad,
+                                     "rmag": err_rmag.mean(axis=0), "tmag": avg_tmag})
 
-            # if i == 10:
+            # if i in [95, 96, 97, 98, 99]:
             #     pdb.set_trace()
+            if i == 90:
+                pdb.set_trace()
 
             avg_line = avg_line.append(averaged_point, ignore_index=True)
             avg_ad = avg_ad.append(ad_point, ignore_index=True)
+
+            avg_ad_up = avg_ad_up.append(ad_point_up, ignore_index=True)
+            avg_ad_down = avg_ad_down.append(ad_point_down, ignore_index=True)
 
         # rotate everything back
         correct_avg = self._rotate_points(avg_line, -1 * self.rotations[self.trial_translation])
         correct_ad = self._rotate_points(avg_ad, -1 * self.rotations[self.trial_translation])
 
+        correct_ad_up = self._rotate_points(avg_ad_up, -1 * self.rotations[self.trial_translation])
+        correct_ad_down = self._rotate_points(avg_ad_down, -1 * self.rotations[self.trial_translation])
+
         self.poses = correct_avg
         self.pose_ad = correct_ad
+        self.pose_ad_up = correct_ad_up
+        self.pose_ad_down = correct_ad_down
+        # pdb.set_trace()
 
         if show_rot_debug:
+            print(f"poses length: {len(self.poses)}")
+            print(f"poses ad length: {len(self.pose_ad)}")
             AsteriskMetrics.debug_rotation(self)
 
         print(f"Averaged: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
@@ -263,7 +298,7 @@ class AveragedTrial(AsteriskTrialData):
         Given the points used to average a point, and the averaged point itself,
         determine the average deviation for that point
         """
-
+        # TODO: we need to
         err_x = points['x'] - averaged_point['x']
         err_y = points['y'] - averaged_point['y']
         err_rmag = points['rmag'] - averaged_point['rmag']
@@ -276,6 +311,8 @@ class AveragedTrial(AsteriskTrialData):
 
         ad_data = pd.DataFrame({"x": err_x, "y": err_y, "rmag": err_rmag, "tmag": err_tmag})
         avg_tmag = ad_data["tmag"].mean(axis=0)
+        # avg_rmag = ad_data["rmag"].mean(axis=0)
+        # pdb.set_trace()
 
         # get calculate normal point
         # TODO: go back 2 in order to get a better approximation, but it will be one step behind
@@ -284,16 +321,19 @@ class AveragedTrial(AsteriskTrialData):
         # # https://math.stackexchange.com/questions/656500/given-a-point-slope-and-a-distance-along-that-slope-easily-find-a-second-p
         slope_x = averaged_point['x'] - prev_avg['x']
         slope_y = averaged_point['y'] - prev_avg['y']
-        # reciprocal_slope = - slope_x / slope_y
+        # reciprocal_slope = -1 * slope_x / slope_y
         # dx_ad = avg_tmag / sqrt(1+reciprocal_slope**2)
         # dy_ad = (avg_tmag * reciprocal_slope) / sqrt(1+reciprocal_slope**2)
-        # # just need to add/subtract them to the average point and it should work
+        # just need to add/subtract them to the average point and it should work
 
         dlen = sqrt(slope_x * slope_x + slope_y * slope_y)
         dx_ad = avg_tmag * -slope_y / dlen
         dy_ad = avg_tmag * slope_x / dlen
 
-        return dx_ad, dy_ad, err_tmag, err_rmag
+        # if np.isnan(averaged_point['x']):
+        #     pdb.set_trace()
+
+        return dx_ad, dy_ad, avg_tmag, err_rmag
 
     def plot_line_contributions(self):
         """
@@ -328,7 +368,7 @@ class AveragedTrial(AsteriskTrialData):
         # plot average
         a_x, a_y, _ = self.get_poses(use_filtered=False)
         plt.plot(a_x, a_y, label="avg", color="xkcd:burnt orange")
-        self.plot_sd("xkcd:burnt orange")
+        self.plot_sd("xkcd:burnt orange", testing=False)
 
         self.plot_line_contributions()
 
@@ -351,29 +391,50 @@ class AveragedTrial(AsteriskTrialData):
             plt.legend()
             plt.show()
 
-    def plot_sd(self, color, use_filtered=False):
+    def plot_sd(self, color, use_filtered=False, testing=True):
         """
         plot the standard deviations as a confidence interval around the averaged line
         :param color: color for sd polygon, must be compatible with matplotlib.
         :param use_filtered: enables option to use filtered or unfiltered data. Defaults to False
         """
-        avg_x, avg_y, _ = self.get_poses()
-        ad_x, ad_y, ad_t = self.get_poses_ad()  # the points are already made in relation to the data
+        avg_x, avg_y, _ = self.get_poses(use_filtered=use_filtered)
+        if not testing:
+            ad_x, ad_y, _ = self.get_poses_ad()
 
-        # necessary for building the polygon
-        r_avg_x = list(reversed(avg_x))
-        r_avg_y = list(reversed(avg_y))
-        r_ad_x = list(reversed(ad_x))
-        r_ad_y = list(reversed(ad_y))
+            # necessary for building the polygon
+            r_avg_x = list(reversed(avg_x))
+            r_avg_y = list(reversed(avg_y))
+            r_ad_x = list(reversed(ad_x))
+            r_ad_y = list(reversed(ad_y))
 
-        poly = []
-        for ax, ay, dx, dy in zip(avg_x, avg_y, ad_x, ad_y):
-            pt = [ax+dx, ay+dy]
-            poly.append(pt)
+            # pdb.set_trace()
 
-        for ax, ay, dx, dy in zip(r_avg_x, r_avg_y, r_ad_x, r_ad_y):
-            pt = [ax-dx, ay-dy]
-            poly.append(pt)
+            poly = []
+            for ax, ay, dx, dy in zip(avg_x, avg_y, ad_x, ad_y):
+                pt = [ax, ay+dy]
+                poly.append(pt)
+
+            for ax, ay, dx, dy in zip(r_avg_x, r_avg_y, r_ad_x, r_ad_y):
+                pt = [ax, ay-dy]
+                poly.append(pt)
+        else:
+            ad_x_up, ad_y_up, _ = self.get_poses_ad(which_set=1)
+            ad_x_down, ad_y_down, _ = self.get_poses_ad(which_set=2)
+
+            # necessary for building the polygon
+            r_ad_x = list(reversed(ad_x_down))
+            r_ad_y = list(reversed(ad_y_down))
+
+            # pdb.set_trace()
+
+            poly = []
+            for ax, ay in zip(ad_x_up, ad_y_up):
+                pt = [ax, ay]
+                poly.append(pt)
+
+            for ax, ay in zip(r_ad_x, r_ad_y):
+                pt = [ax, ay]
+                poly.append(pt)
 
         polyg = plt.Polygon(poly, color=color, alpha=0.4)
         plt.gca().add_patch(polyg)
@@ -381,20 +442,20 @@ class AveragedTrial(AsteriskTrialData):
 
 if __name__ == '__main__':
     # demo and test
-    test1 = AsteriskTrialData('sub1_2v3_b_n_1.csv')
-    test2 = AsteriskTrialData('sub1_2v3_b_n_2.csv')
-    test3 = AsteriskTrialData('sub1_2v3_b_n_3.csv')
+    test1 = AsteriskTrialData('sub1_2v3_c_n_1.csv')
+    test2 = AsteriskTrialData('sub1_2v3_c_n_2.csv')
+    test3 = AsteriskTrialData('sub1_2v3_c_n_3.csv')
 
-    test4 = AsteriskTrialData('sub2_2v3_b_n_1.csv')
-    test5 = AsteriskTrialData('sub2_2v3_b_n_2.csv')
-    test6 = AsteriskTrialData('sub2_2v3_b_n_3.csv')
+    test4 = AsteriskTrialData('sub2_2v3_c_n_1.csv')
+    test5 = AsteriskTrialData('sub2_2v3_c_n_2.csv')
+    test6 = AsteriskTrialData('sub2_2v3_c_n_3.csv')
 
     lines = [test1, test2, test3, test4, test5, test6]
 
     avgln = AveragedTrial()
     avgln.make_average_line(lines, show_rot_debug=False)
-    print(avgln.metrics)
-    print(avgln.metric_sds)
+    # print(avgln.metrics)
+    # print(avgln.metric_sds)
 
     avgln.avg_debug_plot()
 
