@@ -29,7 +29,6 @@ class AsteriskHandData:
         self.window_size = None
         self.averages = []
 
-
     def _gather_hand_data(self, subjects, rotation=None):
         """
         Returns a dictionary with the data for the hand, sorted by task.
@@ -44,10 +43,18 @@ class AsteriskHandData:
                 key = f"{t}_{r}"
                 data_dictionary[key] = self._make_asterisk_trials(subjects, t, r, [1, 2, 3])
 
-        else:  # TODO: also add a check for just cw and ccw
+        elif rotation in ["n", "m15", "p15"]:  # TODO: also add a check for just cw and ccw
             for t in ["a", "b", "c", "d", "e", "f", "g", "h"]:
                 key = f"{t}_{rotation}"
                 data_dictionary[key] = self._make_asterisk_trials(subjects, t, rotation, [1, 2, 3])
+
+        elif rotation in ["cw", "ccw"]:
+            key = f"n_{rotation}"
+            data_dictionary[key] = self._make_asterisk_trials(subjects, "n", rotation, [1, 2, 3])
+
+        else:
+            print("invalid key")
+            data_dictionary = None
 
         return data_dictionary
 
