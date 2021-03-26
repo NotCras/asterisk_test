@@ -329,18 +329,20 @@ class AveragedTrial(AsteriskTrialData):
         plt.title(f"Debugging the calculated points at {i}")
         plt.show()
 
-    def calculate_avg_dev(self, all_points=None, sample_points=25, show_debug=False, show_pt_debug=True):
+    def calculate_avg_dev(self, all_points=None, all_avgs=None, sample_points=25, show_debug=False, show_pt_debug=False):
         """
         Goes through our set of averages and calculates the average deviation of the trials for each avg point
         """
         # TODO: check that we actually have averages
-        avg_pts = self.poses
         avg_ads = pd.DataFrame()
         avg_ads_up = pd.DataFrame()
         avg_ads_down = pd.DataFrame()
 
         if all_points is None:
             all_points = self.all_points  # for now, setting this just in case
+
+        if all_avgs is None:
+            avg_pts = self._rotate_points(self.poses, self.rotations[self.trial_translation])
 
         r_target_x, r_target_y = AsteriskPlotting.get_c(sample_points)
         rotated_target_line = np.column_stack((r_target_x, r_target_y))

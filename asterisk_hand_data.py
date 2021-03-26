@@ -224,8 +224,10 @@ class AsteriskHandData:
 
         # plot target lines as dotted lines
         self.plot_all_target_lines(colors)
-        plt.xticks(np.linspace(-0.6, 0.6, 11), rotation=30)
-        plt.yticks(np.linspace(-0.6, 0.6, 11))
+        plt.title(f"{self.hand.get_name()} avg asterisk, rot: {trials[0].trial_rotation}")
+        plt.xticks(np.linspace(-0.6, 0.6, 13), rotation=30)
+        plt.yticks(np.linspace(-0.6, 0.6, 13))
+        plt.gca().set_aspect('equal', adjustable='box')
         return plt
 
     def _make_fd_plot(self, trials):
