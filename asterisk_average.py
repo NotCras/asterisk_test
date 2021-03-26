@@ -252,17 +252,17 @@ class AveragedTrial(AsteriskTrialData):
         for t in trials:
             data_points = data_points.append(t.poses)  # put all poses in one dataframe for easy access
 
-        self.all_points = data_points # save this for average deviation? TODO: remove this later
+        self.all_points = data_points # save this for average deviation? # TODO: remove this later
         # rotate the line so we can do everything based on the x axis. Yes, I know this is hacky
         r_target_x, r_target_y = AsteriskPlotting.get_c(sample_points)
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
+
         rotated_data = self._rotate_points(data_points, self.rotations[self.trial_translation])
 
         avg_line = pd.DataFrame()
 
         # TODO: otherwise, very low chance we will start at 0,0 -> we know it does if the test was set up properly
-        first_avg = pd.Series({"x": 0., "y": 0.,
-                               "rmag": 0.})
+        first_avg = pd.Series({"x": 0., "y": 0., "rmag": 0.})
         avg_line = avg_line.append(first_avg, ignore_index=True)
 
         for i, t in enumerate(rotated_target_line):
@@ -285,6 +285,9 @@ class AveragedTrial(AsteriskTrialData):
         # for now, also running avg dev calculation right here, it will also show debug plot
         if calc_ad:
             self.calculate_avg_dev(rotated_data, sample_points=sample_points, show_debug=show_debug)
+
+        print(f"Averaged: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
+
 
     def _calc_avg_tmag(self, avg_point, all_points, x_center, sample_points=25):
         """
@@ -335,6 +338,8 @@ class AveragedTrial(AsteriskTrialData):
         # TODO: check that we actually have averages
         avg_pts = self.poses
         avg_ads = pd.DataFrame()
+        avg_ads_up = pd.DataFrame()
+        avg_ads_down = pd.DataFrame()
 
         if all_points is None:
             all_points = self.all_points  # for now, setting this just in case
@@ -370,20 +375,29 @@ class AveragedTrial(AsteriskTrialData):
                 # vec_offset.append((vx, vy))
                 vec_offset = pd.Series({"x": vx, "y": vy, "rmag": 0})  # TODO: calculate rmag later
 
-            if show_pt_debug and i in [22, 23]:
-                if i in [23]:
-                    pdb.set_trace()
+            ad_up = pd.Series({"x": avg_pt['x'] + vec_offset['x'], "y": avg_pt['y'] + vec_offset['y'], "rmag": 0})
+            ad_down = pd.Series({"x": avg_pt['x'] - vec_offset['x'], "y": avg_pt['y'] - vec_offset['y'], "rmag": 0})
+
+            if show_pt_debug and i in [5, 10, 15, 22, 23]:
+                # if i in [23]:
+                #     pdb.set_trace()
 
                 pts_at_pt = self._get_points(all_points, rotated_target_line[i-1][0], 0.5 / sample_points)
 
-                ad_up = pd.Series({"x": avg_pt['x'] + vec_offset['x'], "y": avg_pt['y'] + vec_offset['y'], "rmag": 0})
-                ad_down = pd.Series({"x": avg_pt['x'] - vec_offset['x'], "y": avg_pt['y'] - vec_offset['y'], "rmag": 0})
                 self._debug_avg_dev(i, vec_offset['x'], vec_offset['y'], tmags[i],
                                     pts_at_pt, next_avg, avg_pt, prev_avg, ad_up, ad_down)
 
             avg_ads = avg_ads.append(vec_offset, ignore_index=True)
+            avg_ads_up = avg_ads_up.append(ad_up, ignore_index=True)
+            avg_ads_down = avg_ads_down.append(ad_down, ignore_index=True)
 
-        self.pose_ad = avg_ads
+        correct_ads = self._rotate_points(avg_ads, -1 * self.rotations[self.trial_translation])
+        correct_ads_up = self._rotate_points(avg_ads_up, -1 * self.rotations[self.trial_translation])
+        correct_ads_down = self._rotate_points(avg_ads_down, -1 * self.rotations[self.trial_translation])
+
+        self.pose_ad = correct_ads
+        self.pose_ad_up = correct_ads_up
+        self.pose_ad_down = correct_ads_down
 
         if show_debug:
             print("Showing avg debug plot with average deviations.")
@@ -613,13 +627,13 @@ class AveragedTrial(AsteriskTrialData):
         plt.plot(a_x, a_y, label="avg", color="xkcd:burnt orange")
 
         if with_ad:
-            self.plot_sd("xkcd:burnt orange", testing=False)
+            self.plot_sd("xkcd:burnt orange", testing=True)
 
         self.plot_line_contributions()
 
         plt.title(f"Avg Debug Plot: {self.hand.get_name()}, {self.trial_translation}_{self.trial_rotation}")
 
-        # TODO: show at least one averaging interval
+        # TODO: show at least one averaging interval?
 
         if save_plot:
             plt.savefig(f"pics/avgdebug_{self.hand.get_name()}_{self.subject}_{self.trial_translation}_"
@@ -632,7 +646,7 @@ class AveragedTrial(AsteriskTrialData):
             plt.legend()
             plt.show()
 
-    def plot_sd(self, color, use_filtered=False, testing=True):
+    def plot_sd(self, color, use_filtered=False, testing=False):
         """
         plot the standard deviations as a confidence interval around the averaged line
         :param color: color for sd polygon, must be compatible with matplotlib.
@@ -670,12 +684,14 @@ class AveragedTrial(AsteriskTrialData):
             r_ad_x = list(reversed(ad_x_down))
             r_ad_y = list(reversed(ad_y_down))
 
-            # pdb.set_trace()
-
             poly = []
             for ax, ay in zip(ad_x_up, ad_y_up):
                 pt = [ax, ay]
                 poly.append(pt)
+
+            # add last point for nicer looking plot
+            last_pose = self.get_last_pose()
+            poly.append([last_pose[0], last_pose[1]])
 
             for ax, ay in zip(r_ad_x, r_ad_y):
                 pt = [ax, ay]
@@ -688,7 +704,7 @@ class AveragedTrial(AsteriskTrialData):
 if __name__ == '__main__':
     # demo and test
     h = "2v3"
-    t = "c"
+    t = "e"
     test1 = AsteriskTrialData(f'sub1_{h}_{t}_n_1.csv')
     test2 = AsteriskTrialData(f'sub1_{h}_{t}_n_2.csv')
     test3 = AsteriskTrialData(f'sub1_{h}_{t}_n_3.csv')
@@ -700,7 +716,7 @@ if __name__ == '__main__':
     lines = [test1, test2, test3, test4, test5, test6]
 
     avgln = AveragedTrial()
-    avgln.calculate_avg_line(lines, show_debug=True)
+    avgln.calculate_avg_line(lines, show_debug=True, calc_ad=True)
     # avgln.make_average_line(lines, show_rot_debug=False)
     # print(avgln.metrics)
     # print(avgln.metric_sds)

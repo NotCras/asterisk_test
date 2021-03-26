@@ -288,10 +288,16 @@ class AsteriskMetrics:
             except ValueError:
                 # usually this triggers if there aren't enough points (more than one) in the window
                 # if there aren't enough points, make enough points!
-                area_calculated = AsteriskMetrics.interpolate_points(points, x_center,
-                                                                     bounded_points, bound_size,
-                                                                     target_points)
-                print("Successful interpolation!")
+                try:
+                    area_calculated = AsteriskMetrics.interpolate_points(points, x_center,
+                                                                         bounded_points, bound_size,
+                                                                         target_points)
+                    print("Successful interpolation!")
+                except Exception as e:
+                    print("Interpolation Failed.")
+                    print(e)
+                    # if not points were found at all in this region, depending on bound size
+                    area_calculated = 0
 
             x_center = x_center + 0.1 * bound_size  # want to step in 1% increments
             x_max = x_center + bound_size

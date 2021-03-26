@@ -423,6 +423,7 @@ class AsteriskTrialData:
         """
         Print out a report with all the metrics, useful for debugging
         """
+        pass
 
 
 if __name__ == '__main__':

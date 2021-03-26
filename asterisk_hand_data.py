@@ -146,7 +146,8 @@ class AsteriskHandData:
             trials = self._get_ast_dir(translation, subject, rotation)
 
         average = AveragedTrial()
-        average.make_average_line(trials)
+        # average.make_average_line(trials)
+        average.calculate_avg_line(trials)
         return average
 
     def replace_trial_data(self, trial_obj):
