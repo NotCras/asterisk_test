@@ -286,7 +286,6 @@ class AveragedTrial(AsteriskTrialData):
 
         print(f"Averaged: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
 
-
     def _calc_avg_tmag(self, avg_point, all_points, x_center, sample_points=25):
         """
         Calculate the average error
@@ -310,6 +309,7 @@ class AveragedTrial(AsteriskTrialData):
     def _debug_avg_dev(self, i, dx_ad, dy_ad, avg_tmag, points,
                        next_avg, avg, prev_avg,
                        ad_point_up, ad_point_down):
+        # TODO: make a subplot where we also see this point in the context of the entire rotated line
         print(f"for tmag: {avg_tmag}")
         print(f"dx: {dx_ad}, dy: {dy_ad}")
         # print(f"reciprocal slope: {rec_slope}")
@@ -404,193 +404,6 @@ class AveragedTrial(AsteriskTrialData):
             self.avg_debug_plot(with_ad=True, show_plot=True)
 
         return avg_ads
-
-    def make_average_line(self, trials, show_rot_debug=False, sample_points=25):
-        """
-        Average the path of 2 or more AsteriskTrialObjects. Produces average and standard deviations.
-        Saves this data on the object itself.
-        :param trials: list of trials to average
-        """
-
-        # collect the asterisktrialdata objects
-        self.names = []  # if rerunning an average with same object, make sure these lists are empty
-        self.averaged_trials = []
-        for t_n in trials:
-            self.names.append(t_n.generate_name())
-            self.averaged_trials.append(t_n)
-
-        # first take attributes of first asterisktrialdata object and take its attributes
-        trial = self.averaged_trials[0]
-        self.subject = trial.subject  # TODO: add more subjects, make this a list? -> will affect other func too
-        self.hand = trial.hand
-        self.trial_translation = trial.trial_translation
-        self.trial_rotation = trial.trial_rotation
-        self.trial_num = trial.trial_num
-        self.target_line = trial.target_line
-
-        # get all the data
-        data_points = pd.DataFrame()  # makes an empty dataframe
-        for t in self.averaged_trials:
-            data_points = data_points.append(t.poses)  # put all poses in one dataframe for easy access
-
-        # rotate the line so we can do everything based on the x axis. Yes, I know this is hacky
-        r_target_x, r_target_y = AsteriskPlotting.get_c(sample_points)
-        rotated_target_line = np.column_stack((r_target_x, r_target_y))
-        rotated_data = self._rotate_points(data_points, self.rotations[self.trial_translation])
-
-        avg_line = pd.DataFrame()
-        avg_ad = pd.DataFrame()
-
-        avg_ad_up = pd.DataFrame()
-        avg_ad_down = pd.DataFrame()
-
-        first_avg = pd.Series({"x": 0., "y": 0.,
-                               "rmag": 0.})
-        avg_line = avg_line.append(first_avg, ignore_index=True)
-        points = self._get_points(rotated_data, 0., 0.2 / sample_points)
-
-        #rotated_target_line = np.delete(rotated_target_line, 0, 0)  # remove first line
-        # now we go through averaging
-        for i, t in enumerate(rotated_target_line):
-            t_x = t[0]
-            prev_points = points
-            points = self._get_points(rotated_data, t_x, 0.5/sample_points)
-
-            averaged_point = points.mean(axis=0)  # averages each column in DataFrame
-            # std_point = points.std(axis=0)  # doesn't really show up right
-            # print(f"num points averaged: {len(points)}")
-
-            prevprev_avg, prev_avg = self._get_prev_avgs(avg_line)
-
-            dx_ad, dy_ad, avg_tmag, err_rmag, rec_slope = self.calc_point_ad(prev_points, averaged_point, prevprev_avg)
-
-            ad_point = pd.Series({"x": dx_ad, "y": dy_ad,
-                                  "rmag": err_rmag.mean(axis=0), "tmag": avg_tmag})
-            ad_point_up = pd.Series({"x": prev_avg['x']+dx_ad, "y": prev_avg['y']+dy_ad,
-                                  "rmag": err_rmag.mean(axis=0), "tmag": avg_tmag})
-            ad_point_down = pd.Series({"x": prev_avg['x']-dx_ad, "y": prev_avg['y']-dy_ad,
-                                     "rmag": err_rmag.mean(axis=0), "tmag": avg_tmag})
-
-            # if i in [95, 96, 97, 98, 99]:
-            #     pdb.set_trace()
-            if i == 10: #in [0, 1, 10, 15, 20, 25]:
-                print(f"for tmag: {avg_tmag}")
-                print(f"dx: {dx_ad}, dy: {dy_ad}")
-                print(f"reciprocal slope: {rec_slope}")
-                # print(f"ad_point_up: {ad_point_up}")
-                # print(" ")
-                # print(f"ad_point_down: {ad_point_down}")
-                averages_x = [averaged_point['x'], prev_avg['x'], prevprev_avg['x']]
-                averages_y = [averaged_point['y'], prev_avg['y'], prevprev_avg['y']]
-                plt.scatter(prev_points["x"], prev_points['y'], color="xkcd:blue grey", label="averaged points", alpha=0.5)
-                plt.plot(averages_x, averages_y, color="xkcd:dark red", label="averages")
-                plt.scatter(averaged_point['x'], averaged_point['y'], color="xkcd:dark red", label="avg pt", alpha=0.75)
-                plt.scatter(prev_avg['x'], prev_avg['y'], color="xkcd:dark red", label="avg pt", alpha=0.4)
-                plt.scatter(prevprev_avg['x'], prevprev_avg['y'], color="xkcd:dark red", label="avg pt", alpha=0.65)
-
-                plt.scatter(ad_point_up['x'], ad_point_up['y'], color="xkcd:dark blue", label="ad up", alpha=0.75)
-                plt.scatter(ad_point_down['x'], ad_point_down['y'], color="xkcd:dark green", label="ad down", alpha=0.75)
-                plt.title(f"Debugging the calculated points at {i}")
-                plt.show()
-                plt.clf()
-                pdb.set_trace()
-
-            avg_line = avg_line.append(averaged_point, ignore_index=True)
-            avg_ad = avg_ad.append(ad_point, ignore_index=True)
-
-            avg_ad_up = avg_ad_up.append(ad_point_up, ignore_index=True)
-            avg_ad_down = avg_ad_down.append(ad_point_down, ignore_index=True)
-
-        # get ad for last point
-        prev_avg = averaged_point
-        averaged_point = pd.Series({"x": averaged_point['x']+0.01, "y": averaged_point['y'],
-                                    "rmag": 0.})
-        points = self._get_points(rotated_data, t_x, 0.1)  # last value of t_x
-
-        dx_ad, dy_ad, avg_tmag, err_rmag, rec_slope = self.calc_point_ad(points, averaged_point, prev_avg)
-
-        ad_point = pd.Series({"x": dx_ad, "y": dy_ad,
-                              "rmag": err_rmag.mean(axis=0), "tmag": avg_tmag})
-        ad_point_up = pd.Series({"x": averaged_point['x'], "y": averaged_point['y'] + dy_ad,
-                                 "rmag": err_rmag.mean(axis=0), "tmag": avg_tmag})
-        ad_point_down = pd.Series({"x": averaged_point['x'], "y": averaged_point['y'] - dy_ad,
-                                   "rmag": err_rmag.mean(axis=0), "tmag": avg_tmag})
-
-        avg_ad = avg_ad.append(ad_point, ignore_index=True)
-
-        avg_ad_up = avg_ad_up.append(ad_point_up, ignore_index=True)
-        avg_ad_down = avg_ad_down.append(ad_point_down, ignore_index=True)
-
-        # ======================================================================
-
-        # rotate everything back
-        correct_avg = self._rotate_points(avg_line, -1 * self.rotations[self.trial_translation])
-        correct_ad = self._rotate_points(avg_ad, -1 * self.rotations[self.trial_translation])
-
-        correct_ad_up = self._rotate_points(avg_ad_up, -1 * self.rotations[self.trial_translation])
-        correct_ad_down = self._rotate_points(avg_ad_down, -1 * self.rotations[self.trial_translation])
-
-        self.poses = correct_avg
-        self.pose_ad = correct_ad
-
-        self.pose_ad_up = correct_ad_up
-        self.pose_ad_down = correct_ad_down
-        # pdb.set_trace()
-
-        if show_rot_debug:
-            print(f"poses length: {len(self.poses)}")
-            print(f"poses ad length: {len(self.pose_ad)}")
-            AsteriskCalculations.debug_rotation(self)
-
-        print(f"Averaged: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
-
-        # now filter and calculate metrics
-        self.moving_average()
-        metric_values = self._calc_avg_metrics()
-
-        return correct_avg, metric_values
-
-    def calc_point_ad(self, points, averaged_point, prev_avg):
-        """
-        Given the points used to average a point, and the averaged point itself,
-        determine the average deviation for that point
-        """
-        # TODO: we need to
-        err_x = points['x'] - averaged_point['x']
-        err_y = points['y'] - averaged_point['y']
-        err_rmag = points['rmag'] - averaged_point['rmag']
-        err_tmag = []
-
-        # calculate vector magnitudes
-        for x, y in zip(err_x, err_y):
-            tmag = sqrt(x ** 2 + y ** 2)
-            err_tmag.append(tmag)
-
-        ad_data = pd.DataFrame({"x": err_x, "y": err_y, "rmag": err_rmag, "tmag": err_tmag})
-        avg_tmag = ad_data["tmag"].mean(axis=0)
-        # avg_rmag = ad_data["rmag"].mean(axis=0)
-
-        # get calculate normal point
-        # TODO: go back 2 in order to get a better approximation, but it will be one step behind
-
-        # # this took me forever... I'm embarrassed:
-        # # https://math.stackexchange.com/questions/656500/given-a-point-slope-and-a-distance-along-that-slope-easily-find-a-second-p
-        slope_x = averaged_point['x'] - prev_avg['x']
-        slope_y = averaged_point['y'] - prev_avg['y']
-        reciprocal_slope = -1 * slope_x / slope_y
-        # # print(f"slope_x: {slope_x}, slope_y: {slope_y}")
-        # dx_ad = avg_tmag / sqrt(1+reciprocal_slope**2)
-        # dy_ad = (avg_tmag * reciprocal_slope) / sqrt(1+reciprocal_slope**2)
-        # # just need to add/subtract them to the average point and it should work
-
-        dlen = sqrt(slope_x * slope_x + slope_y * slope_y)
-        dx_ad = avg_tmag * -slope_y / dlen
-        dy_ad = avg_tmag * slope_x / dlen
-
-        # if np.isnan(averaged_point['x']):
-        #     pdb.set_trace()
-
-        return dx_ad, dy_ad, avg_tmag, err_rmag, reciprocal_slope
 
     def plot_line_contributions(self):
         """
