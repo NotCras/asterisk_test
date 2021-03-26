@@ -191,21 +191,30 @@ class AveragedTrial(AsteriskTrialData):
 
         return self.total_distance, self.translation_fd, self.rotation_fd, self.mvt_efficiency, self.area_btwn
 
-    def _get_prev_avgs(self, calculated_averages):
+    def _get_prev_avgs(self, i, avg_pts, at_avg_pt):
         """
         Gets previous two points, for ad calculation. Handles all cases
         """
 
         # based on how I've set it up, there will always be one previous average in the line. This should work
-        p_avg = calculated_averages.iloc[-1]
+        try:
+            prev_avg = avg_pts.iloc[i - 1]
+
+            if np.isnan(prev_avg['x']):
+                prev_avg = at_avg_pt
+        except IndexError:
+            prev_avg = avg_pts.iloc[i]
 
         try:
-            pp_avg = calculated_averages.iloc[-2]
-        except: # in case of the first point, pp_avg won't exist... therefore we will make it the same as p_avg
-            pp_avg = pd.Series({"x": 0., "y": 0.,
-                                  "rmag": 0., "tmag": 0.})
+            next_avg = avg_pts.iloc[i + 1]
 
-        return pp_avg, p_avg
+            if np.isnan(next_avg['x']):
+                next_avg = avg_pts.iloc[i]
+
+        except IndexError:
+            next_avg = avg_pts.iloc[i]
+
+        return prev_avg, next_avg
 
     def _get_attributes(self, trials_to_average):
         """
@@ -343,24 +352,9 @@ class AveragedTrial(AsteriskTrialData):
 
         # go through all the averages, at each point calculate the average deviation
         for i in range(0, len(avg_pts)):
-        #for i, avg_pt in enumerate(avg_pts.iterrows()):
             avg_pt = avg_pts.iloc[i]
             # get the points
-            try:
-                prev_avg = avg_pts.iloc[i-1]
-
-                if np.isnan(prev_avg['x']):
-                    prev_avg = avg_pt
-            except IndexError:
-                prev_avg = avg_pts.iloc[i]
-            try:
-                next_avg = avg_pts.iloc[i+1]
-
-                if np.isnan(next_avg['x']):
-                    next_avg = avg_pts.iloc[i]
-
-            except IndexError:
-                next_avg = avg_pts.iloc[i]
+            prev_avg, next_avg = self._get_prev_avgs(i, avg_pts, avg_pt)
 
             dx = next_avg['x'] - prev_avg['x']
             dy = next_avg['y'] - prev_avg['y']
@@ -389,9 +383,6 @@ class AveragedTrial(AsteriskTrialData):
 
             avg_ads = avg_ads.append(vec_offset, ignore_index=True)
 
-        print(f"avgs: {len(self.poses)}, ads: {len(avg_ads)}")
-        print(f"avgs: {self.poses}")
-        print(f"ads: {avg_ads}")
         self.pose_ad = avg_ads
 
         if show_debug:
@@ -663,6 +654,10 @@ class AveragedTrial(AsteriskTrialData):
             for ax, ay, dx, dy in zip(avg_x, avg_y, ad_x, ad_y):
                 pt = [ax+dx, ay+dy]
                 poly.append(pt)
+
+            # add last point for nicer looking plot
+            last_pose = self.get_last_pose()
+            poly.append([last_pose[0], last_pose[1]])
 
             for ax, ay, dx, dy in zip(r_avg_x, r_avg_y, r_ad_x, r_ad_y):
                 pt = [ax-dx, ay-dy]

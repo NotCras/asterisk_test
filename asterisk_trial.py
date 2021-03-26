@@ -328,7 +328,7 @@ class AsteriskTrialData:
         """
         Returns last pose as an array. Returns both filtered and unfiltered data if obj is filtered
         """
-        return self.poses.tail(1).to_numpy()[0]
+        return self.poses.dropna().tail(1).to_numpy()[0]
 
     def generate_target_line(self, n_samples=100):
         """
