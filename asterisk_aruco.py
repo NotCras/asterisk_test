@@ -17,9 +17,30 @@ marker_side = 0.03
 processing_freq = 1  # analyze every 1 image
 # ============================
 
+def get_indices(id, file_name=None):
+    """
+    Gets the beginning and ending indices of the
+    :param id:
+    :param file_name:
+    :return:
+    """
+    if file_name is not None:
+        table = pd.read_csv(file_name)
+    else:
+        table = pd.read_csv("viz_data_indices.csv")
+
+    try:
+        indices = table.loc[id]
+
+    except Exception as e:
+        print("Could not find the index.")
+        print(e)
+
+    return indices["begin_idx"], indices["end_idx"]
+
 
 class ArucoVision:
-    def __init__(self, folder, side_dims=0.03, freq=1):
+    def __init__(self, folder, side_dims=0.03, freq=1, begin_idx=0, end_idx=None):
         """
         """
         self.home = Path(__file__).parent.absolute()
@@ -36,7 +57,7 @@ class ArucoVision:
         self.dist = np.array((0.1611730644, -0.3392379107, 0.0010744837, 0.000905697))
 
         os.chdir(self.data_folder)
-        self.corners = self.analyze_images()
+        self.corners = self.analyze_images(end_idx=end_idx, begin_idx=begin_idx)
         os.chdir(self.home)
 
     def corner_to_series(self, i, corn):
@@ -152,9 +173,9 @@ class ArucoVision:
 
         return files
 
-    def analyze_images(self):
+    def analyze_images(self, begin_idx=0, end_idx=None):
         corner_data = pd.DataFrame()
-        files = self.get_images()
+        files = self.get_images(begin_idx, end_idx)
 
         # set up aruco dict and parameters
         aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_4X4_250)
@@ -408,10 +429,11 @@ if __name__ == "__main__":
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
 
         file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
-        folder_path = f"viz/{file_name}/"
+        folder_path = f"{file_name}/"
 
         try:
-            trial = ArucoVision(file_name)
+            b_idx, e_idx = get_indices(file_name)
+            trial = ArucoVision(folder_path, begin_idx=b_idx, end_idx=e_idx)
             trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
             trial_pose.save_poses()
 
@@ -426,13 +448,14 @@ if __name__ == "__main__":
         for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand):
             file_name = f"{s}_{h}_{t}_{r}_{n}"
 
-            folder_path = f"viz/{file_name}/"
+            folder_path = f"{file_name}/"
             os.chdir(home_directory)
             # data_path = inner_path
             print(folder_path)
 
             try:
-                trial = ArucoVision(file_name)
+                b_idx, e_idx = get_indices(file_name)
+                trial = ArucoVision(folder_path, begin_idx=b_idx, end_idx=e_idx)
                 trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
                 trial_pose.save_poses()
 
@@ -449,9 +472,12 @@ if __name__ == "__main__":
         rotation = datamanager.smart_input("Enter type of rotation: ", "rotations")
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
 
-        folder = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}/"
+        file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
+        folder_path = f"{file_name}/"
 
-        trial = ArucoVision(folder)
+        b_idx, e_idx = get_indices(file_name)
+        trial = ArucoVision(folder_path, begin_idx=b_idx, end_idx=e_idx)
+
         trial.filter_corners(window_size=4)  # window size 4 might be better? Very small lag
         trial.validate_corners()
 
