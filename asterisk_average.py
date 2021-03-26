@@ -5,7 +5,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from asterisk_trial import AsteriskTrialData
 from asterisk_plotting import AsteriskPlotting
-from asterisk_metrics import AsteriskMetrics
 from asterisk_calculations import AsteriskCalculations
 import pdb
 
@@ -540,7 +539,7 @@ class AveragedTrial(AsteriskTrialData):
         if show_rot_debug:
             print(f"poses length: {len(self.poses)}")
             print(f"poses ad length: {len(self.pose_ad)}")
-            AsteriskMetrics.debug_rotation(self)
+            AsteriskCalculations.debug_rotation(self)
 
         print(f"Averaged: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
 

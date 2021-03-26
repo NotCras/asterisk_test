@@ -3,10 +3,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from asterisk_calculations import AsteriskCalculations
-import similaritymeasures as sm
 from asterisk_plotting import AsteriskPlotting as aplt
-from asterisk_metrics import AsteriskMetrics as am
+from asterisk_calculations import AsteriskCalculations as acalc
 import pdb
 from asterisk_hand import HandObj
 from scipy import stats
@@ -343,13 +341,13 @@ class AsteriskTrialData:
         # get last object pose and use it for determining how far target line should go
         last_obj_pose = self.poses.tail(1).to_numpy()[0]
 
-        target_line_length = AsteriskCalculations.narrow_target(last_obj_pose, target_line)
+        target_line_length = acalc.narrow_target(last_obj_pose, target_line)
 
         if target_line_length:
-            distance_travelled = AsteriskCalculations.t_distance([0, 0], target_line[target_line_length+1])
+            distance_travelled = acalc.t_distance([0, 0], target_line[target_line_length + 1])
             final_target_ln = target_line[:target_line_length]
         else:
-            distance_travelled = AsteriskCalculations.t_distance([0, 0], target_line[0])
+            distance_travelled = acalc.t_distance([0, 0], target_line[0])
             final_target_ln = target_line[:1]
 
         # TODO: distance travelled has error because it is built of target line... maybe use last_obj_pose instead?
@@ -404,12 +402,12 @@ class AsteriskTrialData:
         """
         Updates all metric values on the object.
         """ # TODO: make a pandas dataframe that contains the metrics? Easier to organize
-        self.translation_fd, self.rotation_fd = am.calc_frechet_distance(self)
+        self.translation_fd, self.rotation_fd = acalc.calc_frechet_distance(self)
         # self.fd = am.calc_frechet_distance_all(self)
-        self.max_error = am.calc_max_error(self)
-        self.mvt_efficiency, self.arc_len = am.calc_mvt_efficiency(self)
-        self.area_btwn = am.calc_area_btwn_curves(self)
-        self.max_area_region, self.max_area_loc = am.calc_max_area_region(self)
+        self.max_error = acalc.calc_max_error(self)
+        self.mvt_efficiency, self.arc_len = acalc.calc_mvt_efficiency(self)
+        self.area_btwn = acalc.calc_area_btwn_curves(self)
+        self.max_area_region, self.max_area_loc = acalc.calc_max_area_region(self)
 
         metric_dict = {"trial": self.generate_name(),
                        "t_fd": self.translation_fd, "r_fd": self.rotation_fd,  # "fd": self.fd
