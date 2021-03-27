@@ -118,6 +118,7 @@ class AsteriskTrialData:
         df = df.set_index("frame")
 
         # df_numeric.columns = ["pitch", "rmag", "roll", "tmag", "x", "y", "yaw", "z"]
+        # TODO: is there a way I can make this directly hit each column without worrying about the order?
         # convert m to mm in translational data
         df = df * [1., 1., 1., 1000., 1000., 1000., 1., 1000.]
         df.round(4)
