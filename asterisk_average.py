@@ -451,7 +451,7 @@ class AveragedTrial(AsteriskTrialData):
         # TODO: show at least one averaging interval?
 
         if save_plot:
-            plt.savefig(f"pics/avgdebug_{self.hand.get_name()}_{self.subject}_{self.trial_translation}_"
+            plt.savefig(f"pics/avgdebug_{self.hand.get_name()}_{len(self.subject)}subs_{self.trial_translation}_"
                         f"{self.trial_rotation}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")

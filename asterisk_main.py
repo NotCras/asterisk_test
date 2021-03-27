@@ -38,6 +38,11 @@ def run():
         print("Calculating averages...")
         data.calc_avg_ast(rotation="n")
 
+        print("Saving plots...")
+        data.plot_avg_data(rotation="n", show_plot=True, save_plot=True)
+        for a in data.averages:
+            a.avg_debug_plot(show_plot=True, save_plot=True)
+
         print("Consolidating metrics together...")
         results = AstHandAnalyzer(data)
 
@@ -48,7 +53,6 @@ def run():
 
 
 if __name__ == '__main__':
-
     home_directory = Path(__file__).parent.absolute()
 
     run()

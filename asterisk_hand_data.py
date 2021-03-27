@@ -304,7 +304,7 @@ class AsteriskHandData:
         plt.title(f"Avg {self.hand.get_name()}, {subjects}, {rotation}")
 
         if save_plot:
-            plt.savefig(f"pics/avgd_{self.hand.get_name()}_{subjects}_{rotation}.jpg", format='jpg')
+            plt.savefig(f"pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{rotation}.jpg", format='jpg')
 
             # name -> tuple: subj, hand  names
             print("Figure saved.")
