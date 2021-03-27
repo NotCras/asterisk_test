@@ -88,7 +88,7 @@ class AsteriskTrialData:
         """
         self.hand = HandObj(hand_name)
 
-    def _read_file(self, file_name, folder="csv/"):  # TODO: soon default folder will be aruco_data
+    def _read_file(self, file_name, folder="aruco_data/"):  # TODO: soon default folder will be aruco_data
         """
         Function to read file and save relevant data in the object
         :param file_name: name of file to read in
@@ -96,10 +96,7 @@ class AsteriskTrialData:
         """
         total_path = f"{folder}{file_name}"
         try:
-            df_temp = pd.read_csv(total_path,
-                                  # names=["x", "y", "rmag", "f_x", "f_y", "f_rot_mag"],
-                                  skip_blank_lines=True
-                                  )
+            df_temp = pd.read_csv(total_path, skip_blank_lines=True)
             df = self._condition_df(df_temp)
 
         except Exception as e:  # TODO: add more specific except clauses
@@ -117,24 +114,21 @@ class AsteriskTrialData:
         3) remove extreme outlier values in data
         """
         # TODO: move to aruco pose detection object?
-        df_numeric = df.apply(pd.to_numeric)
+        # df_numeric = df.apply(pd.to_numeric)
+        df = df.set_index("frame")
 
-        # saving for later: ["row", "x", "y", "rmag", "f_x", "f_y", "f_rot_mag"]
-        df_numeric.columns = ["roll", "pitch", "yaw", "x", "y", "z", "tmag",  "rmag"]
-
+        # df_numeric.columns = ["pitch", "rmag", "roll", "tmag", "x", "y", "yaw", "z"]
         # convert m to mm in translational data
-        df = df_numeric * [1., 1., 1., 1000., 1000., 1000., 1000., 1.]
+        df = df * [1., 1., 1., 1000., 1000., 1000., 1., 1000.]
         df.round(4)
-
         # normalize translational data by hand span
         df = df / [1., 1., 1.,  # orientation data
+                   1., # translational magnitude, don't use
                    self.hand.span,  # x
                    self.hand.depth,  # y
-                   1.,  # z - doesn't matter
-                   1.,  # translational magnitude - don't use
-                   1.]  # rotation magnitude
+                   1.,  # yaw
+                   1.]  # z - doesn't matter
         df.round(4)
-
         # occasionally get an outlier value (probably from vision algorithm), I filter them out here
         inlier_df = self._remove_outliers(df, ["x", "y", "rmag"])
         return inlier_df.round(4)
@@ -177,21 +171,22 @@ class AsteriskTrialData:
         Saves pose data as a new csv file
         :param file_name_overwrite: optional parameter, will save as generate_name unless a different name is specified
         """
+        folder = "trial_paths/"
         if file_name_overwrite is None:
-            new_file_name = self.generate_name() + ".csv"
+            new_file_name = f"{self.generate_name()}.csv"
 
         else:
-            new_file_name = file_name_overwrite + ".csv"
+            new_file_name = f"{file_name_overwrite}.csv"
 
         # if data has been filtered, we also want to include that in csv generation,
         # otherwise the filtered columns won't exist
-        if self.filtered:  # TODO: make it in a special folder?
-            filtered_file_name = f"filtered/f{self.window_size}_{new_file_name}"
+        if self.filtered:
+            filtered_file_name = f"{folder}f{self.window_size}_{new_file_name}"
 
             self.poses.to_csv(filtered_file_name, index=True, columns=[
                 "x", "y", "rmag", "f_x", "f_y", "f_rmag"])
         else:
-            self.poses.to_csv(new_file_name, index=True, columns=[
+            self.poses.to_csv(f"{folder}{new_file_name}", index=True, columns=[
                 "x", "y", "rmag"])
 
         # print(f"CSV File generated with name: {new_file_name}")
@@ -425,6 +420,6 @@ class AsteriskTrialData:
 
 
 if __name__ == '__main__':
-    test = AsteriskTrialData("sub1_3v3_c_n_1.csv")
-    print(test.metrics)
+    test = AsteriskTrialData("sub1_2v2_a_n_1.csv")
+    #print(test.metrics)
     test.plot_trial(use_filtered=False)

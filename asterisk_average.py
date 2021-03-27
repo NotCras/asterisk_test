@@ -284,6 +284,8 @@ class AveragedTrial(AsteriskTrialData):
         if calc_ad:
             self.calculate_avg_dev(rotated_data, sample_points=sample_points, show_debug=show_debug)
 
+        self._calc_avg_metrics()
+
         print(f"Averaged: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
 
     def _calc_avg_tmag(self, avg_point, all_points, x_center, sample_points=25):

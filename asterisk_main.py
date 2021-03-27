@@ -16,12 +16,15 @@ def run():
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
     subjects = ["sub1", "sub2"]
-    hand_names = ["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
+    hand_names = ["2v2"]  #["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
 
     # failed_files = []  # TODO: for later?
     for h in hand_names:
         print(f"Running: {h}, {subjects}")
         input("Please press <ENTER> to continue")  # added this for debugging by hand
+
+        print("Analyzing aruco codes on viz data...")
+        # TODO: get aruco analysis here!
 
         print(f"Getting {h} data...")
         data = AsteriskHandData(subjects, h, rotation="n")
@@ -36,12 +39,12 @@ def run():
         data.calc_avg_ast(rotation="n")
 
         print("Consolidating metrics together...")
-        results = AstHandAnalyzer(h)
+        results = AstHandAnalyzer(data)
 
         print("Saving metric data...")
         results.save_data()
 
-        print(f"{h} is complete!")
+        print(f"{h} data generation is complete!")
 
 
 if __name__ == '__main__':

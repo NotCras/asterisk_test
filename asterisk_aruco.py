@@ -27,25 +27,30 @@ def get_indices(id, file_name=None):
     if file_name is not None:
         table = pd.read_csv(file_name)
     else:
-        table = pd.read_csv("viz_data_indices.csv")
+        # table = pd.read_csv("viz_data_indices.csv")
+        table = pd.read_csv("viz_data_indices_2v2_starter.csv")
 
+    table = table.set_index("id")
     try:
         indices = table.loc[id]
 
     except Exception as e:
         print("Could not find the index.")
         print(e)
+        raise IndexError("Could not find the correct indices")
 
-    return indices["begin_idx"], indices["end_idx"]
+    return int(indices["begin_idx"]), int(indices["end_idx"])
 
 
 class ArucoVision:
-    def __init__(self, folder, side_dims=0.03, freq=1, begin_idx=0, end_idx=None):
+    def __init__(self, trial_name, side_dims=0.03, freq=1, begin_idx=0, end_idx=None):
         """
         """
         self.home = Path(__file__).parent.absolute()
-        self.folder_name = folder
-        self.data_folder = self.home / "viz" / folder
+        self.trial_name = trial_name
+        self.folder_name = f"{trial_name}/"
+        self.data_folder = self.home / "viz" / self.folder_name
+        self.marker_side = side_dims
         self.marker_side = side_dims
         self.processing_freq = freq
 
@@ -95,7 +100,7 @@ class ArucoVision:
         """
         # TODO: makes a bunch of nan values at end of data
         filtered_df = pd.DataFrame()
-        # pdb.set_trace()
+        #pdb.set_trace()
         filtered_df["frame"] = self.corners.index
 
         filtered_df["c1_x"] = self.corners["c1_x"].rolling(
@@ -175,7 +180,7 @@ class ArucoVision:
 
     def analyze_images(self, begin_idx=0, end_idx=None):
         corner_data = pd.DataFrame()
-        files = self.get_images(begin_idx, end_idx)
+        files = self.get_images(idx_limit=end_idx, idx_bot=begin_idx)
 
         # set up aruco dict and parameters
         aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_4X4_250)
@@ -196,15 +201,17 @@ class ArucoVision:
             try:
                 if len(ids) > 1:
                     # TODO: so this works, but maybe add some better tracking of this by considering ids and their index
-                    # print("More than one aruco tag found!")
+                    print(f"More than one aruco tag found at frame {i}!")
                     corners = corners[0]
+
+                c = corners[0].squeeze()
             except:
-                # print("Failed to find an aruco code!")
+                print(f"Failed to find an aruco code at frame {i}!")
                 # make corners of None to make sure that we log the failed attempt to find aruco code
-                corners = np.array([[None, None], [None, None], [None, None], [None, None]])
+                c = np.array([[None, None], [None, None], [None, None], [None, None]])
+                # pdb.set_trace()
 
             # pdb.set_trace()
-            c = corners[0].squeeze()
             corner_series = self.corner_to_series(i, c)
             corner_data = corner_data.append(corner_series, ignore_index=True)
 
@@ -327,6 +334,7 @@ class ArucoPoseDetect:
 
         total_successes = 0
         final_i = 0
+
         for i, next_corners in self.vision_data.yield_corners():
             try:
                 # print(f"Estimating pose in image {i}")
@@ -348,6 +356,7 @@ class ArucoPoseDetect:
                 rotM = np.zeros(shape=(3, 3))
                 cv2.Rodrigues(rel_rvec, rotM, jacobian=0)
                 ypr = cv2.RQDecomp3x3(rotM)  # TODO: not sure what we did with this earlier... need to check
+
                 total_successes += 1
 
             except Exception as e:
@@ -366,7 +375,7 @@ class ArucoPoseDetect:
             final_i = i
 
         # print(" ")
-        print(f"Successfully analyzed: {total_successes} / {final_i+1} corners")
+        # print(f"Successfully analyzed: {total_successes} / {final_i+1} corners")
         estimated_poses = estimated_poses.set_index("frame")
         estimated_poses = estimated_poses.round(4)
         return init_pose, estimated_poses
@@ -377,7 +386,7 @@ class ArucoPoseDetect:
         :param file_name_overwrite: optional parameter, will save as generate_name unless a different name is specified
         """
         if file_name_overwrite is None:
-            data_name = self.vision_data.folder_name
+            data_name = self.vision_data.trial_name
             folder = "aruco_data"  # "csv"
             new_file_name = f"{folder}/{data_name}.csv"
 
@@ -433,19 +442,19 @@ if __name__ == "__main__":
 
         try:
             b_idx, e_idx = get_indices(file_name)
-            trial = ArucoVision(folder_path, begin_idx=b_idx, end_idx=e_idx)
+            trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
             trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
             trial_pose.save_poses()
+            print(f"Completed Aruco Analysis for: {file_name}")
 
         except Exception as e:
             print(e)
-
-        print(f"Completed Aruco Analysis for: {file_name}")
+            print(f"Failed Aruco Analysis for: {file_name}")
 
     elif ans == "3":
         files_covered = list()
 
-        for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand):
+        for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand, no_rotations=True):
             file_name = f"{s}_{h}_{t}_{r}_{n}"
 
             folder_path = f"{file_name}/"
@@ -455,7 +464,7 @@ if __name__ == "__main__":
 
             try:
                 b_idx, e_idx = get_indices(file_name)
-                trial = ArucoVision(folder_path, begin_idx=b_idx, end_idx=e_idx)
+                trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
                 trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
                 trial_pose.save_poses()
 
