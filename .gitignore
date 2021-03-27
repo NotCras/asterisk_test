@@ -1,6 +1,4 @@
-data/
 zips/
-pics/
 __pycache__/
 *.zip
 *.csv
@@ -10,3 +8,4 @@ __pycache__/
 *.tar.gz
 *.tar
 .idea/
+.ipynb_checkpoints/
