@@ -11,7 +11,7 @@ from scipy import stats
 
 
 class AsteriskTrialData:
-    def __init__(self, file_name=None, do_metrics=True):
+    def __init__(self, file_name=None, do_metrics=True, norm_data=True):
         """
         Class to represent a single asterisk test trial.
         :param file_name: - name of the file that you want to import data from
@@ -40,7 +40,7 @@ class AsteriskTrialData:
             self.hand = HandObj(h)
 
             # Data will not be filtered in this step
-            data = self._read_file(file_name)
+            data = self._read_file(file_name, norm_data)
             self.poses = data[["x", "y", "rmag"]]
 
         else:
@@ -88,7 +88,7 @@ class AsteriskTrialData:
         """
         self.hand = HandObj(hand_name)
 
-    def _read_file(self, file_name, folder="aruco_data/"):  # TODO: soon default folder will be aruco_data
+    def _read_file(self, file_name, folder="aruco_data/", norm_data=True):  # TODO: soon default folder will be aruco_data
         """
         Function to read file and save relevant data in the object
         :param file_name: name of file to read in
@@ -97,7 +97,7 @@ class AsteriskTrialData:
         total_path = f"{folder}{file_name}"
         try:
             df_temp = pd.read_csv(total_path, skip_blank_lines=True)
-            df = self._condition_df(df_temp)
+            df = self._condition_df(df_temp, norm_data=norm_data)
 
         except Exception as e:  # TODO: add more specific except clauses
             # print(e)
@@ -105,7 +105,7 @@ class AsteriskTrialData:
             print(f"{total_path} has failed to read csv")
         return df
 
-    def _condition_df(self, df):
+    def _condition_df(self, df, norm_data=True):
         """
         Data conditioning procedure used to:
         0) Make columns of the dataframe numeric (they aren't by default), makes dataframe header after the fact to avoid errors with apply function
@@ -122,14 +122,17 @@ class AsteriskTrialData:
         # convert m to mm in translational data
         df = df * [1., 1., 1., 1000., 1000., 1000., 1., 1000.]
         df.round(4)
-        # normalize translational data by hand span
-        df = df / [1., 1., 1.,  # orientation data
-                   1., # translational magnitude, don't use
-                   self.hand.span,  # x
-                   self.hand.depth,  # y
-                   1.,  # yaw
-                   1.]  # z - doesn't matter
-        df.round(4)
+
+        if norm_data:
+            # normalize translational data by hand span
+            df = df / [1., 1., 1.,  # orientation data
+                       1., # translational magnitude, don't use
+                       self.hand.span,  # x
+                       self.hand.depth,  # y
+                       1.,  # yaw
+                       1.]  # z - doesn't matter
+            df = df.round(4)
+
         # occasionally get an outlier value (probably from vision algorithm), I filter them out here
         inlier_df = self._remove_outliers(df, ["x", "y", "rmag"])
         return inlier_df.round(4)
