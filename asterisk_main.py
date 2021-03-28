@@ -2,6 +2,7 @@ from pathlib import Path
 import asterisk_hand_data as h
 from asterisk_hand_data import AsteriskHandData
 from asterisk_study import AstHandAnalyzer
+from asterisk_aruco import batch_aruco_analysis
 import asterisk_trial as t
 
 def run():
@@ -24,7 +25,8 @@ def run():
         input("Please press <ENTER> to continue")  # added this for debugging by hand
 
         print("Analyzing aruco codes on viz data...")
-        # TODO: get aruco analysis here!
+        for s in subjects:
+            batch_aruco_analysis(s, h, no_rotations=True)
 
         print(f"Getting {h} data...")
         data = AsteriskHandData(subjects, h, rotation="n")

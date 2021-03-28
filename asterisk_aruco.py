@@ -404,6 +404,58 @@ class ArucoPoseDetect:
         self.est_poses.plot(x="x", y="y")
 
 
+def single_aruco_analysis(subject, hand, translation, rotation, trial_num):
+    file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
+    folder_path = f"{file_name}/"
+
+    try:
+        b_idx, e_idx = get_indices(file_name)
+    except:
+        print(f"Failed to get cropped indices for {file_name}")
+        e_idx = None
+        b_idx = 0
+
+    try:
+        trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
+        trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
+        trial_pose.save_poses()
+        print(f"Completed Aruco Analysis for: {file_name}")
+
+    except Exception as e:
+        print(e)
+        print(f"Failed Aruco Analysis for: {file_name}")
+
+
+def batch_aruco_analysis(subject, hand, no_rotations=True):
+    files_covered = list()
+    for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand, no_rotations=no_rotations):
+        file_name = f"{s}_{h}_{t}_{r}_{n}"
+
+        folder_path = f"{file_name}/"
+        os.chdir(home_directory)
+        # data_path = inner_path
+        print(folder_path)
+
+        try:
+            b_idx, e_idx = get_indices(file_name)
+        except:
+            e_idx = None
+            b_idx = 0
+
+        try:
+            trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
+            trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
+            trial_pose.save_poses()
+
+            files_covered.append(file_name)
+        except Exception as e:
+            print(e)
+            files_covered.append(f"FAILED: {file_name}")
+
+    print("Completed Batch Aruco Analysis!")
+    print(files_covered)
+
+
 if __name__ == "__main__":
     home_directory = Path(__file__).parent.absolute()
 
@@ -437,44 +489,10 @@ if __name__ == "__main__":
         rotation = datamanager.smart_input("Enter type of rotation: ", "rotations")
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
 
-        file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
-        folder_path = f"{file_name}/"
-
-        try:
-            b_idx, e_idx = get_indices(file_name)
-            trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
-            trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
-            trial_pose.save_poses()
-            print(f"Completed Aruco Analysis for: {file_name}")
-
-        except Exception as e:
-            print(e)
-            print(f"Failed Aruco Analysis for: {file_name}")
+        single_aruco_analysis(subject, hand, translation, rotation, trial_num)
 
     elif ans == "3":
-        files_covered = list()
-
-        for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand, no_rotations=True):
-            file_name = f"{s}_{h}_{t}_{r}_{n}"
-
-            folder_path = f"{file_name}/"
-            os.chdir(home_directory)
-            # data_path = inner_path
-            print(folder_path)
-
-            try:
-                b_idx, e_idx = get_indices(file_name)
-                trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
-                trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
-                trial_pose.save_poses()
-
-                files_covered.append(file_name)
-            except Exception as e:
-                print(e)
-                files_covered.append(f"FAILED: {file_name}")
-
-        print("Completed Batch Aruco Analysis!")
-        print(files_covered)
+        batch_aruco_analysis(subject, hand, no_rotations=True)
 
     elif ans == "4":
         translation = datamanager.smart_input("Enter type of translation: ", "translations")
