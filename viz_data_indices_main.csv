@@ -739,126 +739,126 @@ sub2_modelvf_h_n_2,24,330,fingers not removed from object
 sub2_modelvf_h_n_3,73,170,fingers not removed from object
 sub2_modelvf_h_n_4,40,210,fingers not removed from object
 sub2_modelvf_h_n_5,29,137,fingers not removed from object
-sub3_basic_a_n_1,,,
-sub3_basic_a_n_2,,,
-sub3_basic_a_n_3,,,
-sub3_basic_a_n_4,,,
-sub3_basic_a_n_5,,,
-sub3_basic_b_n_1,,,
-sub3_basic_b_n_2,,,
-sub3_basic_b_n_3,,,
-sub3_basic_b_n_4,,,
-sub3_basic_b_n_5,,,
-sub3_basic_c_n_1,,,
-sub3_basic_c_n_2,,,
-sub3_basic_c_n_3,,,
-sub3_basic_c_n_4,,,
-sub3_basic_c_n_5,,,
-sub3_basic_d_n_1,,,
-sub3_basic_d_n_2,,,
-sub3_basic_d_n_3,,,
-sub3_basic_d_n_4,,,
-sub3_basic_d_n_5,,,
-sub3_basic_e_n_1,,,
-sub3_basic_e_n_2,,,
-sub3_basic_e_n_3,,,
-sub3_basic_e_n_4,,,
-sub3_basic_e_n_5,,,
-sub3_basic_f_n_1,,,
-sub3_basic_f_n_2,,,
-sub3_basic_f_n_3,,,
-sub3_basic_f_n_4,,,
-sub3_basic_f_n_5,,,
-sub3_basic_g_n_1,,,
-sub3_basic_g_n_2,,,
-sub3_basic_g_n_3,,,
-sub3_basic_g_n_4,,,
-sub3_basic_g_n_5,,,
-sub3_basic_h_n_1,,,
-sub3_basic_h_n_2,,,
-sub3_basic_h_n_3,,,
-sub3_basic_h_n_4,,,
-sub3_basic_h_n_5,,,
-sub3_m2stiff_a_n_1,,,
-sub3_m2stiff_a_n_2,,,
-sub3_m2stiff_a_n_3,,,
-sub3_m2stiff_a_n_4,,,
-sub3_m2stiff_a_n_5,,,
-sub3_m2stiff_b_n_1,,,
-sub3_m2stiff_b_n_2,,,
-sub3_m2stiff_b_n_3,,,
-sub3_m2stiff_b_n_4,,,
-sub3_m2stiff_b_n_5,,,
-sub3_m2stiff_c_n_1,,,
-sub3_m2stiff_c_n_2,,,
-sub3_m2stiff_c_n_3,,,
-sub3_m2stiff_c_n_4,,,
-sub3_m2stiff_c_n_5,,,
-sub3_m2stiff_d_n_1,,,
-sub3_m2stiff_d_n_2,,,
-sub3_m2stiff_d_n_3,,,
-sub3_m2stiff_d_n_4,,,
-sub3_m2stiff_d_n_5,,,
-sub3_m2stiff_e_n_1,,,
-sub3_m2stiff_e_n_2,,,
-sub3_m2stiff_e_n_3,,,
-sub3_m2stiff_e_n_4,,,
-sub3_m2stiff_e_n_5,,,
-sub3_m2stiff_f_n_1,,,
-sub3_m2stiff_f_n_2,,,
-sub3_m2stiff_f_n_3,,,
-sub3_m2stiff_f_n_4,,,
-sub3_m2stiff_f_n_5,,,
-sub3_m2stiff_g_n_1,,,
-sub3_m2stiff_g_n_2,,,
-sub3_m2stiff_g_n_3,,,
-sub3_m2stiff_g_n_4,,,
-sub3_m2stiff_g_n_5,,,
-sub3_m2stiff_h_n_1,,,
-sub3_m2stiff_h_n_2,,,
-sub3_m2stiff_h_n_3,,,
-sub3_m2stiff_h_n_4,,,
-sub3_m2stiff_h_n_5,,,
-sub3_m2active_a_n_1,,,
-sub3_m2active_a_n_2,,,
-sub3_m2active_a_n_3,,,
-sub3_m2active_a_n_4,,,
-sub3_m2active_a_n_5,,,
-sub3_m2active_b_n_1,,,
-sub3_m2active_b_n_2,,,
-sub3_m2active_b_n_3,,,
-sub3_m2active_b_n_4,,,
-sub3_m2active_b_n_5,,,
-sub3_m2active_c_n_1,,,
-sub3_m2active_c_n_2,,,
-sub3_m2active_c_n_3,,,
-sub3_m2active_c_n_4,,,
-sub3_m2active_c_n_5,,,
-sub3_m2active_d_n_1,,,
-sub3_m2active_d_n_2,,,
-sub3_m2active_d_n_3,,,
-sub3_m2active_d_n_4,,,
-sub3_m2active_d_n_5,,,
-sub3_m2active_e_n_1,,,
-sub3_m2active_e_n_2,,,
-sub3_m2active_e_n_3,,,
-sub3_m2active_e_n_4,,,
-sub3_m2active_e_n_5,,,
-sub3_m2active_f_n_1,,,
-sub3_m2active_f_n_2,,,
-sub3_m2active_f_n_3,,,
-sub3_m2active_f_n_4,,,
-sub3_m2active_f_n_5,,,
-sub3_m2active_g_n_1,,,
-sub3_m2active_g_n_2,,,
-sub3_m2active_g_n_3,,,
-sub3_m2active_g_n_4,,,
-sub3_m2active_g_n_5,,,
-sub3_m2active_h_n_1,,,
-sub3_m2active_h_n_2,,,
-sub3_m2active_h_n_3,,,
-sub3_m2active_h_n_4,,,
-sub3_m2active_h_n_5,,,
+sub3_basic_a_n_1,52,57,no movement
+sub3_basic_a_n_2,49,54,wiggle in place
+sub3_basic_a_n_3,34,39,wiggle in place
+sub3_basic_a_n_4,35,40,wiggle in place
+sub3_basic_a_n_5,49,58,wiggle in place
+sub3_basic_b_n_1,83,90,wiggle in place
+sub3_basic_b_n_2,59,64,no movement
+sub3_basic_b_n_3,34,39,no movement
+sub3_basic_b_n_4,39,44,no movement
+sub3_basic_b_n_5,33,38,no movement
+sub3_basic_c_n_1,53,222,
+sub3_basic_c_n_2,76,226,
+sub3_basic_c_n_3,104,298,
+sub3_basic_c_n_4,51,202,
+sub3_basic_c_n_5,49,134,
+sub3_basic_d_n_1,44,49,wiggle in place
+sub3_basic_d_n_2,23,28,wiggle in place
+sub3_basic_d_n_3,43,48,wiggle in place
+sub3_basic_d_n_4,46,51,wiggle in place
+sub3_basic_d_n_5,56,61,wiggle in place
+sub3_basic_e_n_1,51,56,no movement
+sub3_basic_e_n_2,35,40,wiggle in place
+sub3_basic_e_n_3,44,50,wiggle in place
+sub3_basic_e_n_4,55,60,wiggle in place
+sub3_basic_e_n_5,49,58,wiggle in place
+sub3_basic_f_n_1,53,58,no movement
+sub3_basic_f_n_2,28,33,wiggle in place
+sub3_basic_f_n_3,21,26,no movement
+sub3_basic_f_n_4,57,62,wiggle in place
+sub3_basic_f_n_5,54,59,wiggle in place
+sub3_basic_g_n_1,50,175,
+sub3_basic_g_n_2,39,84,
+sub3_basic_g_n_3,10,112,
+sub3_basic_g_n_4,22,143,
+sub3_basic_g_n_5,36,164,
+sub3_basic_h_n_1,52,57,wiggle in place
+sub3_basic_h_n_2,33,38,wiggle in place
+sub3_basic_h_n_3,36,41,no movement
+sub3_basic_h_n_4,32,37,no movement
+sub3_basic_h_n_5,40,48,wiggle in place
+sub3_m2stiff_a_n_1,23,68,
+sub3_m2stiff_a_n_2,63,110,
+sub3_m2stiff_a_n_3,137,240,
+sub3_m2stiff_a_n_4,23,137,
+sub3_m2stiff_a_n_5,74,93,
+sub3_m2stiff_b_n_1,137,145,slight movement
+sub3_m2stiff_b_n_2,19,24,no movement
+sub3_m2stiff_b_n_3,46,51,no movement
+sub3_m2stiff_b_n_4,38,43,no movement
+sub3_m2stiff_b_n_5,17,22,no movement
+sub3_m2stiff_c_n_1,61,66,no movement
+sub3_m2stiff_c_n_2,35,40,no movement
+sub3_m2stiff_c_n_3,33,38,no movement
+sub3_m2stiff_c_n_4,12,17,no movement
+sub3_m2stiff_c_n_5,15,20,no movement
+sub3_m2stiff_d_n_1,41,46,no movement
+sub3_m2stiff_d_n_2,96,101,no movement
+sub3_m2stiff_d_n_3,83,88,no movement
+sub3_m2stiff_d_n_4,42,47,no movement
+sub3_m2stiff_d_n_5,48,53,no movement
+sub3_m2stiff_e_n_1,0,223,
+sub3_m2stiff_e_n_2,30,208,
+sub3_m2stiff_e_n_3,40,199,
+sub3_m2stiff_e_n_4,28,186,
+sub3_m2stiff_e_n_5,49,132,
+sub3_m2stiff_f_n_1,63,68,no movement
+sub3_m2stiff_f_n_2,25,30,no movement
+sub3_m2stiff_f_n_3,59,64,no movement
+sub3_m2stiff_f_n_4,37,42,no movement
+sub3_m2stiff_f_n_5,17,22,no movement
+sub3_m2stiff_g_n_1,25,30,prestart wobble
+sub3_m2stiff_g_n_2,17,22,no movement
+sub3_m2stiff_g_n_3,48,53,no movement
+sub3_m2stiff_g_n_4,34,39,no movement
+sub3_m2stiff_g_n_5,24,29,no movement
+sub3_m2stiff_h_n_1,30,35,no movement
+sub3_m2stiff_h_n_2,19,24,no movement
+sub3_m2stiff_h_n_3,37,42,no movement
+sub3_m2stiff_h_n_4,15,20,no movement
+sub3_m2stiff_h_n_5,29,34,no movement
+sub3_m2active_a_n_1,48,109,
+sub3_m2active_a_n_2,30,65,
+sub3_m2active_a_n_3,125,163,
+sub3_m2active_a_n_4,97,130,
+sub3_m2active_a_n_5,96,175,
+sub3_m2active_b_n_1,91,198,
+sub3_m2active_b_n_2,49,97,
+sub3_m2active_b_n_3,47,103,
+sub3_m2active_b_n_4,72,125,
+sub3_m2active_b_n_5,67,132,
+sub3_m2active_c_n_1,37,264,
+sub3_m2active_c_n_2,76,260,
+sub3_m2active_c_n_3,96,267,
+sub3_m2active_c_n_4,89,199,
+sub3_m2active_c_n_5,75,144,
+sub3_m2active_d_n_1,33,201,
+sub3_m2active_d_n_2,69,101,
+sub3_m2active_d_n_3,31,81,
+sub3_m2active_d_n_4,45,212,
+sub3_m2active_d_n_5,26,72,
+sub3_m2active_e_n_1,34,115,
+sub3_m2active_e_n_2,44,127,
+sub3_m2active_e_n_3,67,103,
+sub3_m2active_e_n_4,56,97,
+sub3_m2active_e_n_5,21,63,
+sub3_m2active_f_n_1,42,103,
+sub3_m2active_f_n_2,67,162,
+sub3_m2active_f_n_3,38,139,
+sub3_m2active_f_n_4,52,92,
+sub3_m2active_f_n_5,54,89,
+sub3_m2active_g_n_1,56,116,
+sub3_m2active_g_n_2,50,139,
+sub3_m2active_g_n_3,59,283,
+sub3_m2active_g_n_4,50,150,
+sub3_m2active_g_n_5,40,112,
+sub3_m2active_h_n_1,37,84,
+sub3_m2active_h_n_2,65,159,
+sub3_m2active_h_n_3,36,75,
+sub3_m2active_h_n_4,68,175,
+sub3_m2active_h_n_5,92,210,
 sub3_m2active_n_cw_1,,,
 sub3_m2active_n_cw_2,,,
 sub3_m2active_n_cw_3,,,
@@ -869,46 +869,46 @@ sub3_m2active_n_ccw_2,,,
 sub3_m2active_n_ccw_3,,,
 sub3_m2active_n_ccw_4,,,
 sub3_m2active_n_ccw_5,,,
-sub3_2v2_a_n_1,,,
-sub3_2v2_a_n_2,,,
-sub3_2v2_a_n_3,,,
-sub3_2v2_a_n_4,,,
-sub3_2v2_a_n_5,,,
-sub3_2v2_b_n_1,,,
-sub3_2v2_b_n_2,,,
-sub3_2v2_b_n_3,,,
-sub3_2v2_b_n_4,,,
-sub3_2v2_b_n_5,,,
-sub3_2v2_c_n_1,,,
-sub3_2v2_c_n_2,,,
-sub3_2v2_c_n_3,,,
-sub3_2v2_c_n_4,,,
-sub3_2v2_c_n_5,,,
-sub3_2v2_d_n_1,,,
-sub3_2v2_d_n_2,,,
-sub3_2v2_d_n_3,,,
-sub3_2v2_d_n_4,,,
-sub3_2v2_d_n_5,,,
-sub3_2v2_e_n_1,,,
-sub3_2v2_e_n_2,,,
-sub3_2v2_e_n_3,,,
-sub3_2v2_e_n_4,,,
-sub3_2v2_e_n_5,,,
-sub3_2v2_f_n_1,,,
-sub3_2v2_f_n_2,,,
-sub3_2v2_f_n_3,,,
-sub3_2v2_f_n_4,,,
-sub3_2v2_f_n_5,,,
-sub3_2v2_g_n_1,,,
-sub3_2v2_g_n_2,,,
-sub3_2v2_g_n_3,,,
-sub3_2v2_g_n_4,,,
-sub3_2v2_g_n_5,,,
-sub3_2v2_h_n_1,,,
-sub3_2v2_h_n_2,,,
-sub3_2v2_h_n_3,,,
-sub3_2v2_h_n_4,,,
-sub3_2v2_h_n_5,,,
+sub3_2v2_a_n_1,184,354,pre-start wobble
+sub3_2v2_a_n_2,58,290,
+sub3_2v2_a_n_3,47,300,
+sub3_2v2_a_n_4,44,261,tilt
+sub3_2v2_a_n_5,14,280,
+sub3_2v2_b_n_1,17,199,
+sub3_2v2_b_n_2,199,428,
+sub3_2v2_b_n_3,171,356,
+sub3_2v2_b_n_4,242,485,
+sub3_2v2_b_n_5,7,245,
+sub3_2v2_c_n_1,50,224,tilt & wobble
+sub3_2v2_c_n_2,99,394,
+sub3_2v2_c_n_3,62,923,
+sub3_2v2_c_n_4,113,449,
+sub3_2v2_c_n_5,15,273,
+sub3_2v2_d_n_1,36,163,
+sub3_2v2_d_n_2,134,331,
+sub3_2v2_d_n_3,25,236,
+sub3_2v2_d_n_4,269,480,
+sub3_2v2_d_n_5,0,622,
+sub3_2v2_e_n_1,18,268,
+sub3_2v2_e_n_2,40,349,
+sub3_2v2_e_n_3,32,195,
+sub3_2v2_e_n_4,25,236,
+sub3_2v2_e_n_5,213,330,
+sub3_2v2_f_n_1,65,211,
+sub3_2v2_f_n_2,16,290,
+sub3_2v2_f_n_3,171,448,
+sub3_2v2_f_n_4,101,240,
+sub3_2v2_f_n_5,252,359,
+sub3_2v2_g_n_1,26,190,
+sub3_2v2_g_n_2,32,467,
+sub3_2v2_g_n_3,125,402,
+sub3_2v2_g_n_4,28,250,
+sub3_2v2_g_n_5,17,176,
+sub3_2v2_h_n_1,57,255,
+sub3_2v2_h_n_2,70,168,
+sub3_2v2_h_n_3,93,267,
+sub3_2v2_h_n_4,26,134,
+sub3_2v2_h_n_5,30,208,
 sub3_2v2_n_cw_1,,,
 sub3_2v2_n_cw_2,,,
 sub3_2v2_n_cw_3,,,
@@ -919,46 +919,46 @@ sub3_2v2_n_ccw_2,,,
 sub3_2v2_n_ccw_3,,,
 sub3_2v2_n_ccw_4,,,
 sub3_2v2_n_ccw_5,,,
-sub3_3v3_a_n_1,,,
-sub3_3v3_a_n_2,,,
-sub3_3v3_a_n_3,,,
-sub3_3v3_a_n_4,,,
-sub3_3v3_a_n_5,,,
-sub3_3v3_b_n_1,,,
-sub3_3v3_b_n_2,,,
-sub3_3v3_b_n_3,,,
-sub3_3v3_b_n_4,,,
-sub3_3v3_b_n_5,,,
-sub3_3v3_c_n_1,,,
-sub3_3v3_c_n_2,,,
-sub3_3v3_c_n_3,,,
-sub3_3v3_c_n_4,,,
-sub3_3v3_c_n_5,,,
-sub3_3v3_d_n_1,,,
-sub3_3v3_d_n_2,,,
-sub3_3v3_d_n_3,,,
-sub3_3v3_d_n_4,,,
-sub3_3v3_d_n_5,,,
-sub3_3v3_e_n_1,,,
-sub3_3v3_e_n_2,,,
-sub3_3v3_e_n_3,,,
-sub3_3v3_e_n_4,,,
-sub3_3v3_e_n_5,,,
-sub3_3v3_f_n_1,,,
-sub3_3v3_f_n_2,,,
-sub3_3v3_f_n_3,,,
-sub3_3v3_f_n_4,,,
-sub3_3v3_f_n_5,,,
-sub3_3v3_g_n_1,,,
-sub3_3v3_g_n_2,,,
-sub3_3v3_g_n_3,,,
-sub3_3v3_g_n_4,,,
-sub3_3v3_g_n_5,,,
-sub3_3v3_h_n_1,,,
-sub3_3v3_h_n_2,,,
-sub3_3v3_h_n_3,,,
-sub3_3v3_h_n_4,,,
-sub3_3v3_h_n_5,,,
+sub3_3v3_a_n_1,175,400,
+sub3_3v3_a_n_2,26,158,
+sub3_3v3_a_n_3,36,218,
+sub3_3v3_a_n_4,66,156,
+sub3_3v3_a_n_5,65,154,
+sub3_3v3_b_n_1,33,289,
+sub3_3v3_b_n_2,30,247,
+sub3_3v3_b_n_3,52,176,
+sub3_3v3_b_n_4,45,170,
+sub3_3v3_b_n_5,34,170,
+sub3_3v3_c_n_1,34,337,
+sub3_3v3_c_n_2,64,277,
+sub3_3v3_c_n_3,177,365,
+sub3_3v3_c_n_4,78,264,
+sub3_3v3_c_n_5,50,223,
+sub3_3v3_d_n_1,88,301,wobble
+sub3_3v3_d_n_2,146,323,
+sub3_3v3_d_n_3,127,397,
+sub3_3v3_d_n_4,121,292,
+sub3_3v3_d_n_5,24,188,
+sub3_3v3_e_n_1,96,506,
+sub3_3v3_e_n_2,90,210,
+sub3_3v3_e_n_3,38,255,
+sub3_3v3_e_n_4,70,144,
+sub3_3v3_e_n_5,54,160,
+sub3_3v3_f_n_1,143,370,
+sub3_3v3_f_n_2,226,391,
+sub3_3v3_f_n_3,178,347,
+sub3_3v3_f_n_4,139,356,
+sub3_3v3_f_n_5,68,169,
+sub3_3v3_g_n_1,45,242,
+sub3_3v3_g_n_2,169,400,
+sub3_3v3_g_n_3,34,220,
+sub3_3v3_g_n_4,105,243,
+sub3_3v3_g_n_5,54,195,
+sub3_3v3_h_n_1,38,203,
+sub3_3v3_h_n_2,9,159,
+sub3_3v3_h_n_3,37,225,
+sub3_3v3_h_n_4,70,172,
+sub3_3v3_h_n_5,53,191,
 sub3_3v3_n_cw_1,,,
 sub3_3v3_n_cw_2,,,
 sub3_3v3_n_cw_3,,,
@@ -1069,43 +1069,43 @@ sub3_barrett_n_ccw_2,,,
 sub3_barrett_n_ccw_3,,,
 sub3_barrett_n_ccw_4,,,
 sub3_barrett_n_ccw_5,,,
-sub3_modelvf_a_n_1,,,
-sub3_modelvf_a_n_2,,,
-sub3_modelvf_a_n_3,,,
-sub3_modelvf_a_n_4,,,
-sub3_modelvf_a_n_5,,,
-sub3_modelvf_b_n_1,,,
-sub3_modelvf_b_n_2,,,
-sub3_modelvf_b_n_3,,,
-sub3_modelvf_b_n_4,,,
-sub3_modelvf_b_n_5,,,
-sub3_modelvf_c_n_1,,,
-sub3_modelvf_c_n_2,,,
-sub3_modelvf_c_n_3,,,
-sub3_modelvf_c_n_4,,,
-sub3_modelvf_c_n_5,,,
-sub3_modelvf_d_n_1,,,
-sub3_modelvf_d_n_2,,,
-sub3_modelvf_d_n_3,,,
-sub3_modelvf_d_n_4,,,
-sub3_modelvf_d_n_5,,,
-sub3_modelvf_e_n_1,,,
-sub3_modelvf_e_n_2,,,
-sub3_modelvf_e_n_3,,,
-sub3_modelvf_e_n_4,,,
-sub3_modelvf_e_n_5,,,
-sub3_modelvf_f_n_1,,,
-sub3_modelvf_f_n_2,,,
-sub3_modelvf_f_n_3,,,
-sub3_modelvf_f_n_4,,,
-sub3_modelvf_f_n_5,,,
-sub3_modelvf_g_n_1,,,
-sub3_modelvf_g_n_2,,,
-sub3_modelvf_g_n_3,,,
-sub3_modelvf_g_n_4,,,
-sub3_modelvf_g_n_5,,,
-sub3_modelvf_h_n_1,,,
-sub3_modelvf_h_n_2,,,
-sub3_modelvf_h_n_3,,,
-sub3_modelvf_h_n_4,,,
-sub3_modelvf_h_n_5,,,
+sub3_modelvf_a_n_1,42,173,wobble
+sub3_modelvf_a_n_2,36,88,fingers not removed from object
+sub3_modelvf_a_n_3,17,49,fingers not removed from object
+sub3_modelvf_a_n_4,9,51,fingers not removed from object
+sub3_modelvf_a_n_5,27,66,fingers not removed from object
+sub3_modelvf_b_n_1,36,207,
+sub3_modelvf_b_n_2,14,64,
+sub3_modelvf_b_n_3,15,61,fingers not removed from object
+sub3_modelvf_b_n_4,17,88,fingers not removed from object
+sub3_modelvf_b_n_5,12,55,fingers not removed from object
+sub3_modelvf_c_n_1,24,200,fingers not removed from object
+sub3_modelvf_c_n_2,10,209,fingers not removed from object
+sub3_modelvf_c_n_3,24,175,fingers not removed from object
+sub3_modelvf_c_n_4,22,207,fingers not removed from object
+sub3_modelvf_c_n_5,4,99,fingers not removed from object
+sub3_modelvf_d_n_1,37,42,no movement
+sub3_modelvf_d_n_2,56,456,fingers not removed from object
+sub3_modelvf_d_n_3,27,78,fingers not removed from object
+sub3_modelvf_d_n_4,45,149,fingers not removed from object
+sub3_modelvf_d_n_5,28,74,fingers not removed from object
+sub3_modelvf_e_n_1,24,215,fingers not removed from object
+sub3_modelvf_e_n_2,6,127,fingers not removed from object
+sub3_modelvf_e_n_3,8,57,fingers not removed from object
+sub3_modelvf_e_n_4,26,83,fingers not removed from object
+sub3_modelvf_e_n_5,87,235,fingers not removed from object
+sub3_modelvf_f_n_1,33,141,fingers not removed from object
+sub3_modelvf_f_n_2,32,209,fingers not removed from object
+sub3_modelvf_f_n_3,43,173,fingers not removed from object
+sub3_modelvf_f_n_4,41,156,fingers not removed from object
+sub3_modelvf_f_n_5,47,214,fingers not removed from object
+sub3_modelvf_g_n_1,26,150,fingers not removed from object
+sub3_modelvf_g_n_2,26,377,fingers not removed from object
+sub3_modelvf_g_n_3,34,307,fingers not removed from object
+sub3_modelvf_g_n_4,49,308,fingers not removed from object
+sub3_modelvf_g_n_5,17,243,fingers not removed from object
+sub3_modelvf_h_n_1,15,64,fingers not removed from object
+sub3_modelvf_h_n_2,13,78,fingers not removed from object
+sub3_modelvf_h_n_3,17,80,fingers not removed from object
+sub3_modelvf_h_n_4,11,102,fingers not removed from object
+sub3_modelvf_h_n_5,34,140,fingers not removed from object
