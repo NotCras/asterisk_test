@@ -243,6 +243,8 @@ class AveragedTrial(AsteriskTrialData):
         """
         redoing averaging so that average deviation calculations are done separately after the fact
         """
+        # TODO: enable ability to average on filtered data as well
+
         trials = self._get_attributes(trials)
 
         # get all the data
