@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 from AsteriskTestMetrics import AsteriskTestResults, Pose2D, AsteriskTestMetrics2D
-from asterisk_0_prompts import AsteriskTestTypes
+from AsteriskTestTypes import AsteriskTestTypes
 from math import sqrt
+from pathlib import Path
+import os
 
 class AsteriskAverage(AsteriskTestTypes):
     def __init__(self, ):
@@ -18,6 +20,7 @@ class AsteriskAverage(AsteriskTestTypes):
         :returns array of average poses with += poses
         """
 
+        # initializing
         self.pose_average = []
         self.pose_sd = []
         try:
@@ -34,10 +37,11 @@ class AsteriskAverage(AsteriskTestTypes):
         sd_theta = [0] * n_max
         count = [0] * n_max
         for t in atrs:
+            # keep track of which trials were averaged here
             self.names.append(t.test_name)
 
             for j, index in enumerate(t.target_indices):
-                print("{0} {1} {2}".format(index, t.obj_poses[0, index], t.obj_poses[1, index]))
+                print(f"{index} {t.obj_poses[0, index]} {t.obj_poses[1, index]}")
                 self.pose_average[j].x += t.obj_poses[0, index]
                 self.pose_average[j].y += t.obj_poses[1, index]
                 self.pose_average[j].theta += t.obj_poses[2, index]
@@ -73,10 +77,16 @@ class AsteriskAverage(AsteriskTestTypes):
 
 
 if __name__ == '__main__':
-    dir_name_process = "/Users/grimmc/Downloads/filtered/"
-    subject_name_process = "filt_josh"
+
+    home_directory = Path(__file__).parent.absolute()
+    file_dir = f"filtered/"
+    os.chdir(file_dir)
+
+    subject_name_process = "f15_sub1"
     hand_process = "2v3"
-    my_test_results = AsteriskTestMetrics2D.process_files(dir_name_process, subject_name_process, hand_process)
+    my_test_results = AsteriskTestMetrics2D.process_files(subject_name_process, hand_process)
+
+    os.chdir(home_directory)
 
     at_avgs = []
     for tt in AsteriskTestTypes.generate_translation():

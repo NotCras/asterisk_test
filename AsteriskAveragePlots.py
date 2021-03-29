@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 
 from AsteriskTestMetrics import Pose2D, AsteriskTestMetrics2D, AsteriskTestResults
 from AsteriskAverage import AsteriskAverage
-from asterisk_0_prompts import AsteriskTestTypes
+from AsteriskTestTypes import AsteriskTestTypes
+from pathlib import Path
+import os
 
 
 def plot_pose(pose: Pose2D, rgb=(0.5, 0.5, 0.5), scl=1.0) -> None:
@@ -66,11 +68,13 @@ def plot_average_translation(asterisk_avg: AsteriskAverage):
         except IndexError:
             next_x = asterisk_avg.pose_average[i].x
             next_y = asterisk_avg.pose_average[i].y
+
         dx = next_x - prev_x
         dy = next_y - prev_y
         dlen = sqrt(dx * dx + dy * dy)
         vx = asterisk_avg.pose_sd[i][0] * -dy / dlen
         vy = asterisk_avg.pose_sd[i][0] * dx / dlen
+
         if dlen < 1e-10:
             vec_offset.append((-dy, dx))
         else:
@@ -102,12 +106,16 @@ def plot_average_translation(asterisk_avg: AsteriskAverage):
              linestyle='-', color="black")
 
 
-
 if __name__ == '__main__':
-    dir_name_process = "/Users/grimmc/Downloads/filtered/"
-    subject_name_process = "filt_josh"
-    hand_process = "2v3"
-    my_test_results = AsteriskTestMetrics2D.process_files(dir_name_process, subject_name_process, hand_process)
+    home_directory = Path(__file__).parent.absolute()
+    file_dir = f"filtered/"
+    os.chdir(file_dir)
+
+    hand_names = ["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
+
+    subject_name_process = "f15_sub2"
+    hand_process = "modelvf"
+    my_test_results = AsteriskTestMetrics2D.process_files(subject_name_process, hand_process)
 
     fig, axs = plt.subplots(2, len(my_test_results))
 

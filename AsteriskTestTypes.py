@@ -1,95 +1,16 @@
-#------------------------------------
-subject_name_prompt = """
-ENTER SUBJECTS NAME
-(lowercase!)
+import asterisk_data_manager as datamanager
 
-Possible options:
-"""
-subject_name_options = ["john", "josh", "sage", "garth", "test"]
 
-#------------------------------------
-hand_prompt = """
-ENTER HAND YOU ARE USING FOR THIS TRIAL
-(lowercase!)
-
-Possible options:
-"""
-hand_options = ["human", "basic",  "m2stiff", "m2active",
-                "2v2", "3v3", "2v3", "barrett", "modelvf"]  # "modelo", "modelk",
-
-#------------------------------------
-dir_prompt = """
-ENTER DIRECTION OF CURRENT TRIAL
-(lowercase!)
-
-Possible options:
-"""
-dir_options = ["a", "b", "c", "d", "e", "f", "g", "h", "cw", "ccw"]
-dir_options_no_rot = ["a", "b", "c", "d", "e", "f", "g", "h"]
-
-#------------------------------------
-trial_prompt = """
-WHAT NUMBER TRIAL IS THIS
-(lowercase! ... :P)
-
-Up to ...
-"""
-trial_options = ["1", "2", "3", "4", "5"]  # , "6", "7", "8", "9", "10"]
-
-#------------------------------------
-type_prompt = """
-WHAT TYPE OF TRIAL IS THIS
-(lowercase!)
-
-Options ...
-"""
-type_options = ["none", "plus15", "minus15"]
-
-#------------------------------------
-check_prompt = "Are you happy with this data? : "
-check_options = ["yes", "no", "cancel"]
-
-temp_file_check = "Are you still doing"
-
-#------------------------------------
-def request_name_hand_simple(path):
-    #import csv file of data
-    #for now, just write it out each time
-    folder = path #TODO: make smarter
-    sub = helper.collect_prompt_data(
-        subject_name_prompt, subject_name_options)
-    h = helper.collect_prompt_data(
-        hand_prompt, hand_options)
-    #t = "none"
-    #d = "a"
-
-    return folder, sub, h
-
-#------------------------------------
-def request_name_hand_num_simple(path):
-    #import csv file of data
-    #for now, just write it out each time
-    folder = path #TODO: make smarter
-    sub = helper.collect_prompt_data(
-        subject_name_prompt, subject_name_options)
-    h = helper.collect_prompt_data(
-        hand_prompt, hand_options)
-    #t = "none"
-    #d = "a"
-    num = helper.collect_prompt_data(
-        trial_prompt, trial_options)
-
-    return folder, sub, h, num
-
-#------------------------------------
 class AsteriskTestTypes:
-    test_type_name = ["Translation", "Rotation", "Twist_translation", "undefined"]
-    translation_name = ["a", "b", "c", "d", "e", "f", "g", "h", "none"]
-    rotation_name = ["cw", "ccw", "none"]
-    twist_name = ["plus15", "minus15", "none"]
+    test_type_name = ["Translation", "Rotation",
+                      "Twist_translation", "undefined"]
+    translation_name = ["a", "b", "c", "d", "e", "f", "g", "h", "n"]
+    rotation_name = ["cw", "ccw", "n"]
+    twist_name = ["p15", "m15", "n"]
     translation_angles = range(90, 90-360, -45)
     twist_directions = {"Clockwise": -15, "Counterclockwise": 15}
     rotation_directions = {"Clockwise": -25, "Counterclockwise": 25}
+    # TODO: Need to include subject number
 
     def __init__(self):
         self.test_type_index = 3
@@ -98,13 +19,18 @@ class AsteriskTestTypes:
 
     def __str__(self):
         """Print results"""
-        ret_str = "Test: {0} ".format(self.test_type_name[self.test_type_index])
+        ret_str = f"Test: {self.test_type_name[self.test_type_index]} "
+
         if self.is_translation_test() or self.is_twist_translation_test():
-            ret_str = ret_str + "Trans {0} {1}".format(self.get_translation_name(), self.get_translation_angle())
+            ret_str = ret_str + \
+                f"Trans {self.get_translation_name()} {self.get_translation_angle()}"
+
         if self.is_rotation_test():
-            ret_str = ret_str + "Rot {0}".format(self.get_rotation_name())
+            ret_str = ret_str + f"Rot {self.get_rotation_name()}"
+
         if self.is_twist_translation_test():
-            ret_str = ret_str + " Twist {0}".format(self.get_twist_name())
+            ret_str = ret_str + f" Twist {self.get_twist_name()}"
+
         return ret_str
 
     def set(self, att):
@@ -168,15 +94,18 @@ class AsteriskTestTypes:
          :param trial is which trial (if any)
          returns: String, no Trial appended if trial is -1"""
         trial_str = ""
-        if trial is not -1:
-            trial_str = "_{0}".format(trial)
+        if trial != -1:
+            trial_str = f"_{trial}"
 
         if self.is_translation_test():
-            return self.get_translation_name() + "_none" + trial_str
+            return f"{self.get_translation_name()}_n_{trial_str}"
+
         if self.is_rotation_test():
-            return self.get_rotation_name() + "_none" + trial_str
+            return f"n_{self.get_rotation_name()}_{trial_str}"
+
         if self.is_twist_translation_test():
-            return self.get_twist_name() + "_" + self.get_translation_name() + trial_str
+            return f"{self.get_translation_name()}_{self.get_twist_name()}_{trial_str}"
+
         return "NotValid"
 
     def is_type(self, in_att) -> bool:
@@ -214,28 +143,16 @@ class AsteriskTestTypes:
                 yield att
 
 
-#------------------------------------
-def generate_fname(folder_path, subject_name, hand):
+# ------------------------------------
+def generate_fname(subject_name, hand):
     """Create the full pathname
-    :param folder_path Directory where data is located
+    # :param folder_path Directory where data is located -> currently not used
     :param subject_name Name of subject
     :param hand Name of hand"""
 
-    if hand == "basic" or hand == "m2stiff" or hand == "vf":
-        types = ["none"]
-    else:
-        types = type_options
+    for s, h, t, r, n in datamanager.generate_names_with_s_h(subject_name, hand):
+        file_name = f"{s}_{h}_{t}_{r}_{n}.csv"
 
-    for t in types:
-        if t == "none":
-            directions = dir_options
-        else:
-            directions = dir_options_no_rot
-
-        for d in directions:
-            for num in ["1", "2", "3"]:
-                file_name = subject_name + "_" + hand + "_" + d + "_" + t + "_" + num + ".csv"
-
-                total_path = folder_path + file_name
-                yield total_path
-
+        # total_path = folder_path + file_name
+        # yield total_path
+        yield file_name

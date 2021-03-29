@@ -1,79 +1,40 @@
 # So you want to run the asterisk test?
-Resources for running the asterisk test.
+In this git repository you will find a collection of tools and resources for running a complete asterisk test.
+from start to finish.
 
 
-### initial setup
-This uses python 3. 
+### Initial Setup
+We use python 3. We have the following dependencies:
+- *matplotlib*
+- *pandas*
+- *numpy*
+- *similaritymeasures*
+- *opencv** ( opencv-contrib-python )
+- *curtsies**
+- *keyboard**
 
-Dependencies to run all of the scripts are:
-- opencv ( opencv-contrib-python )
-- curtsies
-- keyboard
-- matplotlib
+Install with pip. 
 
-Install with pip.
-
----
-
-### step 0 - data helper
-This is a script to help us collect camera images and save them in the right folder (without having the test proctor worry about it). 
-
-Will save all data, with correct folder structure, in a folder called `data/`. Will also generate a zip file of the data in the folder root. We back up those zip files to box.
-
-We made a folder called `zips/` where we stored these zip files as an extra backup on the computer at the test location.
-
-I made the prompts file to help clean up the data helper file.
+**Note:* You can ignore *curtsies* and *keyboard* if you will not use the ***asterisk_trial_helper.py*** script. 
+Similarly, you can ignore *opencv* if you will not use the ***asterisk_aruco.py*** script.
 
 ---
+## Folder Setup
+The asterisk test adheres to a strict folder structure. We provide this as part of the git repository.
+- *asterisk_test_data* -> folder for storing zip files of the study
+- *viz* -> this folder holds the image sets that correspond to each study.
+- *csv* -> folder to store aruco positions gathered from viz data as csv files
+- *documentation* -> self explanatory. For documentation we use pdoc.
+- *filtered* -> filtered data is stored here. 
+- *resources* -> extra resources for running the asterisk test such as aruco codes, a webcam streaming script,
+and brief instructions on the asterisk test protocol
 
-
-### step 1 - data extraction and trial viewing
-I made this step to extract the zips that I downloaded from box. This script is wired to grab the zip files in `asterisk_test_folder/[sub_name]/[hand]`. 
-
-It will extract the files to a folder named `viz/`. Inside are folders named for each trial.
-
-The viewImage script will look for data in the `viz` folder and play it back using matplotlib.
-
-
----
-
-### step 2 - analyzing images
-Contains the code to analyze each image for the aruco tag. All aruco tag locations are relative to the aruco tag location in the initial frame. 
-
-Generates csv file in `csv/` folder. (I know, lots of folders but I want the data for every step just in case something goes wrong)
-
-**csv columns**: 
-1. roll (radians)
-2. pitch (radians)
-3. yaw (radians)
-4. x (meters)
-5. y (meters)
-6. z (meters)
-7. magnitude of translation relative to initial pose
-8. magnitude of rotation relative to initial pose (in deg)
+*optional*
+- data -> 
+- pics -> 
 
 ---
-
-### step 3 - data conditioning
-
-`[NOT DONE]` 
-
-Make data nice for frechet distance analysis. 
-
----
-
-
-### step 4 - generate companion path
-
-`[NOT DONE]` 
-
-Generate ground truth path for frechet distance analysis.
-
----
-
-### step 5 - frechet distance
-
-`[NOT DONE]` 
-
-
-
+## Running the Demo
+The best way to understand each file is to check the documentation and to try the demo. We have provided
+a demo which includes an example workflow using the asterisk test suite. Your starting place for
+this is the ***asterisk_main.py*** file.
