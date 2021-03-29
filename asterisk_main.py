@@ -16,6 +16,8 @@ def run():
     5) writes salient data tp external files (averaged asterisk data, final statistics, generated plots)
     """
 
+    home_directory = Path(__file__).parent.absolute()
+
     # right now, just compiles data and saves it all using the AsteriskHandData object
     subjects = datamanager.generate_options("subjects")
     hand_names = ["2v2"]  #["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
@@ -27,7 +29,7 @@ def run():
 
         print("Analyzing aruco codes on viz data...")
         for s in subjects:
-            batch_aruco_analysis(s, h, no_rotations=True)
+            batch_aruco_analysis(s, h, no_rotations=True, home=home_directory)
 
         print(f"Getting {h} data...")
         data = AsteriskHandData(subjects, h, rotation="n")
