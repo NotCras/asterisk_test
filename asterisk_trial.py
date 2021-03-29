@@ -40,7 +40,7 @@ class AsteriskTrialData:
             self.hand = HandObj(h)
 
             # Data will not be filtered in this step
-            data = self._read_file(file_name, norm_data)
+            data = self._read_file(file_name, norm_data=norm_data)
             self.poses = data[["x", "y", "rmag"]]
 
         else:
@@ -88,7 +88,7 @@ class AsteriskTrialData:
         """
         self.hand = HandObj(hand_name)
 
-    def _read_file(self, file_name, folder="aruco_data/", norm_data=True):  # TODO: soon default folder will be aruco_data
+    def _read_file(self, file_name, folder="aruco_data/", norm_data=True):
         """
         Function to read file and save relevant data in the object
         :param file_name: name of file to read in

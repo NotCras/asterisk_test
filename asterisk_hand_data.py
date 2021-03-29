@@ -438,7 +438,7 @@ class AsteriskHandData:
 
 
 if __name__ == '__main__':
-    h = AsteriskHandData(["sub1", "sub2"], "2v3", rotation="n")
+    h = AsteriskHandData(["sub1", "sub2", "sub3"], "2v2", rotation="n")
     h.filter_data()
 
     # # subject 1 averages
