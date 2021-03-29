@@ -404,7 +404,8 @@ class ArucoPoseDetect:
         self.est_poses.plot(x="x", y="y")
 
 
-def single_aruco_analysis(subject, hand, translation, rotation, trial_num):
+def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=None):
+    # TODO: add considerations of home folder
     file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
     folder_path = f"{file_name}/"
 
@@ -426,13 +427,14 @@ def single_aruco_analysis(subject, hand, translation, rotation, trial_num):
         print(f"Failed Aruco Analysis for: {file_name}")
 
 
-def batch_aruco_analysis(subject, hand, no_rotations=True):
+def batch_aruco_analysis(subject, hand, no_rotations=True, home=None):
     files_covered = list()
     for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand, no_rotations=no_rotations):
         file_name = f"{s}_{h}_{t}_{r}_{n}"
 
         folder_path = f"{file_name}/"
-        os.chdir(home_directory)
+        if home is not None:
+            os.chdir(home_directory)
         # data_path = inner_path
         print(folder_path)
 
@@ -490,10 +492,10 @@ if __name__ == "__main__":
         rotation = datamanager.smart_input("Enter type of rotation: ", "rotations")
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
 
-        single_aruco_analysis(subject, hand, translation, rotation, trial_num)
+        single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=home_directory)
 
     elif ans == "3":
-        batch_aruco_analysis(subject, hand, no_rotations=True)
+        batch_aruco_analysis(subject, hand, no_rotations=True, home=home_directory)
 
     elif ans == "4":
         translation = datamanager.smart_input("Enter type of translation: ", "translations")

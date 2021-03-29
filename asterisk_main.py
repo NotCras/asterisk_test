@@ -3,6 +3,7 @@ import asterisk_hand_data as h
 from asterisk_hand_data import AsteriskHandData
 from asterisk_study import AstHandAnalyzer
 from asterisk_aruco import batch_aruco_analysis
+import asterisk_data_manager as datamanager
 import asterisk_trial as t
 
 def run():
@@ -16,10 +17,10 @@ def run():
     """
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
-    subjects = ["sub1", "sub2"]
+    subjects = datamanager.generate_options("subjects")
     hand_names = ["2v2"]  #["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
 
-    # failed_files = []  # TODO: for later?
+    # failed_files = []  # TODO: add ability to collect failed files
     for h in hand_names:
         print(f"Running: {h}, {subjects}")
         input("Please press <ENTER> to continue")  # added this for debugging by hand

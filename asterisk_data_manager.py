@@ -92,8 +92,10 @@ def generate_options(key):
     """
     options = {
             "subjects": ["sub1", "sub2", "sub3"],
-            "hands": ["2v2", "2v3", "3v3", "barrett", "basic", "human", "m2active", "m2stiff", "modelvf"],
+            "hands": ["2v2", "2v3", "3v3", "barrett", "basic", "m2active", "m2stiff", "modelvf"],  # "human"
+            "hands_only_n": ["basic", "m2stiff", "modelvf"],
             "translations": ["a", "b", "c", "d", "e", "f", "g", "h"],
+            "translations_all": ["a", "b", "c", "d", "e", "f", "g", "h", "n"],
             "rotations": ["n", "m15", "p15"],
             "rotations_n_trans": ["cw", "ccw"],
             "numbers": ["1", "2", "3", "4", "5"]
@@ -107,18 +109,18 @@ def generate_t_r_pairs(hand_name, no_rotations=False):
     :param hand_name: name of hand specified
     :return: yields translation and rotation combinations
     """
-    translations = ["a", "b", "c", "d", "e", "f", "g", "h", "n"]
-    n_trans_rot_opts = ["cw", "ccw"]
-    rotations = ["n", "p15", "m15"]
+    translations = generate_options("translations_all")
+    n_trans_rot_opts = generate_options("rotations_n_trans")
+    rotations = generate_options("rotations")
 
     for t in translations:
         if t == "n":  # necessary to divide rotations because cw and ccw only happen with no translation
-            if hand_name in ["basic", "m2stiff", "modelvf"]:
+            if hand_name in generate_options("hands_only_n"):
                 continue
             else:
                 rot = n_trans_rot_opts
         else:
-            if hand_name in ["basic", "m2stiff", "modelvf"] or no_rotations:
+            if hand_name in generate_options("hands_only_n") or no_rotations:
                 rot = "n"
             else:
                 rot = rotations
@@ -134,7 +136,7 @@ def generate_names_with_s_h(subject_name, hand_name, no_rotations=False):
     :param hand_name: name of hand
     :return: yields all parameters
     """
-    num = ["1", "2", "3", "4", "5"]
+    num = generate_options("numbers")
 
     for t, r in generate_t_r_pairs(hand_name, no_rotations=no_rotations):
         for n in num:
@@ -150,11 +152,10 @@ def generate_all_names(subject=None, hand_name=None, no_rotations=False):
     """
     # TODO: make smart version so you can be picky with your options... make the constant lists as default parameters
     if subject is None:
-        subject = ["sub1", "sub2", "sub3"]
+        subject = generate_options("subjects")
 
     if hand_name is None:
-        hand_name = ["basic",  "m2stiff", "m2active",
-                     "2v2", "3v3", "2v3", "barrett", "modelvf"]  # human
+        hand_name = generate_options("hands")
 
     for s in subject:
         for h in hand_name:
@@ -169,7 +170,7 @@ def smart_input(prompt, option, valid_options=None):
         if not in the options will look at valid_options for option
     :param valid_options: provides the ability to specify your own custom options
     """
-    values = {
+    values = {  # TODO: make this use generate_options
         "subjects": ["sub1", "sub2", "sub3"],
         "hands": ["2v2", "2v3", "3v3", "barrett", "basic", "human", "m2active", "m2stiff", "modelvf"],
         "translations": ["a", "b", "c", "d", "e", "f", "g", "h"],
