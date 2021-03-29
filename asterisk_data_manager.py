@@ -96,7 +96,7 @@ def generate_options(key):
             "translations": ["a", "b", "c", "d", "e", "f", "g", "h"],
             "rotations": ["n", "m15", "p15"],
             "rotations_n_trans": ["cw", "ccw"],
-            "numbers": ["1", "2", "3"]  # , "4", "5"]
+            "numbers": ["1", "2", "3", "4", "5"]
             }
     return options[key]
 
@@ -134,7 +134,7 @@ def generate_names_with_s_h(subject_name, hand_name, no_rotations=False):
     :param hand_name: name of hand
     :return: yields all parameters
     """
-    num = ["1", "2", "3"]  # , "4", "5"]  #for now
+    num = ["1", "2", "3", "4", "5"]
 
     for t, r in generate_t_r_pairs(hand_name, no_rotations=no_rotations):
         for n in num:
