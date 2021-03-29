@@ -46,6 +46,8 @@ class AsteriskCalculations:
             if lo_val <= p_x <= hi_val:
                 points_in_bounds.append([p_x, p_y])
 
+        #pdb.set_trace()
+
         #print(np.asarray(points_in_bounds))
         return np.asarray(points_in_bounds)
 
@@ -239,6 +241,8 @@ class AsteriskCalculations:
         current_index = bounded_points.index[0]
         loc_in_indices = indices.index(current_index)
 
+        #spdb.set_trace()
+
         try:
             # get lower bound val
             lower_index = loc_in_indices - 1
@@ -311,14 +315,18 @@ class AsteriskCalculations:
             # if x_max > 0.13:
             #     pdb.set_trace()
             try:
+                #pdb.set_trace()
                 area_calculated = sm.area_between_two_curves(bounded_points_not_df, target_points)
-            except ValueError:
+            except ValueError or IndexError:
+                #print("error")
+                #pdb.set_trace()
                 # usually this triggers if there aren't enough points (more than one) in the window
                 # if there aren't enough points, make enough points!
                 try:
                     area_calculated = AsteriskCalculations.interpolate_points(points, x_center,
                                                                               bounded_points, bound_size,
                                                                               target_points)
+
                     print("Successful interpolation!")
                 except Exception as e:
                     print("Interpolation Failed.")

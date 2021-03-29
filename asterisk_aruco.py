@@ -162,13 +162,19 @@ class ArucoVision:
         Retrieve list of image names, sorted.
         NOTE: Need to manually change directory back to self.home
         """
-        # TODO: have option to set a limit, include images up to index idx_limit
+        # TODO: be smarter about indices. If bot != 0, then bot-1 | if idx_limit != len(files), then lim + 1
         os.chdir(self.data_folder)
         files = [f for f in os.listdir('.') if f[-3:] == 'jpg']
         files.sort()
 
         #print(f"Num of image files in folder: {len(files)}")
         if idx_limit is not None:
+            if idx_bot != 0:
+                idx_bot = idx_bot-1  # this is so that we can include idx_bot
+
+            if idx_limit != len(files):  # so that we can include idx_limit
+                idx_limit = idx_limit + 1
+
             try:
                 files = files[idx_bot:idx_limit]
 
@@ -434,7 +440,7 @@ def batch_aruco_analysis(subject, hand, no_rotations=True, home=None):
 
         folder_path = f"{file_name}/"
         if home is not None:
-            os.chdir(home_directory)
+            os.chdir(home)
         # data_path = inner_path
         print(folder_path)
 

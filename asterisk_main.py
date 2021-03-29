@@ -20,12 +20,13 @@ def run():
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
     subjects = datamanager.generate_options("subjects")
-    hand_names = ["2v2"]  #["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
+    hand_names = ["m2stiff", "m2active", "2v2", "3v3"]
+    #["2v2"]  #["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
 
     # failed_files = []  # TODO: add ability to collect failed files
     for h in hand_names:
         print(f"Running: {h}, {subjects}")
-        input("Please press <ENTER> to continue")  # added this for debugging by hand
+        # input("Please press <ENTER> to continue")  # added this for debugging by hand
 
         print("Analyzing aruco codes on viz data...")
         for s in subjects:
@@ -44,9 +45,9 @@ def run():
         data.calc_avg_ast(rotation="n")
 
         print("Saving plots...")
-        data.plot_avg_data(rotation="n", show_plot=True, save_plot=True)
+        data.plot_avg_data(rotation="n", show_plot=False, save_plot=True)
         for a in data.averages:
-            a.avg_debug_plot(show_plot=True, save_plot=True)
+            a.avg_debug_plot(show_plot=False, save_plot=True, use_filtered=True)
 
         print("Consolidating metrics together...")
         results = AstHandAnalyzer(data)

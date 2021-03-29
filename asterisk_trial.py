@@ -103,6 +103,7 @@ class AsteriskTrialData:
             # print(e)
             df = None
             print(f"{total_path} has failed to read csv")
+
         return df
 
     def _condition_df(self, df, norm_data=True):
@@ -132,9 +133,9 @@ class AsteriskTrialData:
                        1.,  # yaw
                        1.]  # z - doesn't matter
             df = df.round(4)
-
         # occasionally get an outlier value (probably from vision algorithm), I filter them out here
         inlier_df = self._remove_outliers(df, ["x", "y", "rmag"])
+
         return inlier_df.round(4)
 
     def is_ast_trial(self):
@@ -203,17 +204,19 @@ class AsteriskTrialData:
         :param df_to_fix: the dataframe to fix
         :param columns: dataframe columns to remove outliers from
         """
-        for col in columns:
-            # see: https://stackoverflow.com/questions/23199796/detect-and-exclude-outliers-in-pandas-data-frame
-            # q_low = df_to_fix[col].quantile(0.01)
-            q_hi = df_to_fix[col].quantile(0.99)
 
-            df_to_fix = df_to_fix[(df_to_fix[col] < q_hi)]  # this has got to be the problem line
+        if len(df_to_fix) > 10:  # for some trials with movement, this destroys the data. 10 is arbitrary
+            for col in columns:
+                # see: https://stackoverflow.com/questions/23199796/detect-and-exclude-outliers-in-pandas-data-frame
+                # q_low = df_to_fix[col].quantile(0.01)
+                q_hi = df_to_fix[col].quantile(0.99)
 
-            # print(col)
-            # print(f"q_low: {q_low}")
-            # print(f"q_hi: {q_hi}")
-            # print(" ")
+                df_to_fix = df_to_fix[(df_to_fix[col] < q_hi)]  # this has got to be the problem line
+
+                # print(col)
+                # print(f"q_low: {q_low}")
+                # print(f"q_hi: {q_hi}")
+                # print(" ")
 
         return df_to_fix
 
@@ -338,6 +341,7 @@ class AsteriskTrialData:
         target_line = np.column_stack((x_vals, y_vals))
 
         # get last object pose and use it for determining how far target line should go
+
         last_obj_pose = self.poses.tail(1).to_numpy()[0]
 
         target_line_length = acalc.narrow_target(last_obj_pose, target_line)
@@ -346,8 +350,8 @@ class AsteriskTrialData:
             distance_travelled = acalc.t_distance([0, 0], target_line[target_line_length + 1])
             final_target_ln = target_line[:target_line_length]
         else:
-            distance_travelled = acalc.t_distance([0, 0], target_line[0])
-            final_target_ln = target_line[:1]
+            distance_travelled = acalc.t_distance([0, 0], target_line[1])
+            final_target_ln = target_line[:2]  # TODO: unfortunately,  we register a very small translation here
 
         # TODO: distance travelled has error because it is built of target line... maybe use last_obj_pose instead?
         return final_target_ln, distance_travelled
@@ -404,9 +408,25 @@ class AsteriskTrialData:
         self.translation_fd, self.rotation_fd = acalc.calc_frechet_distance(self)
         # self.fd = am.calc_frechet_distance_all(self)
         self.max_error = acalc.calc_max_error(self)
-        self.mvt_efficiency, self.arc_len = acalc.calc_mvt_efficiency(self)
-        self.area_btwn = acalc.calc_area_btwn_curves(self)
-        self.max_area_region, self.max_area_loc = acalc.calc_max_area_region(self)
+
+        try:
+            self.mvt_efficiency, self.arc_len = acalc.calc_mvt_efficiency(self)
+        except RuntimeWarning:
+            self.mvt_efficiency = 0
+            self.arc_len = 0
+
+        try:  # TODO: move all these try excepts to asterisk calculations
+            self.area_btwn = acalc.calc_area_btwn_curves(self)
+        except:
+            self.area_btwn = 0
+
+        try:  # this one is particularly troublesome
+            self.max_area_region, self.max_area_loc = acalc.calc_max_area_region(self)
+        except IndexError:
+            print("Max area region failed")
+            self.max_area_region = 0
+            self.max_area_loc = 0
+        #pdb.set_trace()
 
         metric_dict = {"trial": self.generate_name(),
                        "t_fd": self.translation_fd, "r_fd": self.rotation_fd,  # "fd": self.fd
@@ -424,6 +444,6 @@ class AsteriskTrialData:
 
 
 if __name__ == '__main__':
-    test = AsteriskTrialData("sub1_2v2_a_n_1.csv")
+    test = AsteriskTrialData("sub1_basic_a_n_1.csv")
     #print(test.metrics)
     test.plot_trial(use_filtered=False)

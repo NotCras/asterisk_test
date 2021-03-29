@@ -152,16 +152,31 @@ class AveragedTrial(AsteriskTrialData):
             loc_vals.append(t.max_area_loc)
             arc_lens.append(t.arc_len)
 
-        values["dist"] = (mean(dist_vals), std(dist_vals))
-        values["t_fd"] = (mean(t_fd_vals), std(t_fd_vals))
-        values["r_fd"] = (mean(r_fd_vals), std(r_fd_vals))
-        values["mvt_eff"] = (mean(mvt_eff_vals), std(mvt_eff_vals))
-        values["btwn"] = (mean(btwn_vals), std(btwn_vals))
-        # values["fd"] = (mean(fd_vals), std(fd_vals))
-        values["max_err"] = (mean(err_vals), std(err_vals))
-        values["max_a_reg"] = (mean(reg_vals), std(reg_vals))
-        values["max_a_loc"] = (mean(loc_vals), std(loc_vals))
-        values["arc_len"] = (mean(arc_lens), std(arc_lens))
+        try:
+            values["dist"] = (mean(dist_vals), std(dist_vals))
+            values["t_fd"] = (mean(t_fd_vals), std(t_fd_vals))
+            values["r_fd"] = (mean(r_fd_vals), std(r_fd_vals))
+            values["mvt_eff"] = (mean(mvt_eff_vals), std(mvt_eff_vals))
+            values["btwn"] = (mean(btwn_vals), std(btwn_vals))
+            # values["fd"] = (mean(fd_vals), std(fd_vals))
+            values["max_err"] = (mean(err_vals), std(err_vals))
+            values["max_a_reg"] = (mean(reg_vals), std(reg_vals))
+            values["max_a_loc"] = (mean(loc_vals), std(loc_vals))
+            values["arc_len"] = (mean(arc_lens), std(arc_lens))
+        except Exception as e:
+            print("Averaging Metrics Failed")
+            null_val = (0.,0.)
+            values["dist"] = null_val
+            values["t_fd"] = null_val
+            values["r_fd"] = null_val
+            values["mvt_eff"] = null_val
+            values["btwn"] = null_val
+            # values["fd"] = null_val
+            values["max_err"] = null_val
+            values["max_a_reg"] = null_val
+            values["max_a_loc"] = null_val
+            values["arc_len"] = null_val
+
 
         self.total_distance = values["dist"][0]
         self.total_distance_sd = values["dist"][1]
@@ -305,7 +320,7 @@ class AveragedTrial(AsteriskTrialData):
 
         self._calc_avg_metrics()
 
-        print(f"Averaged: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
+        print(f"Averaged: {self.hand.get_name()} :: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
 
     def _calc_avg_tmag(self, avg_point, all_points, x_center, sample_points=25, use_filtered=False):
         """
@@ -458,6 +473,8 @@ class AveragedTrial(AsteriskTrialData):
         :param show_plot: flag to show plot. Default is true
         :param save_plot: flat to save plot as a file. Default is False
         """
+
+        plt.figure(figsize=(7, 7))
         # plot the trials
         for i, t in enumerate(self.averaged_trials):
             t_x, t_y, _ = t.get_poses(use_filtered=False)
@@ -548,8 +565,8 @@ class AveragedTrial(AsteriskTrialData):
 
 if __name__ == '__main__':
     # demo and test
-    h = "2v2"
-    t = "e"
+    h = "basic"
+    t = "a"
     w=40
     test1 = AsteriskTrialData(f'sub1_{h}_{t}_n_1.csv')
     test1.moving_average(window_size=w)

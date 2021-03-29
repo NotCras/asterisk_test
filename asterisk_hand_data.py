@@ -223,6 +223,8 @@ class AsteriskHandData:
         colors = ["tab:blue", "tab:purple", "tab:red", "tab:olive",
                   "tab:cyan", "tab:green", "tab:pink", "tab:orange"]
 
+        plt.figure(figsize=(7, 7))
+
         # plot data
         for i, t in enumerate(trials):
             data_x, data_y, theta = t.get_poses(use_filtered)
