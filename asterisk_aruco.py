@@ -28,7 +28,7 @@ def get_indices(id, file_name=None):
         table = pd.read_csv(file_name)
     else:
         # table = pd.read_csv("viz_data_indices.csv")
-        table = pd.read_csv("viz_data_indices_2v2_starter.csv")
+        table = pd.read_csv("viz_data_indices_main.csv")
 
     table = table.set_index("id")
     try:
@@ -470,9 +470,10 @@ if __name__ == "__main__":
             2 - aruco analyze one specific set of data
             3 - aruco analyze a batch of data
             4 - validate aruco corner detection on images in slow-mo video
+            5 - test whether the get_index function will get your indices correctly
         """)
 
-    ans = datamanager.smart_input("Enter a function", "mode", ["1", "2", "3", "4"])
+    ans = datamanager.smart_input("Enter a function", "mode", ["1", "2", "3", "4", "5"])
     subject = datamanager.smart_input("Enter subject name: ", "subjects")
     hand = datamanager.smart_input("Enter name of hand: ", "hands")
 
@@ -513,3 +514,19 @@ if __name__ == "__main__":
         # print(f"Missing: {trial_pose.est_poses['x'].isna().sum()}")
         # trial_pose.plot_est_pose()
         # plt.show()
+
+    elif ans == "5":
+        translation = datamanager.smart_input("Enter type of translation: ", "translations")
+        rotation = datamanager.smart_input("Enter type of rotation: ", "rotations")
+        trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
+
+        file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
+        folder_path = f"{file_name}/"
+
+        try:
+            b_idx, e_idx = get_indices(file_name)
+        except:
+            e_idx = None
+            b_idx = 0
+
+        print(f"b: {b_idx}, e: {e_idx}")
