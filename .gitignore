@@ -9,3 +9,4 @@ __pycache__/
 *.tar
 .idea/
 .ipynb_checkpoints/
+!viz_data_indices_main.csv
