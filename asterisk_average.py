@@ -177,7 +177,6 @@ class AveragedTrial(AsteriskTrialData):
             values["max_a_loc"] = null_val
             values["arc_len"] = null_val
 
-
         self.total_distance = values["dist"][0]
         self.total_distance_sd = values["dist"][1]
         self.translation_fd = values["t_fd"][0]
@@ -199,14 +198,14 @@ class AveragedTrial(AsteriskTrialData):
         self.arc_len = values["arc_len"][0]
         self.arc_len_sd = values["arc_len"][1]
 
-        metric_dict = {"trial": self.generate_name(),
+        metric_dict = {"trial": self.generate_name(), "dist": self.total_distance,
                        "t_fd": self.translation_fd, "r_fd": self.rotation_fd,  # "fd": self.fd
                        "max_err": self.max_error, "mvt_eff": self.mvt_efficiency, "arc_len": self.arc_len,
                        "area_btwn": self.area_btwn, "max_a_reg": self.max_area_region, "max_a_loc": self.max_area_loc}
 
         self.metrics = pd.Series(metric_dict)
 
-        metric_sd_dict = {"trial": self.generate_name(),
+        metric_sd_dict = {"trial": self.generate_name(), "dist_sd": self.total_distance_sd,
                           "t_fd_sd": self.translation_fd_sd, "r_fd_sd": self.rotation_fd_sd,  # "fd_sd": self.fd
                           "max_err_sd": self.max_error_sd, "mvt_eff_sd": self.mvt_efficiency_sd,
                           "arc_len": self.arc_len_sd, "area_btwn_sd": self.area_btwn_sd,

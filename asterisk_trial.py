@@ -428,7 +428,7 @@ class AsteriskTrialData:
             self.max_area_loc = 0
         #pdb.set_trace()
 
-        metric_dict = {"trial": self.generate_name(),
+        metric_dict = {"trial": self.generate_name(), "dist": self.total_distance,
                        "t_fd": self.translation_fd, "r_fd": self.rotation_fd,  # "fd": self.fd
                        "max_err": self.max_error, "mvt_eff": self.mvt_efficiency, "arc_len": self.arc_len,
                        "area_btwn": self.area_btwn, "max_a_reg": self.max_area_region, "max_a_loc": self.max_area_loc}
