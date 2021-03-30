@@ -40,7 +40,7 @@ class AsteriskPlotting:
 
     @staticmethod
     def diagonal(num_points=25, mod1=1, mod2=1):
-        coords = np.linspace(0, 0.5, num_points)
+        coords = np.linspace(0, 0.3536, num_points)  # 0.3536 ~= 1 / (2* sqrt(2))
 
         set1 = mod1 * coords
         set2 = mod2 * coords
