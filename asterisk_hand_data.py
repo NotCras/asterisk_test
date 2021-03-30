@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import math as m
 from pathlib import Path
+import csv
 import pdb
 import matplotlib.pyplot as plt
 import asterisk_data_manager as datamanager
@@ -15,7 +16,7 @@ from asterisk_plotting import AsteriskPlotting as aplt
 
 class AsteriskHandData:
     # TODO: add ability to add trials after the fact?
-    def __init__(self, subjects, hand_name, rotation=None):
+    def __init__(self, subjects, hand_name, rotation=None, blocklist_file=None):
         """
         Class to hold all the data pertaining to a specific hand.
         Combines data from all subjects
@@ -24,12 +25,31 @@ class AsteriskHandData:
         """
         self.hand = HandObj(hand_name)
         self.subjects_containing = subjects
-        self.data = self._gather_hand_data(subjects, rotation)
+        if blocklist_file is not None:
+            blocklist = self._check_blocklist(blocklist_file)
+        else:
+            blocklist = None
+
+        self.data = self._gather_hand_data(subjects, rotation, blocklist=blocklist)
         self.filtered = False
         self.window_size = None
         self.averages = []
 
-    def _gather_hand_data(self, subjects, rotation=None):
+    def _check_blocklist(self, file_name):
+        """
+        Checks blocklist file to get the list of trials that should not be included.
+        """
+        with open(file_name) as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            blocked_files = []
+            for row in csv_reader:
+                blocked_files.append(row[0])
+
+            print(f"Will block these files: {blocked_files}")
+
+        return blocked_files
+
+    def _gather_hand_data(self, subjects, rotation=None, blocklist=None):
         """
         Returns a dictionary with the data for the hand, sorted by task.
         Each key,value pair of dictionary is:
@@ -42,18 +62,21 @@ class AsteriskHandData:
             for t, r in datamanager.generate_t_r_pairs(self.hand.get_name()):
                 key = f"{t}_{r}"
                 data_dictionary[key] = self._make_asterisk_trials(subjects, t, r,
-                                                                  datamanager.generate_options("numbers"))
+                                                                  datamanager.generate_options("numbers"),
+                                                                  blocklist=blocklist)
 
         elif rotation in ["n", "m15", "p15"]:  # TODO: also add a check for just cw and ccw
             for t in ["a", "b", "c", "d", "e", "f", "g", "h"]:
                 key = f"{t}_{rotation}"
                 data_dictionary[key] = self._make_asterisk_trials(subjects, t, rotation,
-                                                                  datamanager.generate_options("numbers"))
+                                                                  datamanager.generate_options("numbers"),
+                                                                  blocklist=blocklist)
 
         elif rotation in ["cw", "ccw"]:
             key = f"n_{rotation}"
             data_dictionary[key] = self._make_asterisk_trials(subjects, "n", rotation,
-                                                              datamanager.generate_options("numbers"))
+                                                              datamanager.generate_options("numbers"),
+                                                              blocklist=blocklist)
 
         else:
             print("invalid key")
@@ -61,7 +84,7 @@ class AsteriskHandData:
 
         return data_dictionary
 
-    def _make_asterisk_trials(self, subjects, translation_label, rotation_label, trials):
+    def _make_asterisk_trials(self, subjects, translation_label, rotation_label, trials, blocklist=None):
         """
         Goes through data and compiles data with set attributes into an AsteriskTrial objects
         :param subjects: name of subject
@@ -72,10 +95,14 @@ class AsteriskHandData:
         gathered_data = list()
         for s in subjects:  # TODO: subjects is a list, make a type recommendation?
             for n in trials:
-                try:
-                    asterisk_trial_file = f"{s}_{self.hand.get_name()}_{translation_label}_{rotation_label}_{n}.csv"
+                asterisk_trial = f"{s}_{self.hand.get_name()}_{translation_label}_{rotation_label}_{n}"
 
-                    trial_data = trial.AsteriskTrialData(asterisk_trial_file)
+                if asterisk_trial in blocklist:
+                    print(f"{asterisk_trial} is blacklisted and will not be used.")
+                    continue
+
+                try:
+                    trial_data = trial.AsteriskTrialData(f"{asterisk_trial}.csv")
 
                     gathered_data.append(trial_data)
 
