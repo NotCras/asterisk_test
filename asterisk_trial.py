@@ -209,7 +209,7 @@ class AsteriskTrialData:
             for col in columns:
                 # see: https://stackoverflow.com/questions/23199796/detect-and-exclude-outliers-in-pandas-data-frame
                 # q_low = df_to_fix[col].quantile(0.01)
-                q_hi = df_to_fix[col].quantile(0.99)
+                q_hi = df_to_fix[col].quantile(0.95)  # determined empirically
 
                 df_to_fix = df_to_fix[(df_to_fix[col] < q_hi)]  # this has got to be the problem line
 

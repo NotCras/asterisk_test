@@ -84,13 +84,13 @@ class AsteriskStudy:
         * * * *
         """
 
+        plt.clf()
         plt.figure(figsize=(20, 15))
-
         for i, h in enumerate(self.data.keys()):
             plt.subplot(2, 4, i+1)
             # get hand obj
             hd = self.data[h]
-            hd.plot_avg_data(self.subjects, rotation, show_plot=False, save_plot=False)
+            hd.plot_avg_data(subjects=self.subjects, rotation=rotation, show_plot=False, save_plot=False)
 
             # TODO: figure out sharing x and y axis labels
 
@@ -334,15 +334,15 @@ class AstHandComparison:
 
 
 if __name__ == '__main__':
-    h = AsteriskHandData(["sub1", "sub2"], "3v3", rotation="n")
-    h.filter_data()
-    h.calc_avg_ast(rotation="n")
+    # h = AsteriskHandData(["sub1", "sub2"], "3v3", rotation="n")
+    # h.filter_data()
+    # h.calc_avg_ast(rotation="n")
+    #
+    # results = AstHandAnalyzer(h)
+    # results.save_data()
 
-    results = AstHandAnalyzer(h)
-    results.save_data()
-
-    # study = AsteriskStudy(["sub1", "sub2"], ["2v2", "2v3", "3v3", "barrett"])
-    # study.plot_all_hands(rotation="n", show_plot=True, save_plot=True)
+    study = AsteriskStudy(["sub1", "sub2", "sub3"], ["2v2", "3v3"], rotation="n")
+    study.plot_all_hands(rotation="n", show_plot=True, save_plot=True)
     #
     # hand1 = study.return_hand("2v2")
     # hand2 = study.return_hand("barrett")

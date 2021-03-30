@@ -205,14 +205,20 @@ class ArucoVision:
 
             # print(ids)
             try:
+                if 2 not in ids:
+                    print(ids)
+                    print("FOUND WRONG ARUCO CODE, CANT FIND CORRECT ONE")
+                    raise ValueError("Did not find correct aruco code.")
+
                 if len(ids) > 1:
                     # TODO: so this works, but maybe add some better tracking of this by considering ids and their index
                     print(f"More than one aruco tag found at frame {i}!")
                     corners = corners[0]
 
                 c = corners[0].squeeze()
-            except:
+            except Exception as e:
                 print(f"Failed to find an aruco code at frame {i}!")
+                print(e)
                 # make corners of None to make sure that we log the failed attempt to find aruco code
                 c = np.array([[None, None], [None, None], [None, None], [None, None]])
                 # pdb.set_trace()

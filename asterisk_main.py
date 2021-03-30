@@ -1,12 +1,12 @@
 from pathlib import Path
 import asterisk_hand_data as h
 from asterisk_hand_data import AsteriskHandData
-from asterisk_study import AstHandAnalyzer
+from asterisk_study import AstHandAnalyzer, AsteriskStudy
 from asterisk_aruco import batch_aruco_analysis
 import asterisk_data_manager as datamanager
 import asterisk_trial as t
 
-def run():
+def run_ast_study():
     """
     Handles running an asterisk study
     1) imports all specified data
@@ -20,10 +20,10 @@ def run():
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
     subjects = datamanager.generate_options("subjects")
-    hand_names = ["m2stiff", "m2active", "2v2", "3v3"]
-    #["2v2"]  #["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
+    hand_names = ["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
 
     # failed_files = []  # TODO: add ability to collect failed files
+
     for h in hand_names:
         print(f"Running: {h}, {subjects}")
         # input("Please press <ENTER> to continue")  # added this for debugging by hand
@@ -34,9 +34,10 @@ def run():
 
         print(f"Getting {h} data...")
         data = AsteriskHandData(subjects, h, rotation="n")
+        # data = study.return_hand(h)
 
         print(f"Getting {h} data...")
-        data.filter_data()
+        data.filter_data(25)  # don't use if you're using an asterisk_study obj
 
         print("Generating CSVs of paths...")
         data.save_all_data()
@@ -57,8 +58,14 @@ def run():
 
         print(f"{h} data generation is complete!")
 
+    # print("Getting subplot figures, using Asterisk Study obj")
+    # # I know this is stupidly redundant, but for my purposes I can wait
+    # study = AsteriskStudy(subjects_to_collect=subjects, hands_to_collect=hand_names, rotation="n")
+    # study.filter_data(window_size=25)
+    # study.plot_all_hands(rotation="n", show_plot=True, save_plot=True)
+
 
 if __name__ == '__main__':
     home_directory = Path(__file__).parent.absolute()
 
-    run()
+    run_ast_study()

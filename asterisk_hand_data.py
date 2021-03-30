@@ -150,10 +150,11 @@ class AsteriskHandData:
         :return returns averaged path
         """
         if subject is None:  # get batches of data by trial type, if no subjects given, defaults to all subjects
-            trials = self._get_ast_dir(translation, self.subjects_containing, rotation)
+            trials = self._get_ast_dir(direction_label=translation, subjects=self.subjects_containing,
+                                       rotation_label=rotation)
 
         else:
-            trials = self._get_ast_dir(translation, subject, rotation)
+            trials = self._get_ast_dir(direction_label=translation, subjects=subject, rotation_label=rotation)
 
         average = AveragedTrial()
         # average.make_average_line(trials)
@@ -185,7 +186,7 @@ class AsteriskHandData:
                 averages.append(avg)
         else:
             for t in ["a", "b", "c", "d", "e", "f", "g", "h"]:
-                avg = self._average_dir(t, rotation, subjects)
+                avg = self._average_dir(translation=t, rotation=rotation, subject=subjects)
                 averages.append(avg)
 
         self.averages = averages
@@ -298,7 +299,7 @@ class AsteriskHandData:
             avgs = self.averages
 
         else:
-            avgs = self.calc_avg_ast(subjects, rotation)
+            avgs = self.calc_avg_ast(subjects=subjects, rotation=rotation)
 
         plt = self._make_plot(avgs, use_filtered=False, stds=True, linestyle=linestyle)
 

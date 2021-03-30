@@ -109,7 +109,7 @@ class AveragedTrial(AsteriskTrialData):
         rotated_line = pd.DataFrame(columns=['x', 'y', 'rmag'])
 
         for p in points.iterrows():
-            if use_filtered:
+            if use_filtered and "f_x" in points.columns:
                 x = p[1]["f_x"]
                 y = p[1]["f_y"]
             else:
@@ -477,12 +477,19 @@ class AveragedTrial(AsteriskTrialData):
         plt.figure(figsize=(7, 7))
         # plot the trials
         for i, t in enumerate(self.averaged_trials):
-            t_x, t_y, _ = t.get_poses(use_filtered=False)
-            plt.plot(t_x, t_y, label=f"trial {i}", alpha=0.5, color="xkcd:blue grey")
-
+            # if we averaged with filtered data, just show the filtered data
             if use_filtered and t.filtered:
                 f_x, f_y, _ = t.get_poses(use_filtered=True)
                 plt.plot(f_x, f_y, label=f"trial f_{i}", alpha=0.8, color="xkcd:grey green")
+
+            else:
+                # otherwise, let's show everything so you can wish you averaged on filtered data :P
+                t_x, t_y, _ = t.get_poses(use_filtered=False)
+                plt.plot(t_x, t_y, label=f"trial {i}", alpha=0.4, color="xkcd:blue grey")
+
+                if t.filtered:
+                    f_x, f_y, _ = t.get_poses(use_filtered=True)
+                    plt.plot(f_x, f_y, label=f"trial f_{i}", alpha=0.8, color="xkcd:grey green")
 
         # plot average
         a_x, a_y, _ = self.get_poses(use_filtered=False)
@@ -515,6 +522,7 @@ class AveragedTrial(AsteriskTrialData):
         :param use_filtered: enables option to use filtered or unfiltered data. Defaults to False
         """
         avg_x, avg_y, _ = self.get_poses(use_filtered=use_filtered)
+        # TODO: declutter this. Testing should not be false ever?
         if not testing:
             ad_x, ad_y, _ = self.get_poses_ad()
 
@@ -565,9 +573,9 @@ class AveragedTrial(AsteriskTrialData):
 
 if __name__ == '__main__':
     # demo and test
-    h = "basic"
-    t = "a"
-    w=40
+    h = "3v3"
+    t = "g"
+    w=50
     test1 = AsteriskTrialData(f'sub1_{h}_{t}_n_1.csv')
     test1.moving_average(window_size=w)
     test2 = AsteriskTrialData(f'sub1_{h}_{t}_n_2.csv')
@@ -582,17 +590,17 @@ if __name__ == '__main__':
     test6 = AsteriskTrialData(f'sub2_{h}_{t}_n_3.csv')
     test6.moving_average(window_size=w)
 
-    # test7 = AsteriskTrialData(f'sub3_{h}_{t}_n_1.csv')
-    # test7.moving_average(window_size=w)
-    # test8 = AsteriskTrialData(f'sub3_{h}_{t}_n_2.csv')
-    # test8.moving_average(window_size=w)
-    # test9 = AsteriskTrialData(f'sub3_{h}_{t}_n_3.csv')
-    # test9.moving_average(window_size=w)
+    test7 = AsteriskTrialData(f'sub3_{h}_{t}_n_1.csv')
+    test7.moving_average(window_size=w)
+    test8 = AsteriskTrialData(f'sub3_{h}_{t}_n_2.csv')
+    test8.moving_average(window_size=w)
+    test9 = AsteriskTrialData(f'sub3_{h}_{t}_n_3.csv')
+    test9.moving_average(window_size=w)
 
-    lines = [test1, test2, test3, test4, test5, test6] #, test7, test8, test9]
+    lines = [test1, test2, test3, test4, test5, test6, test7, test8, test9]
 
     avgln = AveragedTrial()
-    avgln.calculate_avg_line(lines, show_debug=True, calc_ad=False, use_filtered=True)
+    avgln.calculate_avg_line(lines, show_debug=True, calc_ad=True, use_filtered=True)
 
     # avgln.make_average_line(lines, show_rot_debug=False)
     # print(avgln.metrics)
