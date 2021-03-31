@@ -572,31 +572,64 @@ class AveragedTrial(AsteriskTrialData):
 
 if __name__ == '__main__':
     # demo and test
-    h = "3v3"
-    t = "g"
-    w=50
+    h = "2v2"
+    t = "a"
+    w=25
     test1 = AsteriskTrialData(f'sub1_{h}_{t}_n_1.csv')
     test1.moving_average(window_size=w)
     test2 = AsteriskTrialData(f'sub1_{h}_{t}_n_2.csv')
     test2.moving_average(window_size=w)
     test3 = AsteriskTrialData(f'sub1_{h}_{t}_n_3.csv')
     test3.moving_average(window_size=w)
-
-    test4 = AsteriskTrialData(f'sub2_{h}_{t}_n_1.csv')
+    test4 = AsteriskTrialData(f'sub1_{h}_{t}_n_4.csv')
     test4.moving_average(window_size=w)
-    test5 = AsteriskTrialData(f'sub2_{h}_{t}_n_2.csv')
+    test5 = AsteriskTrialData(f'sub1_{h}_{t}_n_5.csv')
     test5.moving_average(window_size=w)
-    test6 = AsteriskTrialData(f'sub2_{h}_{t}_n_3.csv')
+
+    test6 = AsteriskTrialData(f'sub2_{h}_{t}_n_1.csv')
     test6.moving_average(window_size=w)
-
-    test7 = AsteriskTrialData(f'sub3_{h}_{t}_n_1.csv')
+    test7 = AsteriskTrialData(f'sub2_{h}_{t}_n_2.csv')
     test7.moving_average(window_size=w)
-    test8 = AsteriskTrialData(f'sub3_{h}_{t}_n_2.csv')
+    test8 = AsteriskTrialData(f'sub2_{h}_{t}_n_3.csv')
     test8.moving_average(window_size=w)
-    test9 = AsteriskTrialData(f'sub3_{h}_{t}_n_3.csv')
+    test9 = AsteriskTrialData(f'sub2_{h}_{t}_n_4.csv')
     test9.moving_average(window_size=w)
+    test10 = AsteriskTrialData(f'sub2_{h}_{t}_n_5.csv')
+    test10.moving_average(window_size=w)
 
-    lines = [test1, test2, test3, test4, test5, test6, test7, test8, test9]
+    test11 = AsteriskTrialData(f'sub3_{h}_{t}_n_1.csv')
+    test11.moving_average(window_size=w)
+    test12 = AsteriskTrialData(f'sub3_{h}_{t}_n_2.csv')
+    test12.moving_average(window_size=w)
+    test13 = AsteriskTrialData(f'sub3_{h}_{t}_n_3.csv')
+    test13.moving_average(window_size=w)
+    test14 = AsteriskTrialData(f'sub3_{h}_{t}_n_4.csv')
+    test14.moving_average(window_size=w)
+    test15 = AsteriskTrialData(f'sub3_{h}_{t}_n_5.csv')
+    test15.moving_average(window_size=w)
+
+    # lines = [test1, test2, test3, test4, test5,
+    #          test6, test7, test8, test9, test10,
+    #          test11, test12, test13, test14, test15]
+    lines = [
+             test1,
+             test2,
+             test3,
+             test4,
+             test5,
+
+             test6,
+             test7,
+             test8,
+             test9,
+             test10,
+
+             test11,
+             test12,
+             test13,
+             test14,
+             test15
+            ]
 
     avgln = AveragedTrial()
     avgln.calculate_avg_line(lines, show_debug=True, calc_ad=True, use_filtered=True)

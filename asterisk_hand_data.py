@@ -97,8 +97,8 @@ class AsteriskHandData:
             for n in trials:
                 asterisk_trial = f"{s}_{self.hand.get_name()}_{translation_label}_{rotation_label}_{n}"
 
-                if asterisk_trial in blocklist:
-                    print(f"{asterisk_trial} is blacklisted and will not be used.")
+                if blocklist is not None and asterisk_trial in blocklist:
+                    print(f"{asterisk_trial} is blocklisted and will not be used.")
                     continue
 
                 try:
