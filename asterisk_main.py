@@ -28,9 +28,9 @@ def run_ast_study():
         print(f"Running: {h}, {subjects}")
         # input("Please press <ENTER> to continue")  # added this for debugging by hand
 
-        print("Analyzing aruco codes on viz data...")
-        for s in subjects:
-            batch_aruco_analysis(s, h, no_rotations=True, home=home_directory)
+        # print("Analyzing aruco codes on viz data...")
+        # for s in subjects:
+        #     batch_aruco_analysis(s, h, no_rotations=True, home=home_directory)
 
         print(f"Getting {h} data...")
         data = AsteriskHandData(subjects, h, rotation="n", blocklist_file="trial_blocklist.csv")
