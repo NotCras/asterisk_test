@@ -177,8 +177,11 @@ class AsteriskCalculations:
         calculates the max error between the ast_trial path and its target line
         If everything is rotated to C direction, then error becomes the max y value
         """
-        points = AsteriskCalculations.rotate_points(ast_trial.poses, AsteriskCalculations.rotations[ast_trial.trial_translation])
-        return points['y'].max()
+        points = AsteriskCalculations.rotate_points(ast_trial.poses,
+                                                    AsteriskCalculations.rotations[ast_trial.trial_translation])
+        points  = points.abs()
+        max_val = points['y'].max()
+        return max_val / ast_trial.arc_len   # divide it by arc length
 
     @staticmethod
     def calc_mvt_efficiency(ast_trial, use_filtered=True):

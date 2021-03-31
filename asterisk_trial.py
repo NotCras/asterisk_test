@@ -407,13 +407,17 @@ class AsteriskTrialData:
         """ # TODO: make a pandas dataframe that contains the metrics? Easier to organize
         self.translation_fd, self.rotation_fd = acalc.calc_frechet_distance(self)
         # self.fd = am.calc_frechet_distance_all(self)
-        self.max_error = acalc.calc_max_error(self)
 
         try:
             self.mvt_efficiency, self.arc_len = acalc.calc_mvt_efficiency(self)
         except RuntimeWarning:
             self.mvt_efficiency = 0
             self.arc_len = 0
+
+        try:
+            self.max_error = acalc.calc_max_error(self)
+        except RuntimeWarning:
+            self.max_error = 0
 
         try:  # TODO: move all these try excepts to asterisk calculations
             self.area_btwn = acalc.calc_area_btwn_curves(self)
