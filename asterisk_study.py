@@ -57,13 +57,6 @@ class AsteriskStudy:
             # TODO: make a nice folder structure to help organize the data by hand
             self.data[h].save_all_data()
 
-    def generate_comparisons(self):
-        """
-        Makes Ast Analyzer objects to compare each hand to each other in sets of 2
-        :return:
-        """
-        pass
-
     def return_hand(self, hand_name):
         """
         Returns specified AsteriskHandData object
@@ -75,7 +68,7 @@ class AsteriskStudy:
         Plot data for a specific hand, with averages
         """
         hand_data = self.return_hand(hand_name)
-        hand_data.plot_avg_data()
+        hand_data.plot_ast_avg()
 
     def plot_all_hands(self, rotation="n", show_plot=True, save_plot=False):
         """
@@ -90,7 +83,7 @@ class AsteriskStudy:
             plt.subplot(2, 4, i+1)
             # get hand obj
             hd = self.data[h]
-            hd.plot_avg_data(subjects=self.subjects, rotation=rotation, show_plot=False, save_plot=False)
+            hd.plot_ast_avg(subjects=self.subjects, rotation=rotation, show_plot=False, save_plot=False)
 
             # TODO: figure out sharing x and y axis labels
 
@@ -104,13 +97,6 @@ class AsteriskStudy:
         if show_plot:
             # plt.legend()
             plt.show()
-
-
-    def plot_all_fd(self):
-        """
-        Make averaged frechet distance plots for each hand and plot them in a big subplot array
-        """
-        pass
 
 
 class AstDirAnalyzer:
@@ -213,7 +199,7 @@ class AstHandComparison:
         # everything stored as a pandas dataframe
         for h in self.hands:
             if not h.averages:  # force hand obj to calculate averages if it hasn't already
-                h.calc_avg_ast(rotation="n")  # TODO: for now, remove for later
+                h.calc_averages(rotation="n")  # TODO: for now, remove for later
 
         self.comparison_results = self.generate_results_df()
 
@@ -315,7 +301,7 @@ class AstHandComparison:
 
         # TODO: function works, but might want to tweak the colors plotted. Make one darker, one lighter
         for i, h in enumerate(self.hands):  # subjects = None makes it default to using all subjects in the average
-            h.plot_avg_data(rotation, subjects=None, show_plot=False, save_plot=False, linestyle=linestyles[i])
+            h.plot_ast_avg(rotation, subjects=None, show_plot=False, save_plot=False, linestyle=linestyles[i])
 
         self.hands[0].plot_all_target_lines(colors)
 

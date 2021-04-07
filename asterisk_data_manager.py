@@ -174,7 +174,8 @@ def smart_input(prompt, option, valid_options=None):
         "subjects": ["sub1", "sub2", "sub3"],
         "hands": ["2v2", "2v3", "3v3", "barrett", "basic", "human", "m2active", "m2stiff", "modelvf"],
         "translations": ["a", "b", "c", "d", "e", "f", "g", "h"],
-        "rotations": ["n", "m15", "p15"],
+        "translations_w_n": ["a", "b", "c", "d", "e", "f", "g", "h", "n"],
+        "rotation_combos": ["n", "m15", "p15"],
         "rotations_n_trans": ["cw", "ccw"],
         "numbers": ["1", "2", "3", "4", "5"],
         "consent": ["y", "n"]

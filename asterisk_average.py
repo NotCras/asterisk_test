@@ -572,9 +572,9 @@ class AveragedTrial(AsteriskTrialData):
 
 if __name__ == '__main__':
     # demo and test
-    h = "2v2"
-    t = "a"
-    w=25
+    h = "basic"
+    t = "c"
+    w = 10
     test1 = AsteriskTrialData(f'sub1_{h}_{t}_n_1.csv')
     test1.moving_average(window_size=w)
     test2 = AsteriskTrialData(f'sub1_{h}_{t}_n_2.csv')

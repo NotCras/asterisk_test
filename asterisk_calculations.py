@@ -176,12 +176,13 @@ class AsteriskCalculations:
         """
         calculates the max error between the ast_trial path and its target line
         If everything is rotated to C direction, then error becomes the max y value
+        Need arc length to be already calculated on the asterisk trial
         """
         points = AsteriskCalculations.rotate_points(ast_trial.poses,
                                                     AsteriskCalculations.rotations[ast_trial.trial_translation])
-        points  = points.abs()
+        points = points.abs()
         max_val = points['y'].max()
-        return max_val / ast_trial.arc_len   # divide it by arc length
+        return max_val / ast_trial.arc_len   # divide it by arc length to normalize the value
 
     @staticmethod
     def calc_mvt_efficiency(ast_trial, use_filtered=True):
@@ -315,14 +316,9 @@ class AsteriskCalculations:
 
             target_points = AsteriskCalculations.get_points_list(targets, x_center, bound_size)
 
-            # if x_max > 0.13:
-            #     pdb.set_trace()
             try:
-                #pdb.set_trace()
                 area_calculated = sm.area_between_two_curves(bounded_points_not_df, target_points)
             except ValueError or IndexError:
-                #print("error")
-                #pdb.set_trace()
                 # usually this triggers if there aren't enough points (more than one) in the window
                 # if there aren't enough points, make enough points!
                 try:

@@ -62,7 +62,7 @@ class AsteriskTrialData:
         self.target_rotation = None
 
         # metrics - predefining them
-        self.total_distance = None
+        self.total_distance = None  # TODO: get rid of separate metrics?
         self.max_error = None
         self.translation_fd = None
         self.rotation_fd = None
@@ -226,7 +226,7 @@ class AsteriskTrialData:
         Overwrites previous moving average calculations.
         :param window_size: size of moving average. Defaults to 15.
         """
-        # TODO: makes a bunch of nan values at end of data
+        # TODO: makes a bunch of nan values at end of data... how to fix?
         self.poses["f_x"] = self.poses["x"].rolling(
             window=window_size, min_periods=1).mean()
         self.poses["f_y"] = self.poses["y"].rolling(
@@ -267,11 +267,6 @@ class AsteriskTrialData:
         """
         data_x, data_y, theta = self.get_poses(use_filtered)
 
-        # experimenting...
-        # junk = 70
-        # data_x = data_x[0:(len(data_x)-junk)]
-        # data_y = data_y[0:(len(data_y)-junk)]
-
         plt.plot(data_x, data_y, color="xkcd:dark blue", label='trajectory')
 
         # plot data points separately to show angle error with marker size
@@ -304,11 +299,6 @@ class AsteriskTrialData:
             plt.yticks(np.linspace(0, aplt.round_half_up(max_y, decimals=2), 10))
         else:
             plt.yticks(np.linspace(aplt.round_half_down(min_y, decimals=2), 0, 10))
-
-        # experimenting...
-        # plt.xticks(np.linspace(-10,
-        #                        80, 10), rotation=30)
-        # plt.yticks(np.linspace(-10, 80, 10))
 
         # plt.gca().set_aspect('equal', adjustable='box')
 
@@ -349,6 +339,7 @@ class AsteriskTrialData:
         if target_line_length:
             distance_travelled = acalc.t_distance([0, 0], target_line[target_line_length + 1])
             final_target_ln = target_line[:target_line_length]
+
         else:
             distance_travelled = acalc.t_distance([0, 0], target_line[1])
             final_target_ln = target_line[:2]  # TODO: unfortunately,  we register a very small translation here
@@ -448,6 +439,6 @@ class AsteriskTrialData:
 
 
 if __name__ == '__main__':
-    test = AsteriskTrialData("sub1_basic_a_n_1.csv")
+    test = AsteriskTrialData("sub1_basic_g_n_3.csv")
     #print(test.metrics)
     test.plot_trial(use_filtered=False)

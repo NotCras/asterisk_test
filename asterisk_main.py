@@ -1,10 +1,10 @@
 from pathlib import Path
-import asterisk_hand_data as h
 from asterisk_hand_data import AsteriskHandData
 from asterisk_study import AstHandAnalyzer, AsteriskStudy
 from asterisk_aruco import batch_aruco_analysis
 import asterisk_data_manager as datamanager
 import asterisk_trial as t
+
 
 def run_ast_study():
     """
@@ -20,7 +20,7 @@ def run_ast_study():
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
     subjects = datamanager.generate_options("subjects")
-    hand_names = ["basic", "2v2"]  # ["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
+    hand_names = ["basic"] #, "2v2"]  # ["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
 
     # failed_files = []  # TODO: add ability to collect failed files
 
@@ -28,25 +28,25 @@ def run_ast_study():
         print(f"Running: {h}, {subjects}")
         # input("Please press <ENTER> to continue")  # added this for debugging by hand
 
-        # print("Analyzing aruco codes on viz data...")
-        # for s in subjects:
-        #     batch_aruco_analysis(s, h, no_rotations=True, home=home_directory)
+        print("Analyzing aruco codes on viz data...")
+        for s in subjects:
+            batch_aruco_analysis(s, h, no_rotations=True, home=home_directory)
 
         print(f"Getting {h} data...")
         data = AsteriskHandData(subjects, h, rotation="n", blocklist_file="trial_blocklist.csv")
         # data = study.return_hand(h)
 
         print(f"Getting {h} data...")
-        data.filter_data(25)  # don't use if you're using an asterisk_study obj
+        data.filter_data(10)  # don't use if you're using an asterisk_study obj
 
         print("Generating CSVs of paths...")
         data.save_all_data()
 
         print("Calculating averages...")
-        data.calc_avg_ast(rotation="n")
+        data.calc_averages(rotation="n")
 
         print("Saving plots...")
-        data.plot_avg_data(rotation="n", show_plot=False, save_plot=True)
+        data.plot_ast_avg(rotation="n", show_plot=False, save_plot=True)
         for a in data.averages:
             a.avg_debug_plot(show_plot=False, save_plot=True, use_filtered=True)
 
