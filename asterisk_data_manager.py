@@ -222,14 +222,14 @@ if __name__ == "__main__":
 
     if ans == "1":
         translation = smart_input("Enter type of translation: ", "translations")
-        rotation = smart_input("Enter type of rotation: ", "rotations")
+        rotation = smart_input("Enter type of rotation: ", "rotation_combos")
         trial_num = smart_input("Enter trial number: ", "numbers")
 
         data_manager.view_images(subject, hand, translation, rotation, trial_num)
 
     elif ans == "2":
         translation = smart_input("Enter type of translation: ", "translations")
-        rotation = smart_input("Enter type of rotation: ", "rotations")
+        rotation = smart_input("Enter type of rotation: ", "rotation_combos")
         trial_num = smart_input("Enter trial number: ", "numbers")
 
         data_manager.single_extract(subject, hand, translation, rotation, trial_num)

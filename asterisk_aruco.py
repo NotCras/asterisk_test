@@ -307,6 +307,9 @@ class ArucoPoseDetect:
         return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
     def inverse_perspective(self, rvec, tvec):
+        """
+        found you! https://aliyasineser.medium.com/calculation-relative-positions-of-aruco-markers-eee9cc4036e3
+        """
         # print(rvec)
         # print(np.matrix(rvec[0]).T)
         R, _ = cv2.Rodrigues(rvec)
@@ -493,7 +496,7 @@ if __name__ == "__main__":
 
     if ans == "1":
         translation = datamanager.smart_input("Enter type of translation: ", "translations")
-        rotation = datamanager.smart_input("Enter type of rotation: ", "rotations")
+        rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
 
         viewer = datamanager.AstData()
@@ -501,7 +504,7 @@ if __name__ == "__main__":
 
     elif ans == "2":
         translation = datamanager.smart_input("Enter type of translation: ", "translations")
-        rotation = datamanager.smart_input("Enter type of rotation: ", "rotations")
+        rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
 
         single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=home_directory)
@@ -511,7 +514,7 @@ if __name__ == "__main__":
 
     elif ans == "4":
         translation = datamanager.smart_input("Enter type of translation: ", "translations")
-        rotation = datamanager.smart_input("Enter type of rotation: ", "rotations")
+        rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
 
         file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
@@ -531,7 +534,7 @@ if __name__ == "__main__":
 
     elif ans == "5":
         translation = datamanager.smart_input("Enter type of translation: ", "translations")
-        rotation = datamanager.smart_input("Enter type of rotation: ", "rotations")
+        rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
 
         file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
