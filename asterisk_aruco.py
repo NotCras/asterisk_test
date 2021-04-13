@@ -17,6 +17,26 @@ marker_side = 0.03
 processing_freq = 1  # analyze every 1 image
 # ============================
 
+class ArucoIndices:
+    """
+    Handles data indices, beginning and ending indices
+    """
+    # TODO: throw get_indices here
+
+    @staticmethod
+    def find_indices(s, h, t, r, n):
+        """
+        Helper to get the data indices for the start and end of a trial
+        """
+        pass
+    
+    def index_gui(self):
+        """
+        Brings up matplotlib slider gui
+        """
+        pass
+
+
 def get_indices(id, file_name=None):
     """
     Gets the beginning and ending indices of the

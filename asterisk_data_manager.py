@@ -83,7 +83,10 @@ class AstData:
             self.single_extract(s, h, t, r, n)
 
 
-# TODO: move following functions into a new asterisk_naming file?
+class AstNaming:
+    pass
+
+# TODO: move following functions into a AstNaming object?
 def generate_options(key):
     """
     One function to return all sorts of parameter lists. Mainly to be used outside of data manager
