@@ -6,11 +6,13 @@
 import numpy as np
 import sys, os, time, pdb
 import cv2
-from cv2 import aruco
-from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 import asterisk_data_manager as datamanager
+from cv2 import aruco
+from pathlib import Path
+from matplotlib.widgets import Slider, Button
+
 
 # === IMPORTANT ATTRIBUTES ===
 marker_side = 0.03
@@ -29,37 +31,82 @@ class ArucoIndices:
         Helper to get the data indices for the start and end of a trial
         """
         pass
-    
-    def index_gui(self):
+
+    @staticmethod
+    def get_indices(id, file_name=None):
         """
-        Brings up matplotlib slider gui
+        Gets the beginning and ending indices of the
+        :param id:
+        :param file_name:
+        :return:
         """
-        pass
+        if file_name is not None:
+            table = pd.read_csv(file_name)
+        else:
+            # table = pd.read_csv("viz_data_indices.csv")
+            table = pd.read_csv("viz_data_indices_main.csv")
 
+        table = table.set_index("id")
+        try:
+            indices = table.loc[id]
 
-def get_indices(id, file_name=None):
-    """
-    Gets the beginning and ending indices of the
-    :param id:
-    :param file_name:
-    :return:
-    """
-    if file_name is not None:
-        table = pd.read_csv(file_name)
-    else:
-        # table = pd.read_csv("viz_data_indices.csv")
-        table = pd.read_csv("viz_data_indices_main.csv")
+        except Exception as e:
+            print("Could not find the index.")
+            print(e)
+            raise IndexError("Could not find the correct indices")
 
-    table = table.set_index("id")
-    try:
-        indices = table.loc[id]
+        return int(indices["begin_idx"]), int(indices["end_idx"])
 
-    except Exception as e:
-        print("Could not find the index.")
-        print(e)
-        raise IndexError("Could not find the correct indices")
+    def _slider_window(self, list_of_files):
+        """
+        Generates a matplotlib window with a slider that changes which image is shown
+        """
+        num_files = len(list_of_files)
 
-    return int(indices["begin_idx"]), int(indices["end_idx"])
+        # setup
+        fig, ax = plt.subplots()
+        plt.subplots_adjust(bottom=0.25)
+
+        # show initial image
+        image_id = list_of_files[0]
+        image = plt.imread(image_id)
+        plt.imshow(image)
+        plt.draw()
+
+        # setup slider
+        slider_bkd_color = "lightgoldenrodyellow"
+        axpos = plt.axes([0.25, 0.1, 0.65, 0.03], facecolor=slider_bkd_color)
+        allowed_positions = np.linspace(0, num_files-1, num_files)
+        image_pos = Slider(
+            ax=axpos,
+            label="Image Number",
+            valmin=0,
+            valmax=num_files-1,
+            valinit=0,
+            valstep=allowed_positions,
+            init_color="none"
+        )
+
+        def _slider_update(val):
+            value = image_pos.val
+            image_id = list_of_files[int(value)]
+            # TODO: plot the frame of the file
+            plt.clf()
+            image = plt.imread(image_id)
+            plt.imshow(image)
+            plt.draw()
+
+        image_pos.on_changed(_slider_update)
+
+        ax_reset = plt.axes([0.8, 0.025, 0.1, 0.04])
+        button = Button(ax_reset, 'Reset', color=slider_bkd_color, hovercolor='0.975')
+
+        def _button_update():
+            # TODO: am I missing anything here?
+            return image_pos.val
+            pass
+
+        button.on_clicked(_button_update)
 
 
 class ArucoVision:
@@ -445,7 +492,7 @@ def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=
     folder_path = f"{file_name}/"
 
     try:
-        b_idx, e_idx = get_indices(file_name)
+        b_idx, e_idx = ArucoIndices.get_indices(file_name)
     except:
         print(f"Failed to get cropped indices for {file_name}")
         e_idx = None
@@ -474,7 +521,7 @@ def batch_aruco_analysis(subject, hand, no_rotations=True, home=None):
         print(folder_path)
 
         try:
-            b_idx, e_idx = get_indices(file_name)
+            b_idx, e_idx = ArucoIndices.get_indices(file_name)
         except:
             e_idx = None
             b_idx = 0
@@ -540,7 +587,7 @@ if __name__ == "__main__":
         file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
         folder_path = f"{file_name}/"
 
-        b_idx, e_idx = get_indices(file_name)
+        b_idx, e_idx = ArucoIndices.get_indices(file_name)
         trial = ArucoVision(folder_path, begin_idx=b_idx, end_idx=e_idx)
 
         trial.filter_corners(window_size=4)  # window size 4 might be better? Very small lag
@@ -561,7 +608,7 @@ if __name__ == "__main__":
         folder_path = f"{file_name}/"
 
         try:
-            b_idx, e_idx = get_indices(file_name)
+            b_idx, e_idx = ArucoIndices.get_indices(file_name)
         except:
             e_idx = None
             b_idx = 0
