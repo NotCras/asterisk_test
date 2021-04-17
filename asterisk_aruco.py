@@ -23,14 +23,6 @@ class ArucoIndices:
     """
     Handles data indices, beginning and ending indices
     """
-    # TODO: throw get_indices here
-
-    @staticmethod
-    def find_indices(s, h, t, r, n):
-        """
-        Helper to get the data indices for the start and end of a trial
-        """
-        pass
 
     @staticmethod
     def get_indices(id, file_name=None):
@@ -57,7 +49,36 @@ class ArucoIndices:
 
         return int(indices["begin_idx"]), int(indices["end_idx"])
 
-    def _slider_window(self, list_of_files):
+    @staticmethod
+    def find_indices(folder_path):
+        """
+        Helper to get the data indices for the start and end of a trial
+        """
+        home = Path(__file__).parent.absolute()
+        os.chdir(folder_path)
+        files = [f for f in os.listdir('.') if f[-3:] == 'jpg']
+        files.sort()
+
+        # get start index
+        start = ArucoIndices._slider_window(files, title="START")
+
+        # get end index
+        end = ArucoIndices._slider_window(files, title="END", init_val=int(start+1))
+
+        print(folder_path)
+        print(f"start: {start}, end: {end}")
+
+        os.chdir(home)
+
+        if end <= start:
+            raise ValueError("starting index cannot be greater than ending index!")
+
+        return start, end
+
+        # TODO: add saving functionality, add these values to the stored index values?
+
+    @staticmethod
+    def _slider_window(list_of_files, title, init_val=0):
         """
         Generates a matplotlib window with a slider that changes which image is shown
         """
@@ -72,41 +93,67 @@ class ArucoIndices:
         image = plt.imread(image_id)
         plt.imshow(image)
         plt.draw()
+        plt.title(f"Get {title} index!")
 
         # setup slider
         slider_bkd_color = "lightgoldenrodyellow"
         axpos = plt.axes([0.25, 0.1, 0.65, 0.03], facecolor=slider_bkd_color)
-        allowed_positions = np.linspace(0, num_files-1, num_files)
+        # allowed_positions = np.linspace(0, 1, num_files).tolist()
         image_pos = Slider(
             ax=axpos,
             label="Image Number",
             valmin=0,
             valmax=num_files-1,
-            valinit=0,
-            valstep=allowed_positions,
-            init_color="none"
+            valinit=init_val,
+            valstep=1
+            #init_color="none"
         )
 
         def _slider_update(val):
-            value = image_pos.val
-            image_id = list_of_files[int(value)]
-            # TODO: plot the frame of the file
-            plt.clf()
+            print(f"val: {val}")
+            image_id = list_of_files[int(val)]
             image = plt.imread(image_id)
-            plt.imshow(image)
-            plt.draw()
+            ax.imshow(image)
+            ax.draw()  # if I use plt.draw() it will draw the image in the button's space
 
         image_pos.on_changed(_slider_update)
 
-        ax_reset = plt.axes([0.8, 0.025, 0.1, 0.04])
-        button = Button(ax_reset, 'Reset', color=slider_bkd_color, hovercolor='0.975')
+        ax_exit = plt.axes([0.8, 0.025, 0.13, 0.05])
+        ax_left = plt.axes([0.3, 0.025, 0.1, 0.05])
+        ax_right = plt.axes([0.5, 0.025, 0.1, 0.05])
 
-        def _button_update():
-            # TODO: am I missing anything here?
-            return image_pos.val
-            pass
+        button_exit = Button(ax_exit, 'Got Index!', color=slider_bkd_color, hovercolor='0.975')
+        button_left = Button(ax_left, '<-', color=slider_bkd_color, hovercolor='0.975')
+        button_right = Button(ax_right, '->', color=slider_bkd_color, hovercolor='0.975')
 
-        button.on_clicked(_button_update)
+        def _button_exit(val):
+            print(f"start index: {image_pos.val}")
+            plt.close()
+
+        def _button_left(val):
+            i = image_pos.val
+            if i <= 0:
+                i = 0
+            else:
+                i = i - 1
+
+            image_pos.set_val(i)
+
+        def _button_right(val):
+            i = image_pos.val
+            if i >= num_files-1:
+                i = num_files-1
+            else:
+                i = i + 1
+
+            image_pos.set_val(i)
+
+        button_exit.on_clicked(_button_exit)
+        button_left.on_clicked(_button_left)
+        button_right.on_clicked(_button_right)
+
+        plt.show()
+        return image_pos.val
 
 
 class ArucoVision:
@@ -555,9 +602,10 @@ if __name__ == "__main__":
             3 - aruco analyze a batch of data
             4 - validate aruco corner detection on images in slow-mo video
             5 - test whether the get_index function will get your indices correctly
+            6 - use a helper to find index values for a certain trial
         """)
 
-    ans = datamanager.smart_input("Enter a function", "mode", ["1", "2", "3", "4", "5"])
+    ans = datamanager.smart_input("Enter a function", "mode", ["1", "2", "3", "4", "5", "6"])
     subject = datamanager.smart_input("Enter subject name: ", "subjects")
     hand = datamanager.smart_input("Enter name of hand: ", "hands")
 
@@ -614,3 +662,15 @@ if __name__ == "__main__":
             b_idx = 0
 
         print(f"b: {b_idx}, e: {e_idx}")
+
+    elif ans == "6":
+        translation = datamanager.smart_input("Enter type of translation: ", "translations")
+        rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
+        trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
+
+        file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
+        folder_path = f"viz/{file_name}/"
+
+        s_i, e_i = ArucoIndices.find_indices(folder_path)
+
+
