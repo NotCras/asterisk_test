@@ -97,6 +97,9 @@ class AsteriskTrialData:
         total_path = f"{folder}{file_name}"
         try:
             df_temp = pd.read_csv(total_path, skip_blank_lines=True)
+
+            # TODO: insert garbage checks
+
             df = self._condition_df(df_temp, norm_data=norm_data)
 
         except Exception as e:  # TODO: add more specific except clauses
