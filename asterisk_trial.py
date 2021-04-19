@@ -125,7 +125,7 @@ class AsteriskTrialData:
         # TODO: is there a way I can make this directly hit each column without worrying about the order?
         # convert m to mm in translational data
         df = df * [1., 1., 1., 1000., 1000., 1000., 1., 1000.]
-        df.round(4)
+        df = df.round(4)
 
         if norm_data:
             # normalize translational data by hand span
