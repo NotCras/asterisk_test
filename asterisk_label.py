@@ -8,7 +8,8 @@ from asterisk_calculations import AsteriskCalculations
 from asterisk_plotting import AsteriskPlotting
 from asterisk_trial import AsteriskTrialData
 
-class AsteriskGarbageCollect:
+
+class AsteriskLabelling:
 
     @staticmethod
     def check_data_direction(trial_label, data):
@@ -154,9 +155,9 @@ if __name__ == "__main__":
 
     df = df.set_index("frame")
 
-    mvt_check, (tmag, mvt_threshold), (rot_magnitude, rot_threshold) = AsteriskGarbageCollect.check_for_movement(df)
-    back_check, (cumulative, back_threshold) = AsteriskGarbageCollect.check_no_backtracking(df, trial_translation,
-                                                                                            debug_rotation=True)
+    mvt_check, (tmag, mvt_threshold), (rot_magnitude, rot_threshold) = AsteriskLabelling.check_for_movement(df)
+    back_check, (cumulative, back_threshold) = AsteriskLabelling.check_no_backtracking(df, trial_translation,
+                                                                                       debug_rotation=True)
 
     print(f"{trial} -> mvt: {mvt_check}, {tmag} v {mvt_threshold} | {rot_magnitude} v {rot_threshold}")
     print(f"{trial} -> backtrack: {back_check}, {cumulative} v {back_threshold}")
