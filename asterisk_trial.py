@@ -62,17 +62,8 @@ class AsteriskTrialData:
         self.target_rotation = None
 
         # metrics - predefining them
-        self.total_distance = None  # TODO: get rid of separate metrics?
-        self.max_error = None
-        self.translation_fd = None
-        self.rotation_fd = None
-        self.fd = None
-        self.mvt_efficiency = None
-        self.arc_len = None
-        self.area_btwn = None
-        self.max_area_region = None
-        self.max_area_loc = None
-        self.metrics = None  # pd series that contains all metrics in it... TODO: to replace the rest later
+        self.total_distance = None  # total_distance is built in because of how integral it is
+        self.metrics = None  # pd series that contains all metrics in it... 
 
         if file_name:
             self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
@@ -117,7 +108,6 @@ class AsteriskTrialData:
         2) normalize translational data by hand span/depth
         3) remove extreme outlier values in data
         """
-        # TODO: move to aruco pose detection object?
         # df_numeric = df.apply(pd.to_numeric)
         df = df.set_index("frame")
 
@@ -125,7 +115,6 @@ class AsteriskTrialData:
         # TODO: is there a way I can make this directly hit each column without worrying about the order?
         # convert m to mm in translational data
         df = df * [1., 1., 1., 1000., 1000., 1000., 1., 1000.]
-        df = df.round(4)
 
         if norm_data:
             # normalize translational data by hand span
@@ -136,10 +125,18 @@ class AsteriskTrialData:
                        1.,  # yaw
                        1.]  # z - doesn't matter
             df = df.round(4)
-        # occasionally get an outlier value (probably from vision algorithm), I filter them out here
-        inlier_df = self._remove_outliers(df, ["x", "y", "rmag"])
 
-        return inlier_df.round(4)
+        # occasionally get an outlier value (probably from vision algorithm), I filter them out here
+        #inlier_df = self._remove_outliers(df, ["x", "y", "rmag"])
+        if len(df) > 10:  # for some trials with movement, this destroys the data. 10 is arbitrary
+            for col in ["x", "y", "rmag"]:
+                # see: https://stackoverflow.com/questions/23199796/detect-and-exclude-outliers-in-pandas-data-frame
+                # q_low = df_to_fix[col].quantile(0.01)
+                q_hi = df[col].quantile(0.98)  # determined empirically
+
+                df = df[(df[col] < q_hi)]  # this has got to be the problem line
+
+        return df.round(4)
 
     def is_ast_trial(self):
         return isinstance(self, AsteriskTrialData)
@@ -198,30 +195,6 @@ class AsteriskTrialData:
                 "x", "y", "rmag"])
 
         # print(f"CSV File generated with name: {new_file_name}")
-
-    def _remove_outliers(self, df_to_fix, columns):
-        """
-        Removes extreme outliers from data, in 99% quartile.
-        Occasionally this happens in the aruco analyzed data and is a necessary function to run.
-        These values completely mess up the moving average filter unless they are dealt with earlier.
-        :param df_to_fix: the dataframe to fix
-        :param columns: dataframe columns to remove outliers from
-        """
-
-        if len(df_to_fix) > 10:  # for some trials with movement, this destroys the data. 10 is arbitrary
-            for col in columns:
-                # see: https://stackoverflow.com/questions/23199796/detect-and-exclude-outliers-in-pandas-data-frame
-                # q_low = df_to_fix[col].quantile(0.01)
-                q_hi = df_to_fix[col].quantile(0.95)  # determined empirically
-
-                df_to_fix = df_to_fix[(df_to_fix[col] < q_hi)]  # this has got to be the problem line
-
-                # print(col)
-                # print(f"q_low: {q_low}")
-                # print(f"q_hi: {q_hi}")
-                # print(" ")
-
-        return df_to_fix
 
     def moving_average(self, window_size=15):
         """
@@ -379,66 +352,43 @@ class AsteriskTrialData:
 
         return target_rot
 
-    def calc_rot_err(self, use_filtered=True):
-        """
-        calculate and return the error in rotation for every data point
-        :param: use_filtered: Gives option to return filtered or unfiltered data
-        """
-
-        if self.filtered and use_filtered:
-            rots = self.poses["f_rmag"]
-        else:
-            rots = self.poses["rmag"]
-
-        # subtract desired rotation
-        rots = rots - self.target_rotation
-
-        return pd.Series.to_list(rots)
-
     def update_all_metrics(self, use_filtered=True):
         """
         Updates all metric values on the object.
-        """ # TODO: make a pandas dataframe that contains the metrics? Easier to organize
-        self.translation_fd, self.rotation_fd = acalc.calc_frechet_distance(self)
-        # self.fd = am.calc_frechet_distance_all(self)
+        """  # TODO: make a pandas dataframe that contains the metrics? Easier to organize
+        translation_fd, rotation_fd = acalc.calc_frechet_distance(self)
+        # fd = am.calc_frechet_distance_all(self)
 
         try:
-            self.mvt_efficiency, self.arc_len = acalc.calc_mvt_efficiency(self)
+            mvt_efficiency, arc_len = acalc.calc_mvt_efficiency(self)
         except RuntimeWarning:
-            self.mvt_efficiency = 0
-            self.arc_len = 0
+            mvt_efficiency = 0
+            arc_len = 0
 
         try:
-            self.max_error = acalc.calc_max_error(self)
+            max_error = acalc.calc_max_error(self)
         except RuntimeWarning:
-            self.max_error = 0
+            max_error = 0
 
         try:  # TODO: move all these try excepts to asterisk calculations
-            self.area_btwn = acalc.calc_area_btwn_curves(self)
+            area_btwn = acalc.calc_area_btwn_curves(self)
         except:
-            self.area_btwn = 0
+            area_btwn = 0
 
         try:  # this one is particularly troublesome
-            self.max_area_region, self.max_area_loc = acalc.calc_max_area_region(self)
+            max_area_region, max_area_loc = acalc.calc_max_area_region(self)
         except IndexError:
             print("Max area region failed")
-            self.max_area_region = 0
-            self.max_area_loc = 0
-        #pdb.set_trace()
+            max_area_region = 0
+            max_area_loc = 0
 
         metric_dict = {"trial": self.generate_name(), "dist": self.total_distance,
-                       "t_fd": self.translation_fd, "r_fd": self.rotation_fd,  # "fd": self.fd
-                       "max_err": self.max_error, "mvt_eff": self.mvt_efficiency, "arc_len": self.arc_len,
-                       "area_btwn": self.area_btwn, "max_a_reg": self.max_area_region, "max_a_loc": self.max_area_loc}
+                       "t_fd": translation_fd, "r_fd": rotation_fd,  # "fd": fd
+                       "max_err": max_error, "mvt_eff": mvt_efficiency, "arc_len": arc_len,
+                       "area_btwn": area_btwn, "max_a_reg": max_area_region, "max_a_loc": max_area_loc}
 
         self.metrics = pd.Series(metric_dict)
         return self.metrics
-
-    def print_metrics(self):
-        """
-        Print out a report with all the metrics, useful for debugging
-        """
-        pass
 
 
 if __name__ == '__main__':

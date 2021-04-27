@@ -25,25 +25,9 @@ class AveragedTrial(AsteriskTrialData):
 
         # just reminding that these are here
         self.total_distance = None
-        self.max_error = None
-        self.translation_fd = None
-        self.rotation_fd = None
-        self.fd = None
-        self.mvt_efficiency = None
-        self.arc_len = None
-        self.area_btwn = None
-        self.max_area_region, self.max_area_loc = None, None
         self.metrics = None
 
         self.total_distance_sd = None
-        self.max_error_sd = None
-        self.translation_fd_sd = None
-        self.fd_sd = None
-        self.rotation_fd_sd = None
-        self.mvt_efficiency_sd = None
-        self.arc_len_sd = None
-        self.area_btwn_sd = None
-        self.max_area_region_sd, self.max_area_loc_sd = None, None
         self.metrics_sd = None
 
     def get_poses_ad(self, which_set=0):
@@ -128,7 +112,10 @@ class AveragedTrial(AsteriskTrialData):
         # go through each trial, grab relevant values and add them to sum
         # first index is the value, second is the standard deviation of the value
         values = {"dist": (0, 0), "t_fd": (0, 0), "r_fd": (0, 0), "mvt_eff": (0, 0), "btwn": (0, 0), # "fd": self.fd
-                  "max_err": (0, 0), "max_a_reg": (0, 0), "max_a_loc": (0, 0), "arc_len": (0,0)}
+                  "max_err": (0, 0), "max_a_reg": (0, 0), "max_a_loc": (0, 0), "arc_len": (0, 0)}
+
+        metric_names = ["dist", "t_fd", "r_fd", "mvt_eff", "btwn", "max_err", "max_a_reg", "max_a_loc", "arc_len"]
+
         dist_vals = []
         t_fd_vals = []
         r_fd_vals = []
@@ -141,79 +128,52 @@ class AveragedTrial(AsteriskTrialData):
         arc_lens = []
 
         for t in self.averaged_trials:
-            dist_vals.append(t.total_distance)
-            t_fd_vals.append(t.translation_fd)
-            r_fd_vals.append(t.rotation_fd)
-            mvt_eff_vals.append(t.mvt_efficiency)
-            btwn_vals.append(t.area_btwn)
-            # fd_vals.append(t.fd)
-            err_vals.append(t.max_error)
-            reg_vals.append(t.max_area_region)
-            loc_vals.append(t.max_area_loc)
-            arc_lens.append(t.arc_len)
+            metrics = t.metrics
+            dist_vals.append(metrics["dist"])
+            t_fd_vals.append(metrics["t_fd"])
+            r_fd_vals.append(metrics["r_fd"])
+            mvt_eff_vals.append(metrics["mvt_eff"])
+            btwn_vals.append(metrics["btwn"])
+            # fd_vals.append(metrics["fd"])
+            err_vals.append(metrics["max_err"])
+            reg_vals.append(metrics["max_a_reg"])
+            loc_vals.append(metrics["max_a_loc"])
+            arc_lens.append(metrics["arc_len"])
 
         try:
-            values["dist"] = (mean(dist_vals), std(dist_vals))
-            values["t_fd"] = (mean(t_fd_vals), std(t_fd_vals))
-            values["r_fd"] = (mean(r_fd_vals), std(r_fd_vals))
-            values["mvt_eff"] = (mean(mvt_eff_vals), std(mvt_eff_vals))
-            values["btwn"] = (mean(btwn_vals), std(btwn_vals))
-            # values["fd"] = (mean(fd_vals), std(fd_vals))
-            values["max_err"] = (mean(err_vals), std(err_vals))
-            values["max_a_reg"] = (mean(reg_vals), std(reg_vals))
-            values["max_a_loc"] = (mean(loc_vals), std(loc_vals))
-            values["arc_len"] = (mean(arc_lens), std(arc_lens))
+            for key, value_list in zip(metric_names, [dist_vals, t_fd_vals, r_fd_vals, mvt_eff_vals, btwn_vals, #fd_vals
+                                                      err_vals, reg_vals, loc_vals, arc_lens]):
+                values[key] = (mean(value_list), std(value_list))
+
         except Exception as e:
             print("Averaging Metrics Failed")
-            null_val = (0.,0.)
-            values["dist"] = null_val
-            values["t_fd"] = null_val
-            values["r_fd"] = null_val
-            values["mvt_eff"] = null_val
-            values["btwn"] = null_val
-            # values["fd"] = null_val
-            values["max_err"] = null_val
-            values["max_a_reg"] = null_val
-            values["max_a_loc"] = null_val
-            values["arc_len"] = null_val
+            print(f"Metric that failed: {key}")
+            print(e)
+            # TODO: make the rest of the metrics that failed a null value and keep the successes
+            null_val = (0., 0.)
 
-        self.total_distance = values["dist"][0]
-        self.total_distance_sd = values["dist"][1]
-        self.translation_fd = values["t_fd"][0]
-        self.translation_fd_sd = values["t_fd"][1]
-        self.rotation_fd = values["r_fd"][0]
-        self.rotation_fd_sd = values["r_fd"][1]
-        self.mvt_efficiency = values["mvt_eff"][0]
-        self.mvt_efficiency_sd = values["mvt_eff"][1]
-        self.area_btwn = values["btwn"][0]
-        self.area_btwn_sd = values["btwn"][1]
-        self.max_error = values["max_err"][0]
-        self.max_error_sd = values["max_err"][1]
-        # self.fd = values["fd"][0]
-        # self.fd_sd =  = values["fd"][1]
-        self.max_area_region = values["max_a_reg"][0]
-        self.max_area_region_sd = values["max_a_reg"][1]
-        self.max_area_loc = values["max_a_loc"][0]
-        self.max_area_loc_sd = values["max_a_loc"][1]
-        self.arc_len = values["arc_len"][0]
-        self.arc_len_sd = values["arc_len"][1]
+            # set all the keys to a null value
+            for key in metric_names:
+                values[key] = null_val
 
-        metric_dict = {"trial": self.generate_name(), "dist": self.total_distance,
-                       "t_fd": self.translation_fd, "r_fd": self.rotation_fd,  # "fd": self.fd
-                       "max_err": self.max_error, "mvt_eff": self.mvt_efficiency, "arc_len": self.arc_len,
-                       "area_btwn": self.area_btwn, "max_a_reg": self.max_area_region, "max_a_loc": self.max_area_loc}
+
+        metric_dict = {"trial": self.generate_name(), "dist": values["dist"][0],
+                       "t_fd": values["t_fd"][0], "r_fd": values["r_fd"][0],  # "fd": values["fd"][0]
+                       "max_err": values["max_err"][0], "mvt_eff": values["mvt_eff"][0],
+                       "arc_len": values["arc_len"][0], "area_btwn": values["btwn"][0],
+                       "max_a_reg": values["max_a_reg"][0], "max_a_loc": values["max_a_loc"][0]}
 
         self.metrics = pd.Series(metric_dict)
 
-        metric_sd_dict = {"trial": self.generate_name(), "dist_sd": self.total_distance_sd,
-                          "t_fd_sd": self.translation_fd_sd, "r_fd_sd": self.rotation_fd_sd,  # "fd_sd": self.fd
-                          "max_err_sd": self.max_error_sd, "mvt_eff_sd": self.mvt_efficiency_sd,
-                          "arc_len": self.arc_len_sd, "area_btwn_sd": self.area_btwn_sd,
-                          "max_a_reg_sd": self.max_area_region_sd, "max_a_loc_sd": self.max_area_loc_sd}
+        metric_sd_dict = {"trial": self.generate_name(), "dist": values["dist"][1],
+                       "t_fd": values["t_fd"][1], "r_fd": values["r_fd"][1],  # "fd": values["fd"][1]
+                       "max_err": values["max_err"][1], "mvt_eff": values["mvt_eff"][1],
+                       "arc_len": values["arc_len"][1], "area_btwn": values["btwn"][1],
+                       "max_a_reg": values["max_a_reg"][1], "max_a_loc": values["max_a_loc"][1]}
 
-        self.metric_sds = pd.Series(metric_sd_dict)
+        self.metric_sds = pd.Series(metric_sd_dict) # TODO: add into one pd dataframe -> value, sd?
 
-        return self.total_distance, self.translation_fd, self.rotation_fd, self.mvt_efficiency, self.area_btwn
+        return self.metrics
 
     def _get_prev_avgs(self, i, avg_pts, at_avg_pt):
         """
