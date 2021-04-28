@@ -12,6 +12,14 @@ from asterisk_trial import AsteriskTrialData
 class AsteriskLabelling:
 
     @staticmethod
+    def assess_distances(ast_trial):
+        """
+        Assess how close the arc len and distance projections are. Depending on what we see, might have to
+        add a flag onto the object
+        """
+        pass
+
+    @staticmethod
     def check_data_direction(trial_label, data):
         """
         True if data doesn't deviate too much, False if it does

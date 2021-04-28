@@ -63,7 +63,9 @@ class AsteriskTrialData:
 
         # metrics - predefining them
         self.total_distance = None  # total_distance is built in because of how integral it is
-        self.metrics = None  # pd series that contains all metrics in it... 
+        self.metrics = None  # pd series that contains all metrics in it... populate it with update_all_metrics
+        
+        self.labels = []  # list of string labels that indicate qualitative (automated) observations about the data
 
         if file_name:
             self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
