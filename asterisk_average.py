@@ -45,6 +45,7 @@ class AveragedTrial(AsteriskTrialData):
             x = self.pose_ad_down["x"]
             y = self.pose_ad_down["y"]
             twist = self.pose_ad_down["rmag"]
+
         else:
             x = self.pose_ad["x"]
             y = self.pose_ad["y"]

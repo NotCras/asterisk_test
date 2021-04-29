@@ -12,11 +12,35 @@ from asterisk_trial import AsteriskTrialData
 class AsteriskLabelling:
 
     @staticmethod
-    def assess_distances(ast_trial):
+    def assess_distances(ast_trial, use_filtered=True):
         """
         Assess how close the arc len and distance projections are. Depending on what we see, might have to
         add a flag onto the object
         """
+        # todo: need to add rotate points
+        # TODO: need to make rotate_points more efficient... use apply or something?
+        test_df = ast_trial.poses
+
+        last_point = ast_trial.get_last_pose()
+        dm = AsteriskCalculations.t_distance([last_point[0], last_point[1]], [0, 0])
+        dx = last_point[0]
+        dy = last_point[1]
+
+        _, s_check = AsteriskCalculations.calc_mvt_efficiency(ast_trial)
+        s = 0
+        sx = test_df["x"].abs().sum()  # TODO: or do filtered...
+        sy = test_df["y"].abs().sum()
+
+        if sy > 0.1 and dm - 0.1 <= dx <= dm + 0.1:  # TODO: ran out of time, go through decision tree more
+            pass  # back and forth movement
+        elif sy > 0.1:
+            pass  # significant backtracking
+
+        if sx > 2*dx:
+            pass  # significant backtracking
+
+
+
         pass
 
     @staticmethod

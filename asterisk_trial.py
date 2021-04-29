@@ -64,7 +64,7 @@ class AsteriskTrialData:
         # metrics - predefining them
         self.total_distance = None  # total_distance is built in because of how integral it is
         self.metrics = None  # pd series that contains all metrics in it... populate it with update_all_metrics
-        
+
         self.labels = []  # list of string labels that indicate qualitative (automated) observations about the data
 
         if file_name:
@@ -235,6 +235,16 @@ class AsteriskTrialData:
         return_twist = pd.Series.to_list(twist.dropna())
 
         return return_x, return_y, return_twist
+
+    def interate_poses(self, use_filtered=True):
+        """
+        Generator to go through each pose in order
+        """
+        if self.filtered and use_filtered:
+            pass
+        else:
+            pass
+        pass
 
     def plot_trial(self, use_filtered=True, show_plot=True, save_plot=False):
         """
