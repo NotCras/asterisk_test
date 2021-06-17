@@ -332,26 +332,73 @@ class AsteriskHandData:
             # plt.legend()  # TODO: showing up weird, need to fix
             plt.show()
 
-    def plot_all_target_lines(self, order_of_colors):
+    def plot_all_target_lines(self, order_of_colors, specific_lines=None):
         """
         Plot all target lines on a plot for easy reference
         :param order_of_colors:
         """
-        x_a, y_a = aplt.get_a()
-        x_b, y_b = aplt.get_b()
-        x_c, y_c = aplt.get_c()
-        x_d, y_d = aplt.get_d()
-        x_e, y_e = aplt.get_e()
-        x_f, y_f = aplt.get_f()
-        x_g, y_g = aplt.get_g()
-        x_h, y_h = aplt.get_h()
+        if specific_lines is None:
+            x_a, y_a = aplt.get_a()
+            x_b, y_b = aplt.get_b()
+            x_c, y_c = aplt.get_c()
+            x_d, y_d = aplt.get_d()
+            x_e, y_e = aplt.get_e()
+            x_f, y_f = aplt.get_f()
+            x_g, y_g = aplt.get_g()
+            x_h, y_h = aplt.get_h()
 
-        ideal_xs = [x_a, x_b, x_c, x_d, x_e, x_f, x_g, x_h]
-        ideal_ys = [y_a, y_b, y_c, y_d, y_e, y_f, y_g, y_h]
+            ideal_xs = [x_a, x_b, x_c, x_d, x_e, x_f, x_g, x_h]
+            ideal_ys = [y_a, y_b, y_c, y_d, y_e, y_f, y_g, y_h]
 
-        for i in range(8):
-            plt.plot(ideal_xs[i], ideal_ys[i], color=order_of_colors[i], label='ideal', linestyle='--')
+            for i in range(8):
+                plt.plot(ideal_xs[i], ideal_ys[i], color=order_of_colors[i], label='ideal', linestyle='--')
 
+        else:  # there are specific directions you want to plot, and only those directions
+            ideal_xs = list()
+            ideal_ys = list()
+
+            if "a" in specific_lines:
+                x_a, y_a = aplt.get_a()
+                ideal_xs.append(x_a)
+                ideal_ys.append(y_a)
+
+            if "b" in specific_lines:
+                x_b, y_b = aplt.get_b()
+                ideal_xs.append(x_b)
+                ideal_ys.append(y_b)
+
+            if "c" in specific_lines:
+                x_c, y_c = aplt.get_c()
+                ideal_xs.append(x_c)
+                ideal_ys.append(y_c)
+
+            if "d" in specific_lines:
+                x_d, y_d = aplt.get_d()
+                ideal_xs.append(x_d)
+                ideal_ys.append(y_d)
+
+            if "e" in specific_lines:
+                x_e, y_e = aplt.get_e()
+                ideal_xs.append(x_e)
+                ideal_ys.append(y_e)
+
+            if "f" in specific_lines:
+                x_f, y_f = aplt.get_f()
+                ideal_xs.append(x_f)
+                ideal_ys.append(y_f)
+
+            if "g" in specific_lines:
+                x_g, y_g = aplt.get_g()
+                ideal_xs.append(x_g)
+                ideal_ys.append(y_g)
+
+            if "h" in specific_lines:
+                x_h, y_h = aplt.get_h()
+                ideal_xs.append(x_h)
+                ideal_ys.append(y_h)
+
+            for i in range(len(ideal_xs)):
+                plt.plot(ideal_xs[i], ideal_ys[i], color=order_of_colors[i], label='ideal', linestyle='--')
 
 if __name__ == '__main__':
     h = AsteriskHandData(["sub1", "sub2", "sub3"], "basic", rotation="n")
