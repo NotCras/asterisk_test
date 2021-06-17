@@ -118,6 +118,9 @@ class AsteriskHandData:
         :param rotation_label: name of rotation trials
         :param trial_num: trial numbers to include, default parameter
         """
+        # TODO: Change things so that we have some way to know when the trials were all no mvt or deviation
+        # Maybe make it return None? then we can return all dictionary keys that don't return none in the other func
+
         gathered_data = list()
         for s in subjects:  # TODO: subjects is a list, make a type recommendation?
             for n in trials:
@@ -132,7 +135,7 @@ class AsteriskHandData:
                     print(f"{trial_data.generate_name()}, labels: {trial_data.labels}")
 
                     if "no_mvt" not in trial_data.labels and "deviation" not in trial_data.labels:
-                        # pdb.set_trace()
+
                         gathered_data.append(trial_data)
 
                     else:
