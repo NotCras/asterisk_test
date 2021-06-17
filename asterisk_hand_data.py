@@ -61,28 +61,54 @@ class AsteriskHandData:
         if rotation is None:
             for t, r in datamanager.generate_t_r_pairs(self.hand.get_name()):
                 key = f"{t}_{r}"
-                data_dictionary[key] = self._make_asterisk_trials(subjects, t, r,
+                data = self._make_asterisk_trials(subjects, t, r,
                                                                   datamanager.generate_options("numbers"),
                                                                   blocklist=blocklist)
+                if data:
+                    data_dictionary[key] = data
+                else:
+                    print(f"{key} not included, no valid data")
 
-        elif rotation in datamanager.generate_options("rotation_combos"):  # TODO: also add a check for just cw and ccw
+        elif rotation in datamanager.generate_options("rotations"):
             for t in datamanager.generate_options("translations"):
                 key = f"{t}_{rotation}"
-                data_dictionary[key] = self._make_asterisk_trials(subjects, t, rotation,
+                data = self._make_asterisk_trials(subjects, t, rotation,
                                                                   datamanager.generate_options("numbers"),
                                                                   blocklist=blocklist)
+                if data:
+                    data_dictionary[key] = data
+                    # pdb.set_trace()
+                else:
+                    print(f"{key} not included, no valid data")
+                    # pdb.set_trace()
 
         elif rotation in datamanager.generate_options("rotations_n_trans"):
             key = f"n_{rotation}"
-            data_dictionary[key] = self._make_asterisk_trials(subjects, "n", rotation,
+            data = self._make_asterisk_trials(subjects, "n", rotation,
                                                               datamanager.generate_options("numbers"),
                                                               blocklist=blocklist)
+            if data:
+                data_dictionary[key] = data
+            else:
+                print(f"{key} not included, no valid data")
 
         else:
             print("invalid key")
             data_dictionary = None
 
         return data_dictionary
+
+    def _get_directions_in_data(self):
+        """
+        Returns a list of trial directions that exist in the data
+        :return:
+        """
+        list_of_dirs = list()
+        for k in list(self.data.keys()):
+            if k[0] is not "n":
+                list_of_dirs.append(k[0])
+
+        return list_of_dirs
 
     def _make_asterisk_trials(self, subjects, translation_label, rotation_label, trials, blocklist=None):
         """
@@ -103,12 +129,21 @@ class AsteriskHandData:
 
                 try:
                     trial_data = trial.AsteriskTrialData(f"{asterisk_trial}.csv")
+                    print(f"{trial_data.generate_name()}, labels: {trial_data.labels}")
 
-                    gathered_data.append(trial_data)
+                    if "no_mvt" not in trial_data.labels and "deviation" not in trial_data.labels:
+                        # pdb.set_trace()
+                        gathered_data.append(trial_data)
+
+                    else:
+                        print(f"{trial_data.generate_name()} failed (no mvt or deviation), not including file.")
+                        continue
+                    #print(" ")
 
                 except Exception as e:
                     print(e)
                     print("Skipping.")
+                    #print(" ")
                     continue
 
         return gathered_data
@@ -193,8 +228,13 @@ class AsteriskHandData:
 
         average = AveragedTrial()
         # average.make_average_line(trials)
-        average.calculate_avg_line(trials)
-        return average
+        if trials:
+            average.calculate_avg_line(trials)
+            return average
+
+        else:
+            print(f"No trials for {translation}_{rotation}, skipping averaging.")
+            return None
 
     def calc_averages(self, subjects=None, rotation=None):
         """
@@ -206,15 +246,26 @@ class AsteriskHandData:
         if subjects is None:  # if no subjects given, defaults to all subjects
             subjects = self.subjects_containing
 
+        dirs = self._get_directions_in_data()
+        print(f"Directions included: {dirs}")
+
         if rotation is None:
             # TODO: make this smarter, so that we base the list on what exists on object
             for t, r in datamanager.generate_t_r_pairs(self.hand.get_name()):
-                avg = self._average_dir(t, r, subjects)
-                averages.append(avg)
+                # make sure that we only include translations that are in the data
+                if t in dirs:
+                    print(f"Averaging {t}")
+                    avg = self._average_dir(t, r, subjects)
+                    if avg is not None:
+                        averages.append(avg)
         else:
             for t in datamanager.generate_options("translations"):
-                avg = self._average_dir(translation=t, rotation=rotation, subject=subjects)
-                averages.append(avg)
+                # make sure that we only include translations that are in the data
+                if t in dirs:
+                    print(f"Averaging {t}")
+                    avg = self._average_dir(translation=t, rotation=rotation, subject=subjects)
+                    if avg is not None:
+                        averages.append(avg)
 
         self.averages = averages
         return averages
@@ -261,8 +312,21 @@ class AsteriskHandData:
             if stds:  # only for AsteriskAverage objs
                 t.plot_sd(colors[i])
 
-        # plot target lines as dotted lines
-        self.plot_all_target_lines(colors)
+        # plot orientation error
+
+        # pdb.set_trace()
+
+        # get all the averages that we have
+        avg_labels = list()
+        for a in self.averages:
+            avg_labels.append(a.trial_translation)
+
+        if len(avg_labels) == 8:
+            # plot target lines as dotted lines
+            self.plot_all_target_lines(colors) # TODO: maybe make set colors for each direction
+        else:
+            self.plot_all_target_lines(colors, avg_labels)
+
         plt.title(f"{self.hand.get_name()} avg asterisk, rot: {trials[0].trial_rotation}")
         plt.xticks(np.linspace(-0.6, 0.6, 13), rotation=30)
         plt.yticks(np.linspace(-0.6, 0.6, 13))
@@ -319,7 +383,9 @@ class AsteriskHandData:
             for a in avgs:
                 a.plot_line_contributions()
 
-        plt.title(f"Avg {self.hand.get_name()}, {subjects}, {rotation}")
+        # TODO: add orientation markers to each line so we have some idea of orientation along the path
+        # TODO: add attributes for object shape, size, and initial position!
+        plt.title(f"Avg {self.hand.get_name()}, {subjects}, {rotation}, Cube (0.25 span), 0.75 depth init pos")
 
         if save_plot:
             plt.savefig(f"pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{rotation}.jpg", format='jpg')
@@ -401,7 +467,7 @@ class AsteriskHandData:
                 plt.plot(ideal_xs[i], ideal_ys[i], color=order_of_colors[i], label='ideal', linestyle='--')
 
 if __name__ == '__main__':
-    h = AsteriskHandData(["sub1", "sub2", "sub3"], "basic", rotation="n")
+    h = AsteriskHandData(["sub1", "sub2", "sub3"], "2v2", rotation="n")
     h.filter_data()
 
     # # subject 1 averages

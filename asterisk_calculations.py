@@ -67,6 +67,22 @@ class AsteriskCalculations:
         pass
 
     @staticmethod
+    def angle_between(pose1, pose2):
+        """
+        Calculates angle between two poses as if they were lines from the origin. Uses the determinant.
+        :param pose1:
+        :param pose2:
+        :return:
+        """
+        M_dot = np.dot(pose1, pose2)
+        mag_t = np.sqrt(pose1[0]**2 + pose1[1]**2)
+        mag_pt = np.sqrt(pose2[0]**2 + pose2[1]**2)
+        mags = mag_t * mag_pt
+        rad = np.arccos(M_dot / mags)
+        angle = np.rad2deg(rad)
+        return angle
+
+    @staticmethod
     def narrow_target(obj_pose, target_poses, scl_ratio=(0.5, 0.5)) -> int:
         """ narrow down the closest point on the target poses
         :param obj_pose last object pose Pose2D
@@ -172,7 +188,7 @@ class AsteriskCalculations:
         return fd
 
     @staticmethod
-    def calc_max_error(ast_trial):
+    def calc_max_error(ast_trial, arc_length):
         """
         calculates the max error between the ast_trial path and its target line
         If everything is rotated to C direction, then error becomes the max y value
@@ -182,7 +198,7 @@ class AsteriskCalculations:
                                                     AsteriskCalculations.rotations[ast_trial.trial_translation])
         points = points.abs()
         max_val = points['y'].max()
-        return max_val / ast_trial.arc_len   # divide it by arc length to normalize the value
+        return max_val / arc_length # ast_trial.metrics["arc_len"]   # divide it by arc length to normalize the value
 
     @staticmethod
     def calc_mvt_efficiency(ast_trial, use_filtered=True):

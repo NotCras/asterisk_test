@@ -71,7 +71,15 @@ class AsteriskTrialData:
             self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
             self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
-            if do_metrics and self.poses is not None:
+            if self.total_distance < 0.1:
+                self.labels.append("no_mvt")
+                print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
+
+            if self.assess_path_deviation():
+                self.labels.append("deviation")
+                print(f"Detected major deviation in {self.generate_name()}. Labelled trial.")
+
+            if do_metrics and self.poses is not None and "no_mvt" not in self.labels:
                 self.update_all_metrics()
 
     def add_hand(self, hand_name):
@@ -236,7 +244,7 @@ class AsteriskTrialData:
 
         return return_x, return_y, return_twist
 
-    def interate_poses(self, use_filtered=True):
+    def iterate_poses(self, use_filtered=True):
         """
         Generator to go through each pose in order
         """
@@ -308,6 +316,32 @@ class AsteriskTrialData:
         """
         return self.poses.dropna().tail(1).to_numpy()[0]
 
+    def assess_path_deviation(self, threshold=40):
+        """
+        Returns true if value
+        :return:
+        """
+        last_target_pt = self.target_line[-1]
+        path_x, path_y, _ = self.get_poses()
+
+        for x, y in zip(path_x[1:], path_y[1:]):
+            if x == 0 and y == 0:  # skip points at the origin
+                continue
+
+            # noise at the origin makes HUGE deviations... how should I avoid it?
+            # avoid points that are really short
+            mag_pt = np.sqrt(x ** 2 + y ** 2)
+            if mag_pt < 0.1:
+                continue
+
+            angle_btwn = acalc.angle_between(last_target_pt, [x,y])
+
+            if angle_btwn > threshold or angle_btwn < -threshold:
+                print(f"Greater than {threshold} deg deviation detected ({angle_btwn}) at pt: ({x}, {y})")
+                return True
+
+        return False
+
     def generate_target_line(self, n_samples=100):
         """
         Using object trajectory (self.poses), build a line to compare to for frechet distance.
@@ -378,7 +412,7 @@ class AsteriskTrialData:
             arc_len = 0
 
         try:
-            max_error = acalc.calc_max_error(self)
+            max_error = acalc.calc_max_error(self, arc_len)
         except RuntimeWarning:
             max_error = 0
 
@@ -394,6 +428,7 @@ class AsteriskTrialData:
             max_area_region = 0
             max_area_loc = 0
 
+        # TODO: Make getters for each metric - can also return none if its not calculated
         metric_dict = {"trial": self.generate_name(), "dist": self.total_distance,
                        "t_fd": translation_fd, "r_fd": rotation_fd,  # "fd": fd
                        "max_err": max_error, "mvt_eff": mvt_efficiency, "arc_len": arc_len,

@@ -31,8 +31,8 @@ class AsteriskPlotting:
     # well, what I can do is do a linspace for both x and y...
     # its straightforward because these are perfect lines we are drawing
     @staticmethod
-    def straight(num_points=25, mod=1):
-        vals = np.linspace(0, 0.5, num_points)
+    def straight(num_points=25, mod=1, max=0.5):
+        vals = np.linspace(0, max, num_points)
         z = np.zeros(num_points)
 
         set1 = mod * vals
@@ -69,7 +69,7 @@ class AsteriskPlotting:
 
     @staticmethod
     def get_e(num_points=25):
-        y_coords, x_coords = AsteriskPlotting.straight(num_points, mod=-1)
+        y_coords, x_coords = AsteriskPlotting.straight(num_points, mod=-1, max=0.75)
         return x_coords, y_coords
 
     @staticmethod

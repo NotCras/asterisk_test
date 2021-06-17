@@ -134,7 +134,7 @@ class AveragedTrial(AsteriskTrialData):
             t_fd_vals.append(metrics["t_fd"])
             r_fd_vals.append(metrics["r_fd"])
             mvt_eff_vals.append(metrics["mvt_eff"])
-            btwn_vals.append(metrics["btwn"])
+            btwn_vals.append(metrics["area_btwn"])
             # fd_vals.append(metrics["fd"])
             err_vals.append(metrics["max_err"])
             reg_vals.append(metrics["max_a_reg"])
