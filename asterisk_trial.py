@@ -270,7 +270,7 @@ class AsteriskTrialData:
         #     # TODO: rn having difficulty doing marker size in a batch, so plotting each point separately
         #     plt.plot(data_x[n], data_y[n], 'r.',
         #              alpha=0.5, markersize=5*theta[n])
-        self.plot_orientations()
+        self.plot_orientations(scale=1.0)
 
         target_x, target_y = [], []
         for t in self.target_line:
@@ -311,7 +311,7 @@ class AsteriskTrialData:
             plt.legend()
             plt.show()
 
-    def plot_orientations(self, positions=[0.25, 0.5, 0.75], scale=1.3):
+    def plot_orientations(self, marker_scale=25, positions=[0.25, 0.5, 0.75], scale=0.75):
         """
         Makes a dial at points indicating the current rotation at that point.
         It won't do it for every point, that is indicated in positions.
@@ -320,43 +320,53 @@ class AsteriskTrialData:
         :return:
         """
         # TODO: make positions not mutable so the error stops annoying me
-        marker_size = str(max(int(10*scale), 1))
+        marker_size = str(max(int(marker_scale*scale), 1))
         x_data, y_data, t_data = self.get_poses()
         size_data = len(x_data)
+
+        dox = 0.
+        doy = scale * 0.005
 
         if positions is not None:
             for spot in positions:
                 idx = int(spot * size_data)
                 x = x_data[idx]
                 y = y_data[idx]
-                t = t_data[idx]
+                t = t_data[idx] * 2 # multiply by 2 to make it on a scale of 180
 
                 plt.plot(x, y, marker="o", markersize=marker_size, color="xkcd:slate")
-                dx = scale * 0.01 * np.sin(np.pi*t/180.)
-                dy = scale * 0.01 * np.cos(np.pi*t/180.)
+                dx = scale * 0.005 * np.sin(np.pi*t/180.)
+                dy = scale * 0.005 * np.cos(np.pi*t/180.)
 
-                plt.plot([x,x+dx], [y,y+dy], linewidth=0.5, color="xkcd:cream")
+                plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
+                plt.plot([x, x + dx], [y, y + dy], linewidth=0.5, color="xkcd:pinky red")
 
         else:
             # go through each point
             for x, y, t in zip(x_data, y_data, t_data):
                 plt.plot(x, y, marker="o", markersize=marker_size, color="xkcd:slate")
-                dx = scale * 0.01 * np.cos(np.pi * t / 180.)
-                dy = scale * 0.01 * np.sin(np.pi * t / 180.)
+                dx = scale * 0.005 * np.cos(np.pi * t / 180.)
+                dy = scale * 0.005 * np.sin(np.pi * t / 180.)
 
-                plt.plot([x, x + dx], [y, y + dy], linewidth=0.5, color="xkcd:cream")
+                plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
+                plt.plot([x, x + dx], [y, y + dy], linewidth=0.5, color="xkcd:pinky red")
+
+                # poly = [[x, y], [x + dox, y + doy], [x + dx, y + dy]]
+                # polyg = plt.Polygon(poly, color="xkcd:cream", alpha=0.9)
+                # plt.gca().add_patch(polyg)
 
         # always includes the last point
         x = x_data[size_data-1]
         y = y_data[size_data-1]
-        t = t_data[size_data-1]
-        print(f"{x}, {y}, r {t}")
+        t = t_data[size_data-1] * 2
+        #print(f"{x}, {y}, r {t}")
 
         plt.plot(x, y, marker="o", markersize=marker_size, color="xkcd:slate")
-        dx = scale * 0.01 * np.sin(np.pi * t / 180.)
-        dy = scale * 0.01 * np.cos(np.pi * t / 180.)
+        dx = scale * 0.005 * np.sin(np.pi * t / 180.)
+        dy = scale * 0.005 * np.cos(np.pi * t / 180.)
 
-        plt.plot([x, x + dx], [y, y + dy], linewidth=0.5, color="xkcd:cream")
+        plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
+        plt.plot([x, x + dx], [y, y + dy], linewidth=0.5, color="xkcd:pinky red")
 
     def get_last_pose(self):
         """
@@ -487,6 +497,6 @@ class AsteriskTrialData:
 
 
 if __name__ == '__main__':
-    test = AsteriskTrialData("sub1_basic_g_n_3.csv")
+    test = AsteriskTrialData("sub2_2v2_c_n_3.csv")
     #print(test.metrics)
     test.plot_trial(use_filtered=False)

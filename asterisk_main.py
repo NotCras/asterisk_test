@@ -20,7 +20,7 @@ def run_ast_study():
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
     subjects = datamanager.generate_options("subjects")
-    hand_names = ["basic"] #, "2v2"]  # ["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
+    hand_names = ["basic", "2v2"]  # ["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
 
     # failed_files = []  # TODO: add ability to collect failed files
 

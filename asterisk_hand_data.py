@@ -105,7 +105,7 @@ class AsteriskHandData:
         """
         list_of_dirs = list()
         for k in list(self.data.keys()):
-            if k[0] is not "n":
+            if k[0] != "n":
                 list_of_dirs.append(k[0])
 
         return list_of_dirs
@@ -324,7 +324,7 @@ class AsteriskHandData:
             plt.plot(data_x, data_y, color=colors[i], label='trajectory', linestyle=linestyle)
 
             # plot orientation error
-            t.plot_orientations(scale=0.9)
+            t.plot_orientations(marker_scale=15, scale=1.0)
 
             if stds:  # only for AsteriskAverage objs
                 t.plot_sd(colors[i])
