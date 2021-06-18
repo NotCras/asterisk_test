@@ -306,19 +306,6 @@ class AsteriskHandData:
 
         plt.figure(figsize=(7, 7))
 
-        # plot data
-        for i, t in enumerate(trials):
-            data_x, data_y, theta = t.get_poses(use_filtered)
-
-            plt.plot(data_x, data_y, color=colors[i], label='trajectory', linestyle=linestyle)
-
-            if stds:  # only for AsteriskAverage objs
-                t.plot_sd(colors[i])
-
-        # plot orientation error
-
-        # pdb.set_trace()
-
         # get all the averages that we have
         avg_labels = list()
         for a in self.averages:
@@ -329,6 +316,18 @@ class AsteriskHandData:
             self.plot_all_target_lines(colors) # TODO: maybe make set colors for each direction
         else:
             self.plot_all_target_lines(colors, avg_labels)
+
+        # plot data
+        for i, t in enumerate(trials):
+            data_x, data_y, theta = t.get_poses(use_filtered)
+
+            plt.plot(data_x, data_y, color=colors[i], label='trajectory', linestyle=linestyle)
+
+            # plot orientation error
+            t.plot_orientations(scale=0.9)
+
+            if stds:  # only for AsteriskAverage objs
+                t.plot_sd(colors[i])
 
         plt.title(f"{self.hand.get_name()} avg asterisk, rot: {trials[0].trial_rotation}")
         plt.xticks(np.linspace(-0.6, 0.6, 13), rotation=30)
@@ -362,7 +361,7 @@ class AsteriskHandData:
             # TODO: have an ability to plot a single average trial
 
     def plot_ast_avg(self, rotation="n", subjects=None, show_plot=True, save_plot=False,
-                     linestyle="solid", plot_contributions=True):
+                     linestyle="solid", plot_contributions=False):
         """
         Plots the data from one subject, averaging all of the data in each direction
         :param subjects: list of subjects. If none is provided, uses all of them

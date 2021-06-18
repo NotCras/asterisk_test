@@ -254,7 +254,7 @@ class AsteriskTrialData:
             pass
         pass
 
-    def plot_trial(self, use_filtered=True, show_plot=True, save_plot=False):
+    def plot_trial(self, use_filtered=True, show_plot=True, save_plot=False, angle_interval=None):
         """
         Plot the poses in the trial, using marker size to denote the error in twist from the desired twist
         :param use_filtered: Gives option to return filtered or unfiltered data
@@ -266,10 +266,11 @@ class AsteriskTrialData:
         plt.plot(data_x, data_y, color="xkcd:dark blue", label='trajectory')
 
         # plot data points separately to show angle error with marker size
-        for n in range(len(data_x)):
-            # TODO: rn having difficulty doing marker size in a batch, so plotting each point separately
-            plt.plot(data_x[n], data_y[n], 'r.',
-                     alpha=0.5, markersize=5*theta[n])
+        # for n in range(len(data_x)):
+        #     # TODO: rn having difficulty doing marker size in a batch, so plotting each point separately
+        #     plt.plot(data_x[n], data_y[n], 'r.',
+        #              alpha=0.5, markersize=5*theta[n])
+        self.plot_orientations()
 
         target_x, target_y = [], []
         for t in self.target_line:
@@ -309,6 +310,53 @@ class AsteriskTrialData:
         if show_plot:
             plt.legend()
             plt.show()
+
+    def plot_orientations(self, positions=[0.25, 0.5, 0.75], scale=1.3):
+        """
+        Makes a dial at points indicating the current rotation at that point.
+        It won't do it for every point, that is indicated in positions.
+        A straight up line indicates no rotation.
+        :param scale:
+        :return:
+        """
+        # TODO: make positions not mutable so the error stops annoying me
+        marker_size = str(max(int(10*scale), 1))
+        x_data, y_data, t_data = self.get_poses()
+        size_data = len(x_data)
+
+        if positions is not None:
+            for spot in positions:
+                idx = int(spot * size_data)
+                x = x_data[idx]
+                y = y_data[idx]
+                t = t_data[idx]
+
+                plt.plot(x, y, marker="o", markersize=marker_size, color="xkcd:slate")
+                dx = scale * 0.01 * np.sin(np.pi*t/180.)
+                dy = scale * 0.01 * np.cos(np.pi*t/180.)
+
+                plt.plot([x,x+dx], [y,y+dy], linewidth=0.5, color="xkcd:cream")
+
+        else:
+            # go through each point
+            for x, y, t in zip(x_data, y_data, t_data):
+                plt.plot(x, y, marker="o", markersize=marker_size, color="xkcd:slate")
+                dx = scale * 0.01 * np.cos(np.pi * t / 180.)
+                dy = scale * 0.01 * np.sin(np.pi * t / 180.)
+
+                plt.plot([x, x + dx], [y, y + dy], linewidth=0.5, color="xkcd:cream")
+
+        # always includes the last point
+        x = x_data[size_data-1]
+        y = y_data[size_data-1]
+        t = t_data[size_data-1]
+        print(f"{x}, {y}, r {t}")
+
+        plt.plot(x, y, marker="o", markersize=marker_size, color="xkcd:slate")
+        dx = scale * 0.01 * np.sin(np.pi * t / 180.)
+        dy = scale * 0.01 * np.cos(np.pi * t / 180.)
+
+        plt.plot([x, x + dx], [y, y + dy], linewidth=0.5, color="xkcd:cream")
 
     def get_last_pose(self):
         """
