@@ -69,7 +69,7 @@ class AsteriskPlotting:
 
     @staticmethod
     def get_e(num_points=25):
-        y_coords, x_coords = AsteriskPlotting.straight(num_points, mod=-1, max=0.75)
+        y_coords, x_coords = AsteriskPlotting.straight(num_points, mod=-1) #, max=0.75)
         return x_coords, y_coords
 
     @staticmethod

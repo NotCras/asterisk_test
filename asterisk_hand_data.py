@@ -119,6 +119,7 @@ class AsteriskHandData:
         :param trial_num: trial numbers to include, default parameter
         """
         # TODO: Change things so that we have some way to know when the trials were all no mvt or deviation
+        # TODO: make a report txt file which sa
         # Maybe make it return None? then we can return all dictionary keys that don't return none in the other func
 
         gathered_data = list()
@@ -324,7 +325,7 @@ class AsteriskHandData:
             plt.plot(data_x, data_y, color=colors[i], label='trajectory', linestyle=linestyle)
 
             # plot orientation error
-            t.plot_orientations(marker_scale=15, scale=1.0)
+            t.plot_orientations(marker_scale=15, line_length=0.025, scale=1)
 
             if stds:  # only for AsteriskAverage objs
                 t.plot_sd(colors[i])

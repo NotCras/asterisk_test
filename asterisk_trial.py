@@ -311,21 +311,22 @@ class AsteriskTrialData:
             plt.legend()
             plt.show()
 
-    def plot_orientations(self, marker_scale=25, positions=[0.25, 0.5, 0.75], scale=0.75):
+    def plot_orientations(self, marker_scale=40, line_length=0.01, positions=[0.3, 0.55, 0.75], scale=0.25):
         """
         Makes a dial at points indicating the current rotation at that point.
         It won't do it for every point, that is indicated in positions.
         A straight up line indicates no rotation.
+        Default values are tuned for a single line plot
         :param scale:
         :return:
         """
         # TODO: make positions not mutable so the error stops annoying me
-        marker_size = str(max(int(marker_scale*scale), 1))
+        marker_size = str(int(marker_scale*scale))
         x_data, y_data, t_data = self.get_poses()
         size_data = len(x_data)
 
         dox = 0.
-        doy = scale * 0.005
+        doy = scale * 0.01
 
         if positions is not None:
             for spot in positions:
@@ -334,22 +335,25 @@ class AsteriskTrialData:
                 y = y_data[idx]
                 t = t_data[idx] * 2 # multiply by 2 to make it on a scale of 180
 
-                plt.plot(x, y, marker="o", markersize=marker_size, color="xkcd:slate")
-                dx = scale * 0.005 * np.sin(np.pi*t/180.)
-                dy = scale * 0.005 * np.cos(np.pi*t/180.)
+                plt.plot(x, y, marker="o", markersize=marker_size, color="xkcd:slate", alpha=0.7)
+                dx = scale * line_length * np.sin(np.pi*t/180.)
+                dy = scale * line_length * np.cos(np.pi*t/180.)
 
-                plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
-                plt.plot([x, x + dx], [y, y + dy], linewidth=0.5, color="xkcd:pinky red")
+                # plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
+                # plt.plot(x, y+doy, markersize=line_length, color="xkcd:aqua green")
+                plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:fluorescent green")
+                #plt.pie([t, 180-y], center=[x,y], radius=0.005)
 
         else:
             # go through each point
             for x, y, t in zip(x_data, y_data, t_data):
-                plt.plot(x, y, marker="o", markersize=marker_size, color="xkcd:slate")
-                dx = scale * 0.005 * np.cos(np.pi * t / 180.)
-                dy = scale * 0.005 * np.sin(np.pi * t / 180.)
+                plt.plot(x, y, marker="o", markersize=marker_size, color="xkcd:slate", alpha=0.7)
+                dx = scale * line_length * np.cos(np.pi * t / 180.)
+                dy = scale * line_length * np.sin(np.pi * t / 180.)
 
-                plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
-                plt.plot([x, x + dx], [y, y + dy], linewidth=0.5, color="xkcd:pinky red")
+                # plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
+                # plt.plot(x, y+doy, markersize=1, color="xkcd:aqua green")
+                plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:fluorescent green")
 
                 # poly = [[x, y], [x + dox, y + doy], [x + dx, y + dy]]
                 # polyg = plt.Polygon(poly, color="xkcd:cream", alpha=0.9)
@@ -361,12 +365,15 @@ class AsteriskTrialData:
         t = t_data[size_data-1] * 2
         #print(f"{x}, {y}, r {t}")
 
-        plt.plot(x, y, marker="o", markersize=marker_size, color="xkcd:slate")
-        dx = scale * 0.005 * np.sin(np.pi * t / 180.)
-        dy = scale * 0.005 * np.cos(np.pi * t / 180.)
+        plt.plot(x, y, marker="o", markersize=marker_size, color="xkcd:slate", alpha=0.7)
+        dx = scale * line_length * np.sin(np.pi * t / 180.)
+        dy = scale * line_length * np.cos(np.pi * t / 180.)
 
-        plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
-        plt.plot([x, x + dx], [y, y + dy], linewidth=0.5, color="xkcd:pinky red")
+        # plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
+        # plt.plot(x, y + doy, markersize=1, color="xkcd:aqua green")
+        plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:fluorescent green")
+        # plt.pie([t, 180-y], center=[x, y], radius=0.005)
+
 
     def get_last_pose(self):
         """
@@ -497,6 +504,6 @@ class AsteriskTrialData:
 
 
 if __name__ == '__main__':
-    test = AsteriskTrialData("sub2_2v2_c_n_3.csv")
+    test = AsteriskTrialData("sub1_2v2_c_n_3.csv")
     #print(test.metrics)
     test.plot_trial(use_filtered=False)

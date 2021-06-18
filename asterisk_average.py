@@ -440,7 +440,7 @@ class AveragedTrial(AsteriskTrialData):
             # if we averaged with filtered data, just show the filtered data
             if use_filtered and t.filtered:
                 f_x, f_y, _ = t.get_poses(use_filtered=True)
-                plt.plot(f_x, f_y, label=f"trial f_{i}", alpha=0.8, color="xkcd:grey green")
+                plt.plot(f_x, f_y, label=f"trial f_{i}", alpha=0.4, color="xkcd:blue grey") #color="xkcd:grey green")
 
             else:
                 # otherwise, let's show everything so you can wish you averaged on filtered data :P
@@ -449,20 +449,21 @@ class AveragedTrial(AsteriskTrialData):
 
                 if t.filtered:
                     f_x, f_y, _ = t.get_poses(use_filtered=True)
-                    plt.plot(f_x, f_y, label=f"trial f_{i}", alpha=0.8, color="xkcd:grey green")
+                    plt.plot(f_x, f_y, label=f"trial f_{i}", alpha=0.8, color="xkcd:blue grey") #color="xkcd:grey green")
 
         # plot average
         a_x, a_y, _ = self.get_poses(use_filtered=False)
-        plt.plot(a_x, a_y, label="avg", color="xkcd:burnt orange")
+        plt.plot(a_x, a_y, label="avg", linewidth=2, color="tab:purple") #"xkcd:burnt orange")
 
         if with_ad:
-            self.plot_sd("xkcd:burnt orange", testing=True)
+            self.plot_sd("tab:purple", testing=True) #"xkcd:burnt orange", testing=True)
 
-        self.plot_line_contributions()
+        # self.plot_line_contributions()
 
-        plt.title(f"Avg Debug Plot: {self.hand.get_name()}, {self.trial_translation}_{self.trial_rotation}")
+        plt.title(f"Averaged: {self.hand.get_name()}, {self.trial_translation}") # _{self.trial_rotation}")
+        plt.legend('', frameon=False)
 
-        # TODO: show at least one averaging interval?
+        self.plot_orientations(marker_scale=25, line_length=0.015, scale=1)
 
         if save_plot:
             plt.savefig(f"pics/avgdebug_{self.hand.get_name()}_{len(self.subject)}subs_{self.trial_translation}_"
@@ -533,8 +534,8 @@ class AveragedTrial(AsteriskTrialData):
 
 if __name__ == '__main__':
     # demo and test
-    h = "basic"
-    t = "c"
+    h = "2v2"
+    t = "b"
     w = 10
     test1 = AsteriskTrialData(f'sub1_{h}_{t}_n_1.csv')
     test1.moving_average(window_size=w)
