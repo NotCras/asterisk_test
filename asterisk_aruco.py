@@ -156,6 +156,21 @@ class ArucoIndices:
         return image_pos.val
 
 
+class ArucoAutoCrop:
+    def __init__(self):
+        pass
+
+    def auto_crop(self, list_of_files, title):
+        """
+        Crops an image trial automatically, but finding the largest distance travelled in the smallest range of index
+        :param list_of_files:
+        :param title:
+        :return:
+        """
+        pass
+
+
+
 class ArucoVision:
     def __init__(self, trial_name, side_dims=0.03, freq=1, begin_idx=0, end_idx=None):
         """

@@ -311,7 +311,7 @@ class AsteriskTrialData:
             plt.legend()
             plt.show()
 
-    def plot_orientations(self, marker_scale=40, line_length=0.01, positions=[0.3, 0.55, 0.75], scale=0.25):
+    def plot_orientations(self, marker_scale=25, line_length=0.01, positions=[0.3, 0.55, 0.75], scale=0.25):
         """
         Makes a dial at points indicating the current rotation at that point.
         It won't do it for every point, that is indicated in positions.
@@ -334,26 +334,29 @@ class AsteriskTrialData:
                 x = x_data[idx]
                 y = y_data[idx]
                 t = t_data[idx] * 2 # multiply by 2 to make it on a scale of 180
+                print(t)
 
-                plt.plot(x, y, marker="o", markersize=marker_size, color="xkcd:slate", alpha=0.7)
+                plt.plot(x, y, marker="s", markersize=marker_size, color="xkcd:slate", alpha=0.7)
+                # makes a custom, square marker with rotation built in
+                # plt.plot(x, y, marker=(4, 0, t), markersize=marker_size, color="xkcd:slate", alpha=0.7)
                 dx = scale * line_length * np.sin(np.pi*t/180.)
                 dy = scale * line_length * np.cos(np.pi*t/180.)
 
                 # plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
                 # plt.plot(x, y+doy, markersize=line_length, color="xkcd:aqua green")
-                plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:fluorescent green")
-                #plt.pie([t, 180-y], center=[x,y], radius=0.005)
+                plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:cream")
+                # plt.pie([t, 180-y], center=[x,y], radius=0.005)
 
         else:
             # go through each point
             for x, y, t in zip(x_data, y_data, t_data):
-                plt.plot(x, y, marker="o", markersize=marker_size, color="xkcd:slate", alpha=0.7)
+                plt.plot(x, y, marker="s", markersize=marker_size, color="xkcd:slate", alpha=0.7)
                 dx = scale * line_length * np.cos(np.pi * t / 180.)
                 dy = scale * line_length * np.sin(np.pi * t / 180.)
 
                 # plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
                 # plt.plot(x, y+doy, markersize=1, color="xkcd:aqua green")
-                plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:fluorescent green")
+                plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:cream")
 
                 # poly = [[x, y], [x + dox, y + doy], [x + dx, y + dy]]
                 # polyg = plt.Polygon(poly, color="xkcd:cream", alpha=0.9)
@@ -365,13 +368,13 @@ class AsteriskTrialData:
         t = t_data[size_data-1] * 2
         #print(f"{x}, {y}, r {t}")
 
-        plt.plot(x, y, marker="o", markersize=marker_size, color="xkcd:slate", alpha=0.7)
+        plt.plot(x, y, marker="s", markersize=marker_size, color="xkcd:slate", alpha=0.7)
         dx = scale * line_length * np.sin(np.pi * t / 180.)
         dy = scale * line_length * np.cos(np.pi * t / 180.)
 
         # plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
         # plt.plot(x, y + doy, markersize=1, color="xkcd:aqua green")
-        plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:fluorescent green")
+        plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:cream")
         # plt.pie([t, 180-y], center=[x, y], radius=0.005)
 
 
