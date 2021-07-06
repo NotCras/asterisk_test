@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import asterisk_data_manager as datamanager
 from cv2 import aruco
 from pathlib import Path
+from math import isclose
 from matplotlib.widgets import Slider, Button
 
 
@@ -399,6 +400,8 @@ class ArucoPoseDetect:
         # k1,k2,p1,p2 ie radial dist and tangential dist
         self.dist = ar_viz_obj.dist
 
+        # TODO: add option for autocropper
+
         self.init_pose, self.est_poses = self.estimate_pose()
 
     def unit_vector(self, vector):
@@ -537,13 +540,29 @@ class ArucoAutoCrop:
     def __init__(self, df_data):
         self.trial_data = df_data
 
-    def yield_index_pairs(self):
+    def yield_index_pairs(self, desired_rotation=None):
         """
-
+        yields pairs of indices to check auto cropping on
+        first index goes through all of the indices except the last index in the data
+        the second index goes through all of the indices between the first index and the last index
         :return:
         """
-        data_size = pd.size(self.trial_data)  # TODO: Fix function call
-        start_i = 0  # TODO: find what is the starting index that has the desired rotation if rotation matters
+        data_size = len(self.trial_data)
+
+        if desired_rotation is not None and (isinstance(desired_rotation, int) or isinstance(desired_rotation, float)):
+            # find the first index that achieves the desired rotation in the data set
+            # self.trial_data.rmag.eq(15).idxmax()
+            i = 0
+            for val in self.trial_data.rmag:
+                if abs(val-15) < 0.5:  # TODO: revisit this logic
+                    start_i = i
+                    break
+
+                i += 1
+                pass
+
+        else:
+            start_i = 0  # TODO: find what is the starting index that has the desired rotation if rotation matters
 
         for i1 in range(start_i, data_size - 1):
             for i2 in range(i1 + 1, data_size):
@@ -555,30 +574,29 @@ class ArucoAutoCrop:
         :param df_data
         :return:
         """
-        c_max_dist = 0
-        c_min_di = 0
         trial_length = len(self.trial_data)
         c_max_is = (1, trial_length)
+
+        c_max_dist = 0
+        c_min_di = trial_length
 
         for i1, i2 in self.yield_index_pairs():
             d1 = self.trial_data.iloc[i1]  # TODO: check function call
             d2 = self.trial_data.iloc[i2]
 
-            i_dist = np.sqrt((d1['x']+d2['x'])**2 + (d1['y']+d2['y'])**2)
+            i_dist = np.sqrt((d1['x']+d2['x'])**2 + (d1['y']+d2['y'])**2)  # the distance between the sampled points
             d_i = i2 - i1
 
             # now check for...
-            # c_max_dist
-            # c_min_di
-            # c_max_is-> make a tuple
-            # if larger/smaller, then replace pair
+            if c_max_dist <= i_dist:  # if we record a greater distance than before...
+
+                if c_min_di >= d_i:  # is the space between the indices smaller than before?
+                    c_max_dist = i_dist
+                    c_min_di = d_i
+
+                    c_max_is = (i1, i2)  # record which indices we are saving
 
         return c_max_is[1], c_max_is[2], c_max_dist, c_min_di
-
-
-
-
-
 
 
 def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=None):
