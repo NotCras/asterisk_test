@@ -156,21 +156,6 @@ class ArucoIndices:
         return image_pos.val
 
 
-class ArucoAutoCrop:
-    def __init__(self):
-        pass
-
-    def auto_crop(self, list_of_files, title):
-        """
-        Crops an image trial automatically, but finding the largest distance travelled in the smallest range of index
-        :param list_of_files:
-        :param title:
-        :return:
-        """
-        pass
-
-
-
 class ArucoVision:
     def __init__(self, trial_name, side_dims=0.03, freq=1, begin_idx=0, end_idx=None):
         """
@@ -546,6 +531,54 @@ class ArucoPoseDetect:
         """
         # pdb.set_trace()
         self.est_poses.plot(x="x", y="y")
+
+
+class ArucoAutoCrop:
+    def __init__(self, df_data):
+        self.trial_data = df_data
+
+    def yield_index_pairs(self):
+        """
+
+        :return:
+        """
+        data_size = pd.size(self.trial_data)  # TODO: Fix function call
+        start_i = 0  # TODO: find what is the starting index that has the desired rotation if rotation matters
+
+        for i1 in range(start_i, data_size - 1):
+            for i2 in range(i1 + 1, data_size):
+                yield i1, i2
+
+    def auto_crop(self):
+        """
+        Crops an image trial automatically, but finding the largest distance travelled in the smallest range of index
+        :param df_data
+        :return:
+        """
+        c_max_dist = 0
+        c_min_di = 0
+        trial_length = len(self.trial_data)
+        c_max_is = (1, trial_length)
+
+        for i1, i2 in self.yield_index_pairs():
+            d1 = self.trial_data.iloc[i1]  # TODO: check function call
+            d2 = self.trial_data.iloc[i2]
+
+            i_dist = np.sqrt((d1['x']+d2['x'])**2 + (d1['y']+d2['y'])**2)
+            d_i = i2 - i1
+
+            # now check for...
+            # c_max_dist
+            # c_min_di
+            # c_max_is-> make a tuple
+            # if larger/smaller, then replace pair
+
+        return c_max_is[1], c_max_is[2], c_max_dist, c_min_di
+
+
+
+
+
 
 
 def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=None):
