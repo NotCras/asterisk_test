@@ -386,7 +386,7 @@ class ArucoVision:
 
 
 class ArucoPoseDetect:
-    def __init__(self, ar_viz_obj, filter_corners=False, filter_window=3):
+    def __init__(self, ar_viz_obj, filter_corners=False, filter_window=3, autocrop=False):
         """
         Object for running pose analysis on data
         """
@@ -403,6 +403,15 @@ class ArucoPoseDetect:
         # TODO: add option for autocropper
 
         self.init_pose, self.est_poses = self.estimate_pose()
+
+        if autocrop:
+            cropper = ArucoAutoCrop(self.est_poses)
+
+            start_i, end_i, _, _ = cropper.auto_crop()
+
+            self.est_poses = self.est_poses.loc[start_i:end_i]
+
+
 
     def unit_vector(self, vector):
         """ Returns the unit vector of the vector.  """
@@ -562,7 +571,7 @@ class ArucoAutoCrop:
                 pass
 
         else:
-            start_i = 0  # TODO: find what is the starting index that has the desired rotation if rotation matters
+            start_i = 0
 
         for i1 in range(start_i, data_size - 1):
             for i2 in range(i1 + 1, data_size):
@@ -606,20 +615,23 @@ def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=
 
     try:
         b_idx, e_idx = ArucoIndices.get_indices(file_name)
+        needs_cropping = False
     except:
         print(f"Failed to get cropped indices for {file_name}")
         e_idx = None
         b_idx = 0
+        needs_cropping = True
 
     try:
         trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
-        trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
+        trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4, autocrop=needs_cropping)
+
         trial_pose.save_poses()
         print(f"Completed Aruco Analysis for: {file_name}")
 
     except Exception as e:
         print(e)
-        print(f"Failed Aruco Analysis for: {file_name}")
+        print(f"Failed Aruco Analysis for: {file_name}") # TODO: be more descriptive about where the error happened
 
 
 def batch_aruco_analysis(subject, hand, no_rotations=True, home=None):
@@ -635,13 +647,15 @@ def batch_aruco_analysis(subject, hand, no_rotations=True, home=None):
 
         try:
             b_idx, e_idx = ArucoIndices.get_indices(file_name)
+            needs_cropping = False
         except:
             e_idx = None
             b_idx = 0
+            needs_cropping = True
 
         try:
             trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
-            trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
+            trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4, autocrop=needs_cropping)
             trial_pose.save_poses()
 
             files_covered.append(file_name)
