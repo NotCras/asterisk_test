@@ -608,10 +608,11 @@ class ArucoAutoCrop:
         return c_max_is[1], c_max_is[2], c_max_dist, c_min_di
 
 
-def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=None):
+def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=None, indices=True, crop=True):
     # TODO: add considerations of home folder
     file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
     folder_path = f"{file_name}/"
+
 
     try:
         b_idx, e_idx = ArucoIndices.get_indices(file_name)
@@ -622,6 +623,13 @@ def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=
         b_idx = 0
         needs_cropping = True
 
+    if not indices:  # TODO: make more straightforward later
+        e_idx = None
+        b_idx = 0
+
+    if not crop:
+        needs_cropping = False
+
     try:
         trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
         trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4, autocrop=needs_cropping)
@@ -631,10 +639,10 @@ def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=
 
     except Exception as e:
         print(e)
-        print(f"Failed Aruco Analysis for: {file_name}") # TODO: be more descriptive about where the error happened
+        print(f"Failed Aruco Analysis for: {file_name}")  # TODO: be more descriptive about where the error happened
 
 
-def batch_aruco_analysis(subject, hand, no_rotations=True, home=None):
+def batch_aruco_analysis(subject, hand, no_rotations=True, home=None, indices=True, crop=True):
     files_covered = list()
     for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand, no_rotations=no_rotations):
         file_name = f"{s}_{h}_{t}_{r}_{n}"
@@ -652,6 +660,13 @@ def batch_aruco_analysis(subject, hand, no_rotations=True, home=None):
             e_idx = None
             b_idx = 0
             needs_cropping = True
+
+        if not indices:  # TODO: make more straightforward later
+            e_idx = None
+            b_idx = 0
+
+        if not crop:
+            needs_cropping = False
 
         try:
             trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
