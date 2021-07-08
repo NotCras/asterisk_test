@@ -716,11 +716,22 @@ if __name__ == "__main__":
         translation = datamanager.smart_input("Enter type of translation: ", "translations")
         rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
+        index = datamanager.smart_input("Should we search for stored index values (start & end)", "consent")
+        crop = datamanager.smart_input("Should we try to automatically crop the trial's start and end?", "consent")
 
-        single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=home_directory)
+        i = index == 'y'
+        c = crop == 'y' # TODO: work on reducing number of prompts?
+
+        single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=home_directory, indices=i, crop=c)
 
     elif ans == "3":
-        batch_aruco_analysis(subject, hand, no_rotations=True, home=home_directory)
+        index = datamanager.smart_input("Should we search for stored index values (start & end)", "consent")
+        crop = datamanager.smart_input("Should we try to automatically crop the trial's start and end?", "consent")
+
+        i = index == 'y'
+        c = crop == 'y'
+
+        batch_aruco_analysis(subject, hand, no_rotations=True, home=home_directory, indices=i, crop=c)
 
     elif ans == "4":
         translation = datamanager.smart_input("Enter type of translation: ", "translations")
