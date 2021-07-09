@@ -405,12 +405,14 @@ class ArucoPoseDetect:
         self.init_pose, self.est_poses = self.estimate_pose()
 
         if autocrop:
+            print("Running autocropper!")
             cropper = ArucoAutoCrop(self.est_poses)
 
             start_i, end_i, _, _ = cropper.auto_crop()
 
-            self.est_poses = self.est_poses.loc[start_i:end_i]
+            print(f"cropped indices => start:{start_i} | end:{end_i}")
 
+            self.est_poses = self.est_poses.loc[start_i:end_i]
 
 
     def unit_vector(self, vector):
@@ -557,6 +559,7 @@ class ArucoAutoCrop:
         :return:
         """
         data_size = len(self.trial_data)
+        start_i = 0
 
         if desired_rotation is not None and (isinstance(desired_rotation, int) or isinstance(desired_rotation, float)):
             # find the first index that achieves the desired rotation in the data set
@@ -568,10 +571,9 @@ class ArucoAutoCrop:
                     break
 
                 i += 1
-                pass
 
         else:
-            start_i = 0
+            start_i = 0  # redundant?
 
         for i1 in range(start_i, data_size - 1):
             for i2 in range(i1 + 1, data_size):
@@ -590,22 +592,41 @@ class ArucoAutoCrop:
         c_min_di = trial_length
 
         for i1, i2 in self.yield_index_pairs():
+            # print(f"Attempting index pair: {i1}, {i2}")
             d1 = self.trial_data.iloc[i1]  # TODO: check function call
             d2 = self.trial_data.iloc[i2]
 
-            i_dist = np.sqrt((d1['x']+d2['x'])**2 + (d1['y']+d2['y'])**2)  # the distance between the sampled points
+            i_dist = np.sqrt((d2['x']-d1['x'])**2 + (d2['y']-d1['y'])**2)  # the distance between the sampled points
             d_i = i2 - i1
 
-            # now check for...
-            if c_max_dist <= i_dist:  # if we record a greater distance than before...
+            val_is_close = abs(c_max_dist - i_dist) <= c_max_dist * 0.01
 
-                if c_min_di >= d_i:  # is the space between the indices smaller than before?
+            # now check for...
+            if i_dist >= c_max_dist:  # if we record a greater distance than before...
+                # print(f"max dist is larger => max:{c_max_dist}, current:{i_dist}")
+                # print("overwriting max and index values.")
+                # print(f"i1 data: x:{d1['x']}, y:{d1['y']}, t:{d1['rmag']}")
+                # print(f"i2 data: x:{d2['x']}, y:{d2['y']}, t:{d2['rmag']}")
+                # print(f"total dist: {i_dist}, d_i: {d_i}")
+                c_max_dist = i_dist
+                c_min_di = d_i
+                c_max_is = (i1, i2)  # record which indices we are saving
+
+            if val_is_close:
+                # print("value is within 1% of c_max_dist")
+
+                if d_i <= c_min_di:  # is the space between the indices smaller than before?
+                    # print(f"d_i is smaller than previous min => min:{c_min_di}, current:{d_i}")
+                    # print(f"but the distances are within 1% => max:{c_max_dist}, current:{i_dist} ")
+                    # print(f"overwriting max and index values.")
                     c_max_dist = i_dist
                     c_min_di = d_i
 
                     c_max_is = (i1, i2)  # record which indices we are saving
 
-        return c_max_is[1], c_max_is[2], c_max_dist, c_min_di
+            print("  ")
+
+        return c_max_is[0], c_max_is[1], c_max_dist, c_min_di
 
 
 def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=None, indices=True, crop=True):
@@ -613,24 +634,27 @@ def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=
     file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
     folder_path = f"{file_name}/"
 
+    if indices:
+        try:
+            b_idx, e_idx = ArucoIndices.get_indices(file_name)
+            needs_cropping = False
+        except:
+            print(f"Failed to get cropped indices for {file_name}")
+            e_idx = None
+            b_idx = 0
+            needs_cropping = True
 
-    try:
-        b_idx, e_idx = ArucoIndices.get_indices(file_name)
-        needs_cropping = False
-    except:
-        print(f"Failed to get cropped indices for {file_name}")
+    else:  # TODO: make more straightforward later
         e_idx = None
         b_idx = 0
         needs_cropping = True
 
-    if not indices:  # TODO: make more straightforward later
-        e_idx = None
-        b_idx = 0
-
     if not crop:
+        print("!!!")
         needs_cropping = False
 
     try:
+        print(f"Needs cropping: {needs_cropping}")
         trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
         trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4, autocrop=needs_cropping)
 
@@ -720,7 +744,7 @@ if __name__ == "__main__":
         crop = datamanager.smart_input("Should we try to automatically crop the trial's start and end?", "consent")
 
         i = index == 'y'
-        c = crop == 'y' # TODO: work on reducing number of prompts?
+        c = crop == 'y'  # TODO: work on reducing number of prompts?
 
         single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=home_directory, indices=i, crop=c)
 
