@@ -403,6 +403,8 @@ class ArucoPoseDetect:
         # TODO: add option for autocropper
 
         self.init_pose, self.est_poses = self.estimate_pose()
+        self.start = 0
+        self.end = None
 
         if autocrop:
             print("Running autocropper!")
@@ -413,7 +415,11 @@ class ArucoPoseDetect:
             print(f"cropped indices => start:{start_i} | end:{end_i}")
 
             self.est_poses = self.est_poses.loc[start_i:end_i]
+            self.start = start_i
+            self.end = end_i
 
+    def get_autocrop_indices(self):
+        return self.start, self.end
 
     def unit_vector(self, vector):
         """ Returns the unit vector of the vector.  """
@@ -624,7 +630,7 @@ class ArucoAutoCrop:
 
                     c_max_is = (i1, i2)  # record which indices we are saving
 
-            print("  ")
+            # print("  ")
 
         return c_max_is[0], c_max_is[1], c_max_dist, c_min_di
 
@@ -650,11 +656,10 @@ def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=
         needs_cropping = True
 
     if not crop:
-        print("!!!")
         needs_cropping = False
 
     try:
-        print(f"Needs cropping: {needs_cropping}")
+        # print(f"Needs cropping: {needs_cropping}")
         trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
         trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4, autocrop=needs_cropping)
 
@@ -668,6 +673,8 @@ def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=
 
 def batch_aruco_analysis(subject, hand, no_rotations=True, home=None, indices=True, crop=True):
     files_covered = list()
+    files_df = pd.DataFrame(columns=["name", "start_i", "end_i"])
+
     for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand, no_rotations=no_rotations):
         file_name = f"{s}_{h}_{t}_{r}_{n}"
 
@@ -677,17 +684,19 @@ def batch_aruco_analysis(subject, hand, no_rotations=True, home=None, indices=Tr
         # data_path = inner_path
         print(folder_path)
 
-        try:
-            b_idx, e_idx = ArucoIndices.get_indices(file_name)
-            needs_cropping = False
-        except:
+        if indices:
+            try:
+                b_idx, e_idx = ArucoIndices.get_indices(file_name)
+                needs_cropping = False
+            except:
+                e_idx = None
+                b_idx = 0
+                needs_cropping = True
+
+        else:  # TODO: make more straightforward later
             e_idx = None
             b_idx = 0
             needs_cropping = True
-
-        if not indices:  # TODO: make more straightforward later
-            e_idx = None
-            b_idx = 0
 
         if not crop:
             needs_cropping = False
@@ -696,11 +705,15 @@ def batch_aruco_analysis(subject, hand, no_rotations=True, home=None, indices=Tr
             trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
             trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4, autocrop=needs_cropping)
             trial_pose.save_poses()
+            s, e = trial_pose.get_autocrop_indices()
 
             files_covered.append(file_name)
+            files_df = files_df.append({"name": file_name, "start_i": s, "end_i": e}, ignore_index=True)
         except Exception as e:
             print(e)
             files_covered.append(f"FAILED: {file_name}")
+
+        files_df.to_csv(f"index_values_{hand}.csv")
 
     print("Completed Batch Aruco Analysis!")
     print(files_covered)
