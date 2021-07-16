@@ -9,7 +9,7 @@ import pdb
 import matplotlib.pyplot as plt
 import asterisk_data_manager as datamanager
 import asterisk_trial as trial
-from asterisk_hand import HandObj
+from ast_hand_info import HandInfo
 from asterisk_average import AveragedTrial
 from asterisk_plotting import AsteriskPlotting as aplt
 
@@ -23,7 +23,7 @@ class AsteriskHandData:
         :param subjects: subjects to include in hand data object
         :param hand_name: name of hand for this object
         """
-        self.hand = HandObj(hand_name)
+        self.hand = HandInfo(hand_name)
         self.subjects_containing = subjects
         if blocklist_file is not None:
             blocklist = self._check_blocklist(blocklist_file)

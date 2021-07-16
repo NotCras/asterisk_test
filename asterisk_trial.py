@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from asterisk_plotting import AsteriskPlotting as aplt
 from asterisk_calculations import AsteriskCalculations as acalc
 import pdb
-from asterisk_hand import HandObj
+from ast_hand_info import HandInfo
 from scipy import stats
 
 
@@ -37,7 +37,7 @@ class AsteriskTrialData:
         if file_name:
             s, h, t, r, e = file_name.split("_")
             n, _ = e.split(".")
-            self.hand = HandObj(h)
+            self.hand = HandInfo(h)
 
             # Data will not be filtered in this step
             data = self._read_file(file_name, norm_data=norm_data)
@@ -87,7 +87,7 @@ class AsteriskTrialData:
         If you didn't make the object with a file_name, a function to set hand in painless manner
         :param hand_name: name of hand to make
         """
-        self.hand = HandObj(hand_name)
+        self.hand = HandInfo(hand_name)
 
     def _read_file(self, file_name, folder="aruco_data/", norm_data=True):
         """
@@ -147,6 +147,9 @@ class AsteriskTrialData:
                 df = df[(df[col] < q_hi)]  # this has got to be the problem line
 
         return df.round(4)
+
+    def add_data(self):
+        pass
 
     def is_ast_trial(self):
         return isinstance(self, AsteriskTrialData)
@@ -377,7 +380,6 @@ class AsteriskTrialData:
         plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:cream")
         # plt.pie([t, 180-y], center=[x, y], radius=0.005)
 
-
     def get_last_pose(self):
         """
         Returns last pose as an array. Returns both filtered and unfiltered data if obj is filtered
@@ -469,15 +471,15 @@ class AsteriskTrialData:
     def update_all_metrics(self, use_filtered=True):
         """
         Updates all metric values on the object.
-        """  # TODO: make a pandas dataframe that contains the metrics? Easier to organize
+        """
         translation_fd, rotation_fd = acalc.calc_frechet_distance(self)
         # fd = am.calc_frechet_distance_all(self)
 
         try:
             mvt_efficiency, arc_len = acalc.calc_mvt_efficiency(self)
         except RuntimeWarning:
-            mvt_efficiency = 0
-            arc_len = 0
+            mvt_efficiency = -1
+            arc_len = -1
 
         try:
             max_error = acalc.calc_max_error(self, arc_len)
@@ -487,14 +489,14 @@ class AsteriskTrialData:
         try:  # TODO: move all these try excepts to asterisk calculations
             area_btwn = acalc.calc_area_btwn_curves(self)
         except:
-            area_btwn = 0
+            area_btwn = -1
 
         try:  # this one is particularly troublesome
             max_area_region, max_area_loc = acalc.calc_max_area_region(self)
         except IndexError:
             print("Max area region failed")
-            max_area_region = 0
-            max_area_loc = 0
+            max_area_region = -1
+            max_area_loc = -1
 
         # TODO: Make getters for each metric - can also return none if its not calculated
         metric_dict = {"trial": self.generate_name(), "dist": self.total_distance,
