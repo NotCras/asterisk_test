@@ -84,7 +84,58 @@ class AstData:
 
 
 class AstNaming:
-    pass
+    options = {
+        "subjects": ["sub1", "sub2", "sub3"],
+        "hands": ["2v2", "2v3", "3v3", "barrett", "basic", "m2active", "m2stiff", "modelvf"],  # "human"
+        "hands_only_n": ["basic", "m2stiff", "modelvf"],
+        "translations": ["a", "b", "c", "d", "e", "f", "g", "h"],
+        "translations_all": ["a", "b", "c", "d", "e", "f", "g", "h", "n"],
+        "rotations": ["n", "m15", "p15"],
+        "rotations_n_trans": ["cw", "ccw"],
+        "numbers": ["1", "2", "3", "4", "5"]
+    }
+    values = {  # TODO: make this use generate_options
+        "subjects": ["sub1", "sub2", "sub3"],
+        "hands": ["2v2", "2v3", "3v3", "barrett", "basic", "human", "m2active", "m2stiff", "modelvf"],
+        "translations": ["a", "b", "c", "d", "e", "f", "g", "h"],
+        "translations_w_n": ["a", "b", "c", "d", "e", "f", "g", "h", "n"],
+        "rotation_combos": ["n", "m15", "p15"],
+        "rotations_n_trans": ["cw", "ccw"],
+        "numbers": ["1", "2", "3", "4", "5"],
+        "consent": ["y", "n"]
+    }
+
+    def __init__(self):
+        pass
+
+    def get_option(self, key):
+        """
+        Return set of objects for a given key. If no key, returns
+        :param key:
+        :return:
+        """
+        try:
+            return self.options[key]
+        except:
+            return None
+
+    def add_option(self, key, options, overwrite=False):
+        """
+        Adds a set of options at given key.
+        Has the option to overwrite at an existing key, otherwise it won't overwrite.
+
+        Returns True if operation succeeded, otherwise returns False
+        """
+        if key in self.options.keys:
+            if overwrite:
+                self.options[key] = options
+                return True
+            else:
+                return False
+        else:
+            self.options[key] = options
+            return True
+
 
 # TODO: move following functions into a AstNaming object?
 def generate_options(key):
@@ -93,17 +144,8 @@ def generate_options(key):
     :param key: the key of the list that you want
     :return: list of parameters
     """
-    options = {
-            "subjects": ["sub1", "sub2", "sub3"],
-            "hands": ["2v2", "2v3", "3v3", "barrett", "basic", "m2active", "m2stiff", "modelvf"],  # "human"
-            "hands_only_n": ["basic", "m2stiff", "modelvf"],
-            "translations": ["a", "b", "c", "d", "e", "f", "g", "h"],
-            "translations_all": ["a", "b", "c", "d", "e", "f", "g", "h", "n"],
-            "rotations": ["n", "m15", "p15"],
-            "rotations_n_trans": ["cw", "ccw"],
-            "numbers": ["1", "2", "3", "4", "5"]
-            }
-    return options[key]
+    opt = AstNaming()
+    return opt.get_option(key)
 
 
 def generate_t_r_pairs(hand_name, no_rotations=False):
@@ -200,6 +242,23 @@ def smart_input(prompt, option, valid_options=None):
             print("Invalid response.")
 
     return response
+
+
+class AstDir:
+    """
+    Manages the folder paths where data is stored.
+    """
+    def __init__(self, home_dir=None, viz_folder_name="viz", aruco_folder_name="aruco_data",
+                 trial_folder_name="trial_data", results_folder_name="results"):
+        if home_dir is None:
+            self.home = Path(__file__).parent.absolute()
+        else:
+            self.home = home_dir
+
+        self.viz_folder = viz_folder_name  # where visual data is stored
+        self.aruco_folder = aruco_folder_name  # where aruco analysis data is stored
+        self.trial_folder = trial_folder_name  # where trial path data (with filtering) is stored
+        self.results_folder = results_folder_name  # where metric results and images are stored
 
 
 if __name__ == "__main__":
