@@ -180,6 +180,12 @@ class ArucoVision:
         self.corners = self.analyze_images(end_idx=end_idx, begin_idx=begin_idx)
         os.chdir(self.home)
 
+    def get_trial_name(self):
+        """
+        Get trial name.
+        """
+        return self.trial_name
+
     def corner_to_series(self, i, corn):
         """
         Convert standard numpy array of corners into pd.Series (to add to corners dataframe)
@@ -400,8 +406,6 @@ class ArucoPoseDetect:
         # k1,k2,p1,p2 ie radial dist and tangential dist
         self.dist = ar_viz_obj.dist
 
-        # TODO: add option for autocropper
-
         self.init_pose, self.est_poses = self.estimate_pose()
         self.start = 0
         self.end = None
@@ -599,11 +603,11 @@ class ArucoAutoCrop:
 
         for i1, i2 in self.yield_index_pairs():
             # print(f"Attempting index pair: {i1}, {i2}")
-            d1 = self.trial_data.iloc[i1]  # TODO: check function call
+            d1 = self.trial_data.iloc[i1]
             d2 = self.trial_data.iloc[i2]
 
             i_dist = np.sqrt((d2['x']-d1['x'])**2 + (d2['y']-d1['y'])**2)  # the distance between the sampled points
-            d_i = i2 - i1
+            d_i = i2 - i1  # TODO: what about rotation?
 
             val_is_close = abs(c_max_dist - i_dist) <= c_max_dist * 0.01
 
