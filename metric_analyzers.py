@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import asterisk_data_manager as datamanager
-from asterisk_hand_data import AstHandTrials
-from asterisk_plotting import AsteriskPlotting
+from ast_hand_data import AstHandTrials
+from ast_plotting import AsteriskPlotting
 import pdb
 
 from scipy import stats

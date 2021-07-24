@@ -6,9 +6,9 @@ import numpy as np
 from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan, radians, mean, std
 import pandas as pd
 import matplotlib.pyplot as plt
-from asterisk_trial import AstTrial
-from asterisk_plotting import AsteriskPlotting
-from asterisk_calculations import AsteriskCalculations
+from ast_trial import AstTrial
+from ast_plotting import AsteriskPlotting
+from ast_calculations import AsteriskCalculations
 import pdb
 
 

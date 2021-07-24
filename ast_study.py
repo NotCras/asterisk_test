@@ -2,7 +2,7 @@
 
 
 import matplotlib.pyplot as plt
-from asterisk_hand_data import AstHandTrials
+from ast_hand_data import AstHandTrials
 
 from pathlib import Path
 

@@ -9,9 +9,9 @@ import pdb
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from asterisk_calculations import AsteriskCalculations
-from asterisk_plotting import AsteriskPlotting
-from asterisk_trial import AstTrial
+from ast_calculations import AsteriskCalculations
+from ast_plotting import AsteriskPlotting
+from ast_trial import AstTrial
 
 
 class AsteriskLabelling:

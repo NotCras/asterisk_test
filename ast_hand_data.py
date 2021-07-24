@@ -11,10 +11,10 @@ import csv
 import pdb
 import matplotlib.pyplot as plt
 import asterisk_data_manager as datamanager
-import asterisk_trial as trial
+import ast_trial as trial
 from ast_hand_info import HandInfo
-from asterisk_average import AveragedTrial
-from asterisk_plotting import AsteriskPlotting as aplt
+from ast_averaging import AveragedTrial
+from ast_plotting import AsteriskPlotting as aplt
 
 
 class AstHandTrials:

@@ -4,12 +4,12 @@ The entire pipeline from aruco analysis of vision data to metric calculations.
 """
 
 from pathlib import Path
-from asterisk_hand_data import AstHandTrials
-from asterisk_study import AstStudyTrials
-from asterisk_aruco import batch_aruco_analysis
-from asterisk_analyzers import AstHandAnalyzer
+from ast_hand_data import AstHandTrials
+from ast_study import AstStudyTrials
+from ast_aruco import batch_aruco_analysis
+from metric_analyzers import AstHandAnalyzer
 import asterisk_data_manager as datamanager
-import asterisk_trial as t
+import ast_trial as t
 
 
 def run_ast_study():

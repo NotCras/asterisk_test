@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pdb
 import matplotlib.pyplot as plt
-from asterisk_plotting import AsteriskPlotting
+from ast_plotting import AsteriskPlotting
 
 
 class AsteriskCalculations:
