@@ -1,7 +1,13 @@
+"""
+This file serves as an example of how to analyze (and organize) asterisk test data.
+The entire pipeline from aruco analysis of vision data to metric calculations.
+"""
+
 from pathlib import Path
-from asterisk_hand_data import AsteriskHandData
-from asterisk_study import AstHandAnalyzer, AsteriskStudy
+from asterisk_hand_data import AstHandTrials
+from asterisk_study import AstStudyTrials
 from asterisk_aruco import batch_aruco_analysis
+from asterisk_analyzers import AstHandAnalyzer
 import asterisk_data_manager as datamanager
 import asterisk_trial as t
 
@@ -9,7 +15,7 @@ import asterisk_trial as t
 def run_ast_study():
     """
     Handles running an asterisk study
-    1) imports all specified data
+    1) imports all specified data, runs aruco analysis
     2) filters everything with a 15 sample moving average
     3) averages all similar trials
     4) produces a final averaged plot for each hand, as well as by subject
@@ -33,7 +39,7 @@ def run_ast_study():
         #     batch_aruco_analysis(s, h, no_rotations=True, home=home_directory)
 
         print(f"Getting {h} data...")
-        data = AsteriskHandData(subjects, h, rotation="n", blocklist_file="trial_blocklist.csv")
+        data = AstHandTrials(subjects, h, rotation="n", blocklist_file="trial_blocklist.csv")
         # data = study.return_hand(h)
 
         print(f"Getting {h} data...")

@@ -2,13 +2,13 @@ import numpy as np
 from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan, radians, mean, std
 import pandas as pd
 import matplotlib.pyplot as plt
-from asterisk_trial import AsteriskTrialData
+from asterisk_trial import AstTrial
 from asterisk_plotting import AsteriskPlotting
 from asterisk_calculations import AsteriskCalculations
 import pdb
 
 
-class AveragedTrial(AsteriskTrialData):
+class AveragedTrial(AstTrial):
     rotations = {"a": 270, "b": 315, "c": 0, "d": 45, "e": 90,
                  "f": 135, "g": 180, "h": 225, "n": 0}
 
@@ -537,37 +537,37 @@ if __name__ == '__main__':
     h = "2v2"
     t = "b"
     w = 10
-    test1 = AsteriskTrialData(f'sub1_{h}_{t}_n_1.csv')
+    test1 = AstTrial(f'sub1_{h}_{t}_n_1.csv')
     test1.moving_average(window_size=w)
-    test2 = AsteriskTrialData(f'sub1_{h}_{t}_n_2.csv')
+    test2 = AstTrial(f'sub1_{h}_{t}_n_2.csv')
     test2.moving_average(window_size=w)
-    test3 = AsteriskTrialData(f'sub1_{h}_{t}_n_3.csv')
+    test3 = AstTrial(f'sub1_{h}_{t}_n_3.csv')
     test3.moving_average(window_size=w)
-    test4 = AsteriskTrialData(f'sub1_{h}_{t}_n_4.csv')
+    test4 = AstTrial(f'sub1_{h}_{t}_n_4.csv')
     test4.moving_average(window_size=w)
-    test5 = AsteriskTrialData(f'sub1_{h}_{t}_n_5.csv')
+    test5 = AstTrial(f'sub1_{h}_{t}_n_5.csv')
     test5.moving_average(window_size=w)
 
-    test6 = AsteriskTrialData(f'sub2_{h}_{t}_n_1.csv')
+    test6 = AstTrial(f'sub2_{h}_{t}_n_1.csv')
     test6.moving_average(window_size=w)
-    test7 = AsteriskTrialData(f'sub2_{h}_{t}_n_2.csv')
+    test7 = AstTrial(f'sub2_{h}_{t}_n_2.csv')
     test7.moving_average(window_size=w)
-    test8 = AsteriskTrialData(f'sub2_{h}_{t}_n_3.csv')
+    test8 = AstTrial(f'sub2_{h}_{t}_n_3.csv')
     test8.moving_average(window_size=w)
-    test9 = AsteriskTrialData(f'sub2_{h}_{t}_n_4.csv')
+    test9 = AstTrial(f'sub2_{h}_{t}_n_4.csv')
     test9.moving_average(window_size=w)
-    test10 = AsteriskTrialData(f'sub2_{h}_{t}_n_5.csv')
+    test10 = AstTrial(f'sub2_{h}_{t}_n_5.csv')
     test10.moving_average(window_size=w)
 
-    test11 = AsteriskTrialData(f'sub3_{h}_{t}_n_1.csv')
+    test11 = AstTrial(f'sub3_{h}_{t}_n_1.csv')
     test11.moving_average(window_size=w)
-    test12 = AsteriskTrialData(f'sub3_{h}_{t}_n_2.csv')
+    test12 = AstTrial(f'sub3_{h}_{t}_n_2.csv')
     test12.moving_average(window_size=w)
-    test13 = AsteriskTrialData(f'sub3_{h}_{t}_n_3.csv')
+    test13 = AstTrial(f'sub3_{h}_{t}_n_3.csv')
     test13.moving_average(window_size=w)
-    test14 = AsteriskTrialData(f'sub3_{h}_{t}_n_4.csv')
+    test14 = AstTrial(f'sub3_{h}_{t}_n_4.csv')
     test14.moving_average(window_size=w)
-    test15 = AsteriskTrialData(f'sub3_{h}_{t}_n_5.csv')
+    test15 = AstTrial(f'sub3_{h}_{t}_n_5.csv')
     test15.moving_average(window_size=w)
 
     # lines = [test1, test2, test3, test4, test5,

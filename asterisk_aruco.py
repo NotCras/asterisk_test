@@ -566,7 +566,6 @@ class ArucoAutoCrop:
         yields pairs of indices to check auto cropping on
         first index goes through all of the indices except the last index in the data
         the second index goes through all of the indices between the first index and the last index
-        :return:
         """
         data_size = len(self.trial_data)
         start_i = 0

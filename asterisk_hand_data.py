@@ -14,7 +14,7 @@ from asterisk_average import AveragedTrial
 from asterisk_plotting import AsteriskPlotting as aplt
 
 
-class AsteriskHandData:
+class AstHandTrials:
     # TODO: add ability to add trials after the fact?
     def __init__(self, subjects, hand_name, rotation=None, blocklist_file=None):
         """
@@ -132,7 +132,7 @@ class AsteriskHandData:
                     continue
 
                 try:
-                    trial_data = trial.AsteriskTrialData(f"{asterisk_trial}.csv")
+                    trial_data = trial.AstTrial(f"{asterisk_trial}.csv")
                     print(f"{trial_data.generate_name()}, labels: {trial_data.labels}")
 
                     if "no_mvt" not in trial_data.labels and "deviation" not in trial_data.labels:
@@ -470,7 +470,7 @@ class AsteriskHandData:
                 plt.plot(ideal_xs[i], ideal_ys[i], color=order_of_colors[i], label='ideal', linestyle='--')
 
 if __name__ == '__main__':
-    h = AsteriskHandData(["sub1", "sub2", "sub3"], "2v2", rotation="n")
+    h = AstHandTrials(["sub1", "sub2", "sub3"], "2v2", rotation="n")
     h.filter_data()
 
     # # subject 1 averages

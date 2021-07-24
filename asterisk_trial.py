@@ -11,7 +11,7 @@ from ast_hand_info import HandInfo
 from scipy import stats
 
 
-class AsteriskTrialData:
+class AstTrial:
     def __init__(self, file_name=None, folder=None, do_metrics=True, norm_data=True):
         """
         Class to represent a single asterisk test trial.
@@ -155,7 +155,7 @@ class AsteriskTrialData:
         pass
 
     def is_ast_trial(self):
-        return isinstance(self, AsteriskTrialData)
+        return isinstance(self, AstTrial)
 
     def is_trial(self, subject_name, hand_name, translation_name, rotation_name, trial_num=None):
         """  TODO: not tested yet
@@ -516,6 +516,6 @@ class AsteriskTrialData:
 
 
 if __name__ == '__main__':
-    test = AsteriskTrialData("sub1_2v2_c_n_1.csv", do_metrics=True, norm_data=True)
+    test = AstTrial("sub1_2v2_c_n_1.csv", do_metrics=True, norm_data=True)
     #print(test.metrics)
     test.plot_trial(use_filtered=False)

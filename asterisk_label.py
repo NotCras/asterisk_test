@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from asterisk_calculations import AsteriskCalculations
 from asterisk_plotting import AsteriskPlotting
-from asterisk_trial import AsteriskTrialData
+from asterisk_trial import AstTrial
 
 
 class AsteriskLabelling:
