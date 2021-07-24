@@ -349,7 +349,7 @@ class AsteriskHandData:
         plt.title(f"Plot: {self.hand.get_name()}, {subjects}, set #{trial_number}")
 
         if save_plot:
-            plt.savefig(f"pics/fullplot4_{self.hand.get_name()}_{subjects}_{trial_number}.jpg", format='jpg')
+            plt.savefig(f"results/pics/fullplot4_{self.hand.get_name()}_{subjects}_{trial_number}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
@@ -391,7 +391,7 @@ class AsteriskHandData:
         plt.title(f"Avg {self.hand.get_name()}, {subjects}, {rotation}, Cube (0.25 span), 0.75 depth init pos")
 
         if save_plot:
-            plt.savefig(f"pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{rotation}.jpg", format='jpg')
+            plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{rotation}.jpg", format='jpg')
 
             # name -> tuple: subj, hand  names
             print("Figure saved.")

@@ -11,7 +11,7 @@ from scipy import stats
 
 
 class AsteriskTrialData:
-    def __init__(self, file_name=None, do_metrics=True, norm_data=True):
+    def __init__(self, file_name=None, folder=None, do_metrics=True, norm_data=True):
         """
         Class to represent a single asterisk test trial.
         :param file_name: - name of the file that you want to import data from
@@ -97,10 +97,12 @@ class AsteriskTrialData:
         """
         total_path = f"{folder}{file_name}"
         try:
+            # print(f"Reading file: {total_path}")
             df_temp = pd.read_csv(total_path, skip_blank_lines=True)
 
             # TODO: insert garbage checks
 
+            # print(f"Now at data conditioning.")
             df = self._condition_df(df_temp, norm_data=norm_data)
 
         except Exception as e:  # TODO: add more specific except clauses
@@ -305,7 +307,7 @@ class AsteriskTrialData:
         plt.title(f"Plot: {self.generate_name()}")
 
         if save_plot:
-            plt.savefig(f"pics/plot_{self.generate_name()}.jpg", format='jpg')
+            plt.savefig(f"results/pics/plot_{self.generate_name()}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
@@ -428,11 +430,15 @@ class AsteriskTrialData:
 
         target_line_length = acalc.narrow_target(last_obj_pose, target_line)
 
-        if target_line_length:
+        if target_line_length <= n_samples - 2:  # want the plus 1 to round up
             distance_travelled = acalc.t_distance([0, 0], target_line[target_line_length + 1])
             final_target_ln = target_line[:target_line_length]
 
-        else:
+        elif target_line_length == n_samples - 1:   # if at the top,
+            distance_travelled = acalc.t_distance([0, 0], target_line[target_line_length])  # + 1])
+            final_target_ln = target_line[:target_line_length]
+
+        else:  # covering for no movement
             distance_travelled = acalc.t_distance([0, 0], target_line[1])
             final_target_ln = target_line[:2]  # TODO: unfortunately,  we register a very small translation here
 
@@ -509,6 +515,6 @@ class AsteriskTrialData:
 
 
 if __name__ == '__main__':
-    test = AsteriskTrialData("sub1_2v2_c_n_3.csv")
+    test = AsteriskTrialData("sub1_2v2_c_n_1.csv", do_metrics=True, norm_data=True)
     #print(test.metrics)
     test.plot_trial(use_filtered=False)

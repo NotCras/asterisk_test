@@ -62,7 +62,7 @@ class AstData:
         :param rotation_name: name of rotation
         :param trial_number: trial number
         """
-        folders = f"asterisk_test_data/{subject_name}/{hand_name}/"
+        folders = f"compressed_data/{subject_name}/{hand_name}/"
         file_name = f"{subject_name}_{hand_name}_{translation_name}_{rotation_name}_{trial_number}"
 
         extract_from = folders+file_name+".zip"

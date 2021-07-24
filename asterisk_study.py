@@ -89,7 +89,7 @@ class AsteriskStudy:
 
         if save_plot:
             # added the zero to guarantee that it comes first
-            plt.savefig(f"pics/0all_{rotation}.jpg", format='jpg')
+            plt.savefig(f"results/pics/0all_{rotation}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
@@ -275,7 +275,7 @@ class AstHandComparison:
 
         if save_plot:
             # added the zero to guarantee that it comes first
-            plt.savefig(f"pics/0all_{rotation}.jpg", format='jpg')
+            plt.savefig(f"results/pics/0all_{rotation}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
@@ -307,7 +307,7 @@ class AstHandComparison:
 
         if save_plot:
             # added the zero to guarantee that it comes first
-            plt.savefig(f"pics/0all_{rotation}.jpg", format='jpg')
+            plt.savefig(f"results/pics/0all_{rotation}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
