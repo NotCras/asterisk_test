@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from asterisk_plotting import AsteriskPlotting as aplt
 from asterisk_calculations import AsteriskCalculations as acalc
+from asterisk_metrics import AstMetrics as am
 import pdb
 from ast_hand_info import HandInfo
 from scipy import stats
@@ -478,27 +479,27 @@ class AsteriskTrialData:
         """
         Updates all metric values on the object.
         """
-        translation_fd, rotation_fd = acalc.calc_frechet_distance(self)
+        translation_fd, rotation_fd = am.calc_frechet_distance(self)
         # fd = am.calc_frechet_distance_all(self)
 
         try:
-            mvt_efficiency, arc_len = acalc.calc_mvt_efficiency(self)
+            mvt_efficiency, arc_len = am.calc_mvt_efficiency(self)
         except RuntimeWarning:
             mvt_efficiency = -1
             arc_len = -1
 
         try:
-            max_error = acalc.calc_max_error(self, arc_len)
+            max_error = am.calc_max_error(self, arc_len)
         except RuntimeWarning:
             max_error = 0
 
         try:  # TODO: move all these try excepts to asterisk calculations
-            area_btwn = acalc.calc_area_btwn_curves(self)
+            area_btwn = am.calc_area_btwn_curves(self)
         except:
             area_btwn = -1
 
         try:  # this one is particularly troublesome
-            max_area_region, max_area_loc = acalc.calc_max_area_region(self)
+            max_area_region, max_area_loc = am.calc_max_area_region(self)
         except IndexError:
             print("Max area region failed")
             max_area_region = -1
