@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 
+"""
+Handles various data management classes:
+1) AstData: handles extracting compressed trial data
+2) AstNaming: holds all of the relevant trial options
+3) generate options function - a function that uses the AstNaming class to return any sort of list of options
+4) generate_... - a set of four one-stop-shop generator functions for iterating over all of the trial options
+5) smart input function: function which is key to the prompts one will find if they run most of the files as scripts
+6) AstDir: handles directory locations for the rest of the classes (NOT DONE YET)
+"""
+
 import os
 import matplotlib.pyplot as plt
 
@@ -84,7 +94,7 @@ class AstData:
 
 
 class AstNaming:
-    options = {
+    options = {  # TODO: to make it easier for user, should we have it read the options in from a txt file?
         "subjects": ["sub1", "sub2", "sub3"],
         "hands": ["2v2", "2v3", "3v3", "barrett", "basic", "m2active", "m2stiff", "modelvf"],  # "human"
         "hands_only_n": ["basic", "m2stiff", "modelvf"],
@@ -205,6 +215,20 @@ def generate_all_names(subject=None, hand_name=None, no_rotations=False):
     for s in subject:
         for h in hand_name:
             yield generate_names_with_s_h(s, h, no_rotations=no_rotations)
+
+
+def generate_fname(subject_name, hand):
+    """Create the full pathname
+    # :param folder_path Directory where data is located -> currently not used
+    :param subject_name Name of subject
+    :param hand Name of hand"""
+
+    for s, h, t, r, n in generate_names_with_s_h(subject_name, hand):
+        file_name = f"{s}_{h}_{t}_{r}_{n}.csv"
+
+        # total_path = folder_path + file_name
+        # yield total_path
+        yield file_name
 
 
 def smart_input(prompt, option, valid_options=None):

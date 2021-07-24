@@ -1,6 +1,6 @@
 
 '''
-Code to...
+What will become the oo class file for a helper to run the asterisk test.
 a) take in user input to determine data naming and file structure
         using var = input( "enter: ")
 b) check that data was entered correctly - look for duplicates
@@ -18,7 +18,7 @@ e) compress the data into a zip file
 import os, shutil, keyboard, subprocess 
 from curtsies import Input 
 from pathlib import Path 
-import AsteriskTestTypes as prompts
+import asterisk_data_manager as prompts
 
 #------------------------------------
 

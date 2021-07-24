@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+"""
+File for assessing labels to put on an asterisk trial object. [NOT DONE]
+"""
+
 import pdb
 
 import numpy as np

@@ -1,5 +1,5 @@
 """
-Handles averaging multiple AstTrial objects in one direction. 
+Handles averaging multiple AstTrial objects in one direction. Handles both the paths and metrics.
 """
 
 import numpy as np
@@ -19,7 +19,7 @@ class AveragedTrial(AstTrial):
     def __init__(self):
         super(AveragedTrial, self).__init__()  # for making an empty AsteriskTrialData object
 
-        self.subject = []
+        self.subject = []  # TODO: maybe make subject a set? Maybe also make a direction and rotation label set?
         self.names = []  # names of trials averaged
         self.averaged_trials = []  # actual AsteriskTrialData objects that were averaged
         # self.pose_average = []  # maybe just use poses
@@ -35,6 +35,7 @@ class AveragedTrial(AstTrial):
         self.metrics_sd = None
 
         # TODO: change add data functions to work for averaging
+        # TODO: incorporate labelling
 
     def get_poses_ad(self, which_set=0):
         """

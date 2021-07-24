@@ -1,3 +1,7 @@
+"""
+Several analyzer classes which combine metric data for different sets of data and exports them. [NOT DONE]
+"""
+
 
 import csv
 import numpy as np

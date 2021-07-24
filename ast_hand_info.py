@@ -1,3 +1,9 @@
+"""
+An object which holds important information about the hand, readily accessible when needed for normalizing translation
+Holds a hand's name, span & depth measurements, number of fingers.
+Loads this information from hidden file in the root.
+"""
+
 import pandas as pd
 from numpy import abs
 

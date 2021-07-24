@@ -16,7 +16,7 @@ from scipy import stats
 
 
 class AstTrial:
-    def __init__(self, file_name=None, folder=None, do_metrics=True, norm_data=True):
+    def __init__(self, file_name=None, folder=None, do_metrics=True, norm_data=True, controller_label=None):
         """
         Class to represent a single asterisk test trial.
         :param file_name: - name of the file that you want to import data from
@@ -70,7 +70,9 @@ class AstTrial:
         self.total_distance = None  # total_distance is built in because of how integral it is
         self.metrics = None  # pd series that contains all metrics in it... populate it with update_all_metrics
 
-        self.labels = []  # list of string labels that indicate qualitative (automated) observations about the data
+        # TODO: integrate controller label into the plot title
+        self.controller_label = controller_label  # TODO: combine with data_labels but as a dictionary?
+        self.data_labels = []  # list of string labels that indicate qualitative (automated) observations about the data
 
         if file_name:
             self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
