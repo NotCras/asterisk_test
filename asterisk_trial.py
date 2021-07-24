@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Handles a single asterisk trial. Manages reading in, conditioning, and filtering object paths. Also handles plotting.
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -89,6 +93,58 @@ class AstTrial:
         :param hand_name: name of hand to make
         """
         self.hand = HandInfo(hand_name)
+
+    def add_data_by_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True):
+        """
+        Add object path data as a file. By default, will run data through conditioning function
+        """
+        # TODO: add translation, rotation, and other labels
+        self.hand = HandInfo(handinfo_name)
+
+        # Data will not be filtered in this step
+        data = self._read_file(file_name, norm_data=norm_data)
+        self.poses = data[["x", "y", "rmag"]]
+
+        self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
+        self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
+
+        if self.total_distance < 0.1:
+            self.labels.append("no_mvt")
+            print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
+
+        if self.assess_path_deviation():
+            self.labels.append("deviation")
+            print(f"Detected major deviation in {self.generate_name()}. Labelled trial.")
+
+        if do_metrics and self.poses is not None and "no_mvt" not in self.labels:
+            self.update_all_metrics()
+
+
+    def add_data_by_data(self, path_df, condition_df=True, do_metrics=True):
+        """
+        Add object path data as a dataframe. By default, will run dataframe through conditioning function
+        """
+        # TODO: add translation, rotation, and other labels
+        if condition_df:
+            data = self._condition_df(path_df)
+        else:
+            data=path_df
+
+        self.poses = data[["x", "y", "rmag"]]
+
+        self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
+        self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
+
+        if self.total_distance < 0.1:
+            self.labels.append("no_mvt")
+            print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
+
+        if self.assess_path_deviation():
+            self.labels.append("deviation")
+            print(f"Detected major deviation in {self.generate_name()}. Labelled trial.")
+
+        if do_metrics and self.poses is not None and "no_mvt" not in self.labels:
+            self.update_all_metrics()
 
     def _read_file(self, file_name, folder="aruco_data/", norm_data=True):
         """

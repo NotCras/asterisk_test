@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Class for organizing asterisk trial data for one specific hand. Handles analysis, averaging, and plotting.
+"""
 
 import numpy as np
 import pandas as pd

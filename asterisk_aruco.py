@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-@author: kartik (original), john (major edits, cleaning)
+Four classes for asterisk test aruco analysis:
+1) ArucoIndices: finds start and end
+2) ArucoVision: handles detecting of aruco code, can filter aruco corners
+3) ArucoPoseDetect: given an arucovision object (with detected aruco code corners), calculates aruco code pose
+4) ArucoAutoCrop: automatically finds start and end indices using a simple model
+5) 2 helper functions which handle aruco code analysis
+----- one for single trial analysis, and another for batches of trials
+@author: kartik (original), john (major edits, cleaning/refactoring, indices/autocropper)
 """
 import numpy as np
 import sys, os, time, pdb
@@ -19,6 +26,7 @@ from matplotlib.widgets import Slider, Button
 marker_side = 0.03
 processing_freq = 1  # analyze every 1 image
 # ============================
+
 
 class ArucoIndices:
     """

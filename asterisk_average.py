@@ -1,3 +1,7 @@
+"""
+Handles averaging multiple AstTrial objects in one direction. 
+"""
+
 import numpy as np
 from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan, radians, mean, std
 import pandas as pd
@@ -29,6 +33,8 @@ class AveragedTrial(AstTrial):
 
         self.total_distance_sd = None
         self.metrics_sd = None
+
+        # TODO: change add data functions to work for averaging
 
     def get_poses_ad(self, which_set=0):
         """
