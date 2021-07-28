@@ -39,8 +39,8 @@ class AsteriskPlotting:
         return set1, z
 
     @staticmethod
-    def diagonal(num_points=25, mod1=1, mod2=1):
-        coords = np.linspace(0, 0.3536, num_points)  # 0.3536 ~= 1 / (2* sqrt(2))
+    def diagonal(num_points=25, mod1=1, mod2=1, max=0.3536):
+        coords = np.linspace(0, max, num_points)  # 0.3536 ~= 1 / (2* sqrt(2))
 
         set1 = mod1 * coords
         set2 = mod2 * coords
@@ -48,43 +48,43 @@ class AsteriskPlotting:
         return set1, set2
 
     @staticmethod
-    def get_a(num_points=25):
-        y_coords, x_coords = AsteriskPlotting.straight(num_points)
+    def get_a(num_points=25, max=0.5):
+        y_coords, x_coords = AsteriskPlotting.straight(num_points=num_points, max=max)
         return x_coords, y_coords
 
     @staticmethod
-    def get_b(num_points=25):
-        x_coords, y_coords = AsteriskPlotting.diagonal(num_points)
+    def get_b(num_points=25, max=0.5):
+        x_coords, y_coords = AsteriskPlotting.diagonal(num_points=num_points, max=max)
         return x_coords, y_coords
 
     @staticmethod
-    def get_c(num_points=25):
-        x_coords, y_coords = AsteriskPlotting.straight(num_points)
+    def get_c(num_points=25, max=0.5):
+        x_coords, y_coords = AsteriskPlotting.straight(num_points=num_points, max=max)
         return x_coords, y_coords
 
     @staticmethod
-    def get_d(num_points=25):
-        x_coords, y_coords = AsteriskPlotting.diagonal(num_points=num_points, mod1=1, mod2=-1)
+    def get_d(num_points=25, max=0.3536):
+        x_coords, y_coords = AsteriskPlotting.diagonal(num_points=num_points, mod1=1, mod2=-1, max=max)
         return x_coords, y_coords
 
     @staticmethod
-    def get_e(num_points=25):
-        y_coords, x_coords = AsteriskPlotting.straight(num_points, mod=-1) #, max=0.75)
+    def get_e(num_points=25, max=0.5):
+        y_coords, x_coords = AsteriskPlotting.straight(num_points, mod=-1, max=max) #, max=0.75)
         return x_coords, y_coords
 
     @staticmethod
-    def get_f(num_points=25):
-        x_coords, y_coords = AsteriskPlotting.diagonal(num_points=num_points, mod1=-1, mod2=-1)
+    def get_f(num_points=25, max=0.3536):
+        x_coords, y_coords = AsteriskPlotting.diagonal(num_points=num_points, mod1=-1, mod2=-1, max=max)
         return x_coords, y_coords
 
     @staticmethod
-    def get_g(num_points=25):
-        x_coords, y_coords = AsteriskPlotting.straight(num_points, mod=-1)
+    def get_g(num_points=25, max=0.5):
+        x_coords, y_coords = AsteriskPlotting.straight(num_points, mod=-1, max=max)
         return x_coords, y_coords
 
     @staticmethod
-    def get_h(num_points=25):
-        x_coords, y_coords = AsteriskPlotting.diagonal(num_points, mod1=-1)
+    def get_h(num_points=25, max=0.3536):
+        x_coords, y_coords = AsteriskPlotting.diagonal(num_points, mod1=-1, max=max)
         return x_coords, y_coords
 
     @staticmethod

@@ -75,7 +75,11 @@ class AstTrial:
         self.data_labels = []  # list of string labels that indicate qualitative (automated) observations about the data
 
         if file_name:
-            self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
+            self.target_line, self.total_distance = self.generate_target_line(100)  #, no_norm_len=norm_data)  # 100 samples
+
+            # if not norm_data:
+            #     self.target_line = [item * 2 *  for item in self.target_line]
+
             self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
             if self.total_distance < 0.1:
@@ -120,7 +124,6 @@ class AstTrial:
 
         if do_metrics and self.poses is not None and "no_mvt" not in self.labels:
             self.update_all_metrics()
-
 
     def add_data_by_data(self, path_df, condition_df=True, do_metrics=True):
         """
@@ -208,9 +211,6 @@ class AstTrial:
                 df = df[(df[col] < q_hi)]  # this has got to be the problem line
 
         return df.round(4)
-
-    def add_data(self):
-        pass
 
     def is_ast_trial(self):
         return isinstance(self, AstTrial)
@@ -473,13 +473,17 @@ class AstTrial:
 
         return False
 
-    def generate_target_line(self, n_samples=100):
+    def generate_target_line(self, n_samples=100, no_norm=0):
         """
         Using object trajectory (self.poses), build a line to compare to for frechet distance.
         Updates this attribute on object.
         :param n_samples: number of samples for target line. Defaults to 100
         """
-        x_vals, y_vals = aplt.get_direction(self.trial_translation, n_samples)
+
+        #if no_norm==0:
+        x_vals, y_vals = aplt.get_direction(self.trial_translation, n_samples=n_samples)
+        #else:
+        #    x_vals, y_vals = aplt.get_direction(self.trial_translation, n_samples=n_samples, max=no_norm)
 
         target_line = np.column_stack((x_vals, y_vals))
 
