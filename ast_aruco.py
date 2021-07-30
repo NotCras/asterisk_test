@@ -753,16 +753,26 @@ if __name__ == "__main__":
     hand = datamanager.smart_input("Enter name of hand: ", "hands")
 
     if ans == "1":
-        translation = datamanager.smart_input("Enter type of translation: ", "translations")
-        rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
+        translation = datamanager.smart_input("Enter type of translation: ", "translations_w_n")
+
+        if translation == "n":
+            rotation = datamanager.smart_input("Enter type of rotation: ", "rotations_n_trans")
+        else:
+            rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
+
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
 
         viewer = datamanager.AstData()
         viewer.view_images(subject, hand, translation, rotation, trial_num)
 
     elif ans == "2":
-        translation = datamanager.smart_input("Enter type of translation: ", "translations")
-        rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
+        translation = datamanager.smart_input("Enter type of translation: ", "translations_w_n")
+
+        if translation == "n":
+            rotation = datamanager.smart_input("Enter type of rotation: ", "rotations_n_trans")
+        else:
+            rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
+
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
         index = datamanager.smart_input("Should we search for stored index values (start & end)", "consent")
         crop = datamanager.smart_input("Should we try to automatically crop the trial's start and end?", "consent")
@@ -782,8 +792,13 @@ if __name__ == "__main__":
         batch_aruco_analysis(subject, hand, no_rotations=True, home=home_directory, indices=i, crop=c)
 
     elif ans == "4":
-        translation = datamanager.smart_input("Enter type of translation: ", "translations")
-        rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
+        translation = datamanager.smart_input("Enter type of translation: ", "translations_w_n")
+
+        if translation == "n":
+            rotation = datamanager.smart_input("Enter type of rotation: ", "rotations_n_trans")
+        else:
+            rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
+
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
 
         file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
@@ -802,8 +817,13 @@ if __name__ == "__main__":
         # plt.show()
 
     elif ans == "5":
-        translation = datamanager.smart_input("Enter type of translation: ", "translations")
-        rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
+        translation = datamanager.smart_input("Enter type of translation: ", "translations_w_n")
+
+        if translation == "n":
+            rotation = datamanager.smart_input("Enter type of rotation: ", "rotations_n_trans")
+        else:
+            rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
+
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
 
         file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
@@ -818,8 +838,13 @@ if __name__ == "__main__":
         print(f"b: {b_idx}, e: {e_idx}")
 
     elif ans == "6":
-        translation = datamanager.smart_input("Enter type of translation: ", "translations")
-        rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
+        translation = datamanager.smart_input("Enter type of translation: ", "translations_w_n")
+
+        if translation == "n":
+            rotation = datamanager.smart_input("Enter type of rotation: ", "rotations_n_trans")
+        else:
+            rotation = datamanager.smart_input("Enter type of rotation: ", "rotation_combos")
+
         trial_num = datamanager.smart_input("Enter trial number: ", "numbers")
 
         file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
