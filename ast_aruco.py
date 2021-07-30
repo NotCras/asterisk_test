@@ -400,7 +400,7 @@ class ArucoVision:
 
 
 class ArucoPoseDetect:
-    def __init__(self, ar_viz_obj, filter_corners=False, filter_window=3, autocrop=False):
+    def __init__(self, ar_viz_obj, filter_corners=False, filter_window=3): #, autocrop=False):
         """
         Object for running pose analysis on data
         """
@@ -415,23 +415,23 @@ class ArucoPoseDetect:
         self.dist = ar_viz_obj.dist
 
         self.init_pose, self.est_poses = self.estimate_pose()
-        self.start = 0
-        self.end = None
-
-        if autocrop:
-            print("Running autocropper!")
-            cropper = ArucoAutoCrop(self.est_poses)
-
-            start_i, end_i, _, _ = cropper.auto_crop()
-
-            print(f"cropped indices => start:{start_i} | end:{end_i}")
-
-            self.est_poses = self.est_poses.loc[start_i:end_i]
-            self.start = start_i
-            self.end = end_i
-
-    def get_autocrop_indices(self):
-        return self.start, self.end
+        # self.start = 0
+        # self.end = None
+        #
+        # if autocrop:
+        #     print("Running autocropper!")
+        #     cropper = ArucoAutoCrop(self.est_poses)
+        #
+        #     start_i, end_i, _, _ = cropper.auto_crop()
+        #
+        #     print(f"cropped indices => start:{start_i} | end:{end_i}")
+        #
+        #     self.est_poses = self.est_poses.loc[start_i:end_i]
+        #     self.start = start_i
+        #     self.end = end_i
+    #
+    # def get_autocrop_indices(self):
+    #     return self.start, self.end
 
     def unit_vector(self, vector):
         """ Returns the unit vector of the vector.  """
@@ -566,8 +566,19 @@ class ArucoPoseDetect:
 
 
 class ArucoAutoCrop:
-    def __init__(self, df_data):
-        self.trial_data = df_data
+    def __init__(self, apose_obj):
+        self.trial_data = apose_obj.est_poses
+
+        print("Running autocropper!")
+        self.start_i, self.end_i, self.cropped_path_dist, _ = self.auto_crop()
+
+        self.cropped_poses = self.trial_data.loc[self.start_i:self.end_i]
+
+    def get_cropped_poses(self):
+        return self.cropped_poses
+
+    def get_autocrop_indices(self):
+        return self.start_i, self.end_i
 
     def yield_index_pairs(self, desired_rotation=None):
         """
@@ -642,6 +653,7 @@ class ArucoAutoCrop:
                     c_max_is = (i1, i2)  # record which indices we are saving
 
             # print("  ")
+        print(f"cropped indices => start:{c_max_is[0]} | end:{c_max_is[1]}")
 
         return c_max_is[0], c_max_is[1], c_max_dist, c_min_di
 
