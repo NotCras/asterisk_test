@@ -567,6 +567,7 @@ class ArucoPoseDetect:
 
 class ArucoAutoCrop:
     def __init__(self, apose_obj):
+        self.pose_obj = apose_obj
         self.trial_data = apose_obj.est_poses
 
         print("Running autocropper!")
@@ -579,6 +580,22 @@ class ArucoAutoCrop:
 
     def get_autocrop_indices(self):
         return self.start_i, self.end_i
+
+    def save_poses(self, file_name_overwrite=None):
+        """
+        Saves pose data as a new csv file
+        :param file_name_overwrite: optional parameter, will save as generate_name unless a different name is specified
+        """
+        if file_name_overwrite is None:
+            data_name = self.pose_obj.vision_data.trial_name
+            folder = "aruco_data"  # "csv"
+            new_file_name = f"{folder}/{data_name}.csv"
+
+        else:
+            new_file_name = file_name_overwrite + ".csv"
+
+        self.cropped_poses.to_csv(new_file_name, index=True)
+        # print(f"CSV File generated with name: {new_file_name}")
 
     def yield_index_pairs(self, desired_rotation=None):
         """
@@ -684,14 +701,25 @@ def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=
     try:
         # print(f"Needs cropping: {needs_cropping}")
         trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
-        trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4, autocrop=needs_cropping)
-
-        trial_pose.save_poses()
+        trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
         print(f"Completed Aruco Analysis for: {file_name}")
 
     except Exception as e:
         print(e)
         print(f"Failed Aruco Analysis for: {file_name}")  # TODO: be more descriptive about where the error happened
+        return
+
+    try:
+        if needs_cropping:
+            trial_cropped = ArucoAutoCrop(trial_pose)
+
+            trial_cropped.save_poses()
+        else:
+            trial_pose.save_poses()
+
+    except Exception as e:
+        print(e)
+        print(f"Failed ArucoAutoCrop for: {file_name}")
 
 
 def batch_aruco_analysis(subject, hand, no_rotations=True, home=None, indices=True, crop=True):
@@ -723,18 +751,50 @@ def batch_aruco_analysis(subject, hand, no_rotations=True, home=None, indices=Tr
 
         if not crop:
             needs_cropping = False
+    #
+    #     except Exception as e:
+    #     print(e)
+    #     print(f"Failed Aruco Analysis for: {file_name}")  # TODO: be more descriptive about where the error happened
+    #     return
+    #
+    # try:
+    #     if needs_cropping:
+    #         trial_cropped = ArucoAutoCrop(trial_pose)
+    #
+    #         trial_cropped.save_poses()
+    #     else:
+    #         trial_pose.save_poses()
+    #
+    # except Exception as e:
+    #     print(e)
+    #     print(f"Failed ArucoAutoCrop for: {file_name}")
 
         try:
             trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
-            trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4, autocrop=needs_cropping)
-            trial_pose.save_poses()
-            s, e = trial_pose.get_autocrop_indices()
+            trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
 
-            files_covered.append(file_name)
-            files_df = files_df.append({"name": file_name, "start_i": s, "end_i": e}, ignore_index=True)
         except Exception as e:
             print(e)
             files_covered.append(f"FAILED: {file_name}")
+            continue
+
+        try:
+            if needs_cropping:
+                print("Running Autocropper!")
+                trial_cropped = ArucoAutoCrop(trial_pose)
+
+                trial_cropped.save_poses()
+                s, e = trial_cropped.get_autocrop_indices()
+                files_df = files_df.append({"name": file_name, "start_i": s, "end_i": e}, ignore_index=True)
+
+            else:
+                trial_pose.save_poses()
+
+            files_covered.append(file_name)
+
+        except Exception as e:
+            print(e)
+            files_covered.append(f"FAILED indices: {file_name}")
 
         files_df.to_csv(f"index_values_{hand}.csv")
 
