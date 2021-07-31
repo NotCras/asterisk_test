@@ -760,6 +760,7 @@ def batch_aruco_analysis(subject, hand, no_rotations=True, home=None, indices=Tr
         except Exception as e:
             print(e)
             files_covered.append(f"FAILED: {file_name}")
+            files_df = files_df.append({"name": file_name, "start_i": -1, "end_i": -1}, ignore_index=True)
             continue
 
         try:
@@ -779,6 +780,7 @@ def batch_aruco_analysis(subject, hand, no_rotations=True, home=None, indices=Tr
         except Exception as e:
             print(e)
             files_covered.append(f"FAILED indices: {file_name}")
+            files_df = files_df.append({"name": file_name, "start_i": -1, "end_i": -1}, ignore_index=True)
 
         files_df.to_csv(f"index_values_{hand}.csv")
 
