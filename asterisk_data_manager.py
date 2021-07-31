@@ -268,6 +268,13 @@ def smart_input(prompt, option, valid_options=None):
     return response
 
 
+def smart_answer(user_input, options):
+    """
+    Function that will enable users to enter in multiple options. This function analyzes a user's input and returns
+    a list of the options which were selected.
+    """
+    pass
+
 class AstDir:
     """
     Manages the folder paths where data is stored.

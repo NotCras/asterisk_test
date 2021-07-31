@@ -839,7 +839,7 @@ if __name__ == "__main__":
         single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=home_directory, indices=i, crop=c)
 
     elif ans == "3":
-        r = datamanager.smart_input("Should we focus on just translation trials or include rotation trials?", "consent")
+        r = datamanager.smart_input("Should we include trials with rotations? ", "consent")
         index = datamanager.smart_input("Should we search for stored index values (start & end)", "consent")
         crop = datamanager.smart_input("Should we try to automatically crop the trial's start and end?", "consent")
 
