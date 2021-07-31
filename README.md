@@ -23,7 +23,10 @@ We use python 3. We have the following dependencies:
 - *curtsies**
 - *keyboard**
 
-Install with pip. 
+Install dependencies with pip.
+
+Currently, we are considering configuring this package for pip, but we will need to find a 
+suitable solution for managing folders first. 
 
 **Note:* You can ignore *curtsies* and *keyboard* if you will not use the ***asterisk_trial_helper.py*** script. 
 Similarly, you can ignore *opencv* if you will not use the ***asterisk_aruco.py*** script.

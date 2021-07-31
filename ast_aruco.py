@@ -641,8 +641,9 @@ class ArucoAutoCrop:
             d1 = self.trial_data.iloc[i1]
             d2 = self.trial_data.iloc[i2]
 
-            i_dist = np.sqrt((d2['x']-d1['x'])**2 + (d2['y']-d1['y'])**2)  # the distance between the sampled points
-            d_i = i2 - i1  # TODO: what about rotation?
+            # the distance between the sampled points
+            i_dist = np.sqrt((d2['x']-d1['x'])**2 + (d2['y']-d1['y'])**2 + (d2['rmag'] - d1['rmag'])**2)
+            d_i = i2 - i1
 
             val_is_close = abs(c_max_dist - i_dist) <= c_max_dist * 0.01
 
@@ -751,23 +752,6 @@ def batch_aruco_analysis(subject, hand, no_rotations=True, home=None, indices=Tr
 
         if not crop:
             needs_cropping = False
-    #
-    #     except Exception as e:
-    #     print(e)
-    #     print(f"Failed Aruco Analysis for: {file_name}")  # TODO: be more descriptive about where the error happened
-    #     return
-    #
-    # try:
-    #     if needs_cropping:
-    #         trial_cropped = ArucoAutoCrop(trial_pose)
-    #
-    #         trial_cropped.save_poses()
-    #     else:
-    #         trial_pose.save_poses()
-    #
-    # except Exception as e:
-    #     print(e)
-    #     print(f"Failed ArucoAutoCrop for: {file_name}")
 
         try:
             trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
@@ -855,13 +839,15 @@ if __name__ == "__main__":
         single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=home_directory, indices=i, crop=c)
 
     elif ans == "3":
+        r = datamanager.smart_input("Should we focus on just translation trials or include rotation trials?", "consent")
         index = datamanager.smart_input("Should we search for stored index values (start & end)", "consent")
         crop = datamanager.smart_input("Should we try to automatically crop the trial's start and end?", "consent")
 
+        rots = r == 'n'
         i = index == 'y'
         c = crop == 'y'
 
-        batch_aruco_analysis(subject, hand, no_rotations=True, home=home_directory, indices=i, crop=c)
+        batch_aruco_analysis(subject, hand, no_rotations=rots, home=home_directory, indices=i, crop=c)
 
     elif ans == "4":
         translation = datamanager.smart_input("Enter type of translation: ", "translations_w_n")
