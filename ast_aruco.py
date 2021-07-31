@@ -566,12 +566,12 @@ class ArucoPoseDetect:
 
 
 class ArucoAutoCrop:
-    def __init__(self, apose_obj):
+    def __init__(self, apose_obj, only_rotation=False):
         self.pose_obj = apose_obj
         self.trial_data = apose_obj.est_poses
 
         print("Running autocropper!")
-        self.start_i, self.end_i, self.cropped_path_dist, _ = self.auto_crop()
+        self.start_i, self.end_i, self.cropped_path_dist, _ = self.auto_crop(only_rotation=only_rotation)
 
         self.cropped_poses = self.trial_data.loc[self.start_i:self.end_i]
 
@@ -611,7 +611,7 @@ class ArucoAutoCrop:
             # self.trial_data.rmag.eq(15).idxmax()
             i = 0
             for val in self.trial_data.rmag:
-                if abs(val-15) < 0.5:  # TODO: revisit this logic
+                if abs(val-desired_rotation) < 6:  # TODO: revisit this logic
                     start_i = i
                     break
 
@@ -624,7 +624,7 @@ class ArucoAutoCrop:
             for i2 in range(i1 + 1, data_size):
                 yield i1, i2
 
-    def auto_crop(self):
+    def auto_crop(self, only_rotation=False):
         """
         Crops an image trial automatically, but finding the largest distance travelled in the smallest range of index
         :param df_data
@@ -642,7 +642,10 @@ class ArucoAutoCrop:
             d2 = self.trial_data.iloc[i2]
 
             # the distance between the sampled points
-            i_dist = np.sqrt((d2['x']-d1['x'])**2 + (d2['y']-d1['y'])**2 + (d2['rmag'] - d1['rmag'])**2)
+            if only_rotation:
+                i_dist = np.sqrt((d2['rmag']-d1['rmag'])**2)
+            else:
+                i_dist = np.sqrt((d2['x']-d1['x'])**2 + (d2['y']-d1['y'])**2)  # + (d2['rmag'] - d1['rmag'])**2)
             d_i = i2 - i1
 
             val_is_close = abs(c_max_dist - i_dist) <= c_max_dist * 0.01
@@ -712,7 +715,10 @@ def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=
 
     try:
         if needs_cropping:
-            trial_cropped = ArucoAutoCrop(trial_pose)
+            if r in ['cw', 'ccw']:
+                trial_cropped = ArucoAutoCrop(trial_pose, only_rotation=True)
+            else:
+                trial_cropped = ArucoAutoCrop(trial_pose)
 
             trial_cropped.save_poses()
         else:
@@ -766,7 +772,11 @@ def batch_aruco_analysis(subject, hand, no_rotations=True, home=None, indices=Tr
         try:
             if needs_cropping:
                 print("Running Autocropper!")
-                trial_cropped = ArucoAutoCrop(trial_pose)
+
+                if r in ['cw', 'ccw']:
+                    trial_cropped = ArucoAutoCrop(trial_pose, only_rotation=True)
+                else:
+                    trial_cropped = ArucoAutoCrop(trial_pose)
 
                 trial_cropped.save_poses()
                 s, e = trial_cropped.get_autocrop_indices()
