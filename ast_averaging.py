@@ -467,7 +467,7 @@ class AveragedTrial(AstTrial):
 
         # self.plot_line_contributions()
 
-        plt.title(f"Averaged: {self.hand.get_name()}, {self.trial_translation}") # _{self.trial_rotation}")
+        plt.title(f"Averaged: {self.hand.get_name()}, {self.trial_translation}, {self.trial_rotation}")
         plt.legend('', frameon=False)
 
         self.plot_orientations(marker_scale=25, line_length=0.015, scale=1)

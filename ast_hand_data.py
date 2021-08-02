@@ -260,7 +260,7 @@ class AstHandTrials:
             # TODO: make this smarter, so that we base the list on what exists on object
             for t, r in datamanager.generate_t_r_pairs(self.hand.get_name()):
                 # make sure that we only include translations that are in the data
-                if t in dirs:
+                if t in dirs:  # TODO: also look at rotations
                     print(f"Averaging {t}")
                     avg = self._average_dir(t, r, subjects)
                     if avg is not None:
