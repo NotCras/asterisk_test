@@ -83,14 +83,14 @@ class AstTrial:
             self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
             if self.total_distance < 0.1:
-                self.labels.append("no_mvt")
+                self.data_labels.append("no_mvt")
                 print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
 
             if self.assess_path_deviation():
-                self.labels.append("deviation")
+                self.data_labels.append("deviation")
                 print(f"Detected major deviation in {self.generate_name()}. Labelled trial.")
 
-            if do_metrics and self.poses is not None and "no_mvt" not in self.labels:
+            if do_metrics and self.poses is not None and "no_mvt" not in self.data_labels:
                 self.update_all_metrics()
 
     def add_hand(self, hand_name):

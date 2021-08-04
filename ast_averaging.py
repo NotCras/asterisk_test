@@ -473,7 +473,7 @@ class AveragedTrial(AstTrial):
         self.plot_orientations(marker_scale=25, line_length=0.015, scale=1)
 
         if save_plot:
-            plt.savefig(f"pics/avgdebug_{self.hand.get_name()}_{len(self.subject)}subs_{self.trial_translation}_"
+            plt.savefig(f"results/pics/avgdebug_{self.hand.get_name()}_{len(self.subject)}subs_{self.trial_translation}_"
                         f"{self.trial_rotation}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")

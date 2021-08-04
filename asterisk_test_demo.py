@@ -26,7 +26,7 @@ def run_ast_study():
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
     subjects = datamanager.generate_options("subjects")
-    hand_names = ["basic", "m2stiff", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]
+    hand_names = ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]  # "m2stiff",
 
     # failed_files = []  # TODO: add ability to collect failed files
 
@@ -38,10 +38,10 @@ def run_ast_study():
         for s in subjects:
             batch_aruco_analysis(s, h, no_rotations=False, home=home_directory)
 
-        for rot in ["n", "m15", "p15"]:
+        for rot in ['n']:  # , "m15", "p15"]:
             print(f"Getting {h} ({rot}) data...")
             # data = AstHandTrials(subjects, h, rotation="n", blocklist_file="trial_blocklist.csv")
-            data = AstHandTrials(subjects, h, rotation=rot)  # , blocklist_file="trial_blocklist.csv")
+            data = AstHandTrials(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
             # data = study.return_hand(h)
 
             print(f"Getting {h} data...")
@@ -51,7 +51,7 @@ def run_ast_study():
             data.save_all_data()
 
             print("Calculating averages...")
-            data.calc_averages()  # rotation="n")
+            data.calc_averages( rotation="n")
 
             print("Saving plots...")
 

@@ -136,9 +136,9 @@ class AstHandTrials:
 
                 try:
                     trial_data = trial.AstTrial(f"{asterisk_trial}.csv")
-                    print(f"{trial_data.generate_name()}, labels: {trial_data.labels}")
+                    print(f"{trial_data.generate_name()}, labels: {trial_data.data_labels}")
 
-                    if "no_mvt" not in trial_data.labels and "deviation" not in trial_data.labels:
+                    if "no_mvt" not in trial_data.data_labels and "deviation" not in trial_data.data_labels:
 
                         gathered_data.append(trial_data)
 
@@ -333,7 +333,7 @@ class AstHandTrials:
             if stds:  # only for AsteriskAverage objs
                 t.plot_sd(colors[i])
 
-        plt.title(f"{self.hand.get_name()} avg asterisk, rot: {trials[0].trial_rotation}")
+        plt.title(f"{self.hand.get_name()} avg asterisk")  # , rot: {trials[0].trial_rotation}")
         plt.xticks(np.linspace(-0.6, 0.6, 13), rotation=30)
         plt.yticks(np.linspace(-0.6, 0.6, 13))
         plt.gca().set_aspect('equal', adjustable='box')
