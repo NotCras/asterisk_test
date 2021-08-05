@@ -20,14 +20,15 @@ class AsteriskLabelling:
     @staticmethod
     def assess_distances(ast_trial, use_filtered=True):
         """
-        Assess how close the arc len and distance projections are. Depending on what we see, might have to
-        add a flag onto the object
+        Assess how close the arc len and distance projections are to look for backtracking
         """
         # todo: need to add rotate points
         # TODO: need to make rotate_points more efficient... use apply or something?
         test_df = ast_trial.poses
 
-        last_point = ast_trial.get_last_pose()
+        rotated = acalc.rotate_points(ast_trial.poses, acalc.rotations[ast_trial.trial_translation])
+
+        last_point = rotated.dropna().tail(1).to_numpy()[0]
         dm = acalc.t_distance([last_point[0], last_point[1]], [0, 0])
         dx = last_point[0]
         dy = last_point[1]

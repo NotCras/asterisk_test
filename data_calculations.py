@@ -112,18 +112,23 @@ class AsteriskCalculations:
         return [new_x, new_y]
 
     @staticmethod
-    def rotate_points(points, ang):
+    def rotate_points(points, ang, use_filtered=False):
         """
         Rotate points so they are horizontal, used in averaging
         :param points: points is a dataframe with 'x', 'y', 'rmag' columns
         :param ang: angle to rotate data
-        """
+        """  # TODO: make more efficient with apply function or something?
         rad = np.radians(ang)
         rotated_line = pd.DataFrame(columns=['x', 'y', 'rmag'])
 
         for p in points.iterrows():
-            x = p[1]['x']
-            y = p[1]['y']
+            if use_filtered:
+                x = p[1]['f_x']
+                y = p[1]['f_y']
+            else:
+                x = p[1]['x']
+                y = p[1]['y']
+
             new_x = x*np.cos(rad) - y*np.sin(rad)
             new_y = y*np.cos(rad) + x*np.sin(rad)
             rotated_line = rotated_line.append({"x": new_x, "y": new_y, "rmag": p[1]['rmag']}, ignore_index=True)

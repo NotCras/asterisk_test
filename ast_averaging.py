@@ -37,6 +37,32 @@ class AveragedTrial(AstTrial):
         # TODO: change add data functions to work for averaging
         # TODO: incorporate labelling
 
+
+    def _get_attributes(self, trials_to_average):
+        """
+        gets the attributes from the trials
+        (currently only looks at the first trial
+        """
+        # collect the asterisktrialdata objects, get attributes
+        self.names = []  # if rerunning an average with same object, make sure these lists are empty
+        self.averaged_trials = []
+        subjects = []
+        for t_n in trials_to_average:
+            self.names.append(t_n.generate_name())
+            self.averaged_trials.append(t_n)
+            subjects.append(t_n.subject)
+
+        self.subject = set(subjects)
+        # first take attributes of first asterisktrialdata object and take its attributes
+
+        trial = trials_to_average[0]
+        self.hand = trial.hand
+        self.trial_translation = trial.trial_translation
+        self.trial_rotation = trial.trial_rotation
+        self.trial_num = trial.trial_num
+        self.target_line = trial.target_line
+        return trials_to_average
+
     def get_poses_ad(self, which_set=0):
         """
         Separates poses into x, y, theta for easy plotting.
@@ -90,28 +116,6 @@ class AveragedTrial(AstTrial):
             points_in_bounds = points[(points['x'] >= lo_val) & (points['x'] <= hi_val)]
 
         return points_in_bounds
-
-    def _rotate_points(self, points, ang, use_filtered=False):
-        """
-        Rotate points so they are horizontal, used in averaging
-        :param points: points is a dataframe with 'x', 'y', 'rmag' columns
-        :param ang: angle to rotate data
-        """
-        rad = radians(ang)
-        rotated_line = pd.DataFrame(columns=['x', 'y', 'rmag'])
-
-        for p in points.iterrows():
-            if use_filtered and "f_x" in points.columns:
-                x = p[1]["f_x"]
-                y = p[1]["f_y"]
-            else:
-                x = p[1]['x']
-                y = p[1]['y']
-            new_x = x*cos(rad) - y*sin(rad)
-            new_y = y*cos(rad) + x*sin(rad)
-            rotated_line = rotated_line.append({"x": new_x, "y": new_y, "rmag": p[1]['rmag']}, ignore_index=True)
-
-        return rotated_line
 
     def _calc_avg_metrics(self):
         """
@@ -208,31 +212,6 @@ class AveragedTrial(AstTrial):
 
         return prev_avg, next_avg
 
-    def _get_attributes(self, trials_to_average):
-        """
-        gets the attributes from the trials
-        (currently only looks at the first trial
-        """
-        # collect the asterisktrialdata objects, get attributes
-        self.names = []  # if rerunning an average with same object, make sure these lists are empty
-        self.averaged_trials = []
-        subjects = []
-        for t_n in trials_to_average:
-            self.names.append(t_n.generate_name())
-            self.averaged_trials.append(t_n)
-            subjects.append(t_n.subject)
-
-        self.subject = set(subjects)
-        # first take attributes of first asterisktrialdata object and take its attributes
-
-        trial = trials_to_average[0]
-        self.hand = trial.hand
-        self.trial_translation = trial.trial_translation
-        self.trial_rotation = trial.trial_rotation
-        self.trial_num = trial.trial_num
-        self.target_line = trial.target_line
-        return trials_to_average
-
     def calculate_avg_line(self, trials, sample_points=25, show_debug=False, calc_ad=True, use_filtered=False):
         """
         redoing averaging so that average deviation calculations are done separately after the fact
@@ -249,12 +228,11 @@ class AveragedTrial(AstTrial):
 
             data_points = data_points.append(t.poses)  # put all poses in one dataframe for easy access
 
-        self.all_points = data_points # save this for average deviation? # TODO: remove this later
         # rotate the line so we can do everything based on the x axis. Yes, I know this is hacky
         r_target_x, r_target_y = AsteriskPlotting.get_c(sample_points)
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
 
-        rotated_data = self._rotate_points(data_points, self.rotations[self.trial_translation],
+        rotated_data = AsteriskCalculations.rotate_points(data_points, self.rotations[self.trial_translation],
                                            use_filtered=use_filtered)
         avg_line = pd.DataFrame()
 
@@ -269,11 +247,7 @@ class AveragedTrial(AstTrial):
 
             avg_line = avg_line.append(averaged_point, ignore_index=True)
 
-            #if i in [20, 21, 22, 23, 24, 25]:
-            #    print(i)
-            #    pdb.set_trace()
-
-        correct_avg = self._rotate_points(avg_line, -1 * self.rotations[self.trial_translation])
+        correct_avg = AsteriskCalculations.rotate_points(avg_line, -1 * self.rotations[self.trial_translation])
         self.poses = correct_avg
 
         if show_debug and not calc_ad:
