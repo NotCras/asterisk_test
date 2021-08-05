@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 import pdb
 import matplotlib.pyplot as plt
-from ast_plotting import AsteriskPlotting
-from ast_calculations import AsteriskCalculations
+from data_plotting import AsteriskPlotting
+from data_calculations import AsteriskCalculations
 
 
 class AstMetrics:

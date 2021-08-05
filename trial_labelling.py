@@ -9,9 +9,9 @@ import pdb
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from ast_calculations import AsteriskCalculations as acalc
+from data_calculations import AsteriskCalculations as acalc
 from metric_calculation import AstMetrics as am
-from ast_plotting import AsteriskPlotting as aplt
+from data_plotting import AsteriskPlotting as aplt
 from ast_trial import AstTrial
 
 

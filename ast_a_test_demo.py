@@ -8,7 +8,7 @@ from ast_hand_data import AstHandTrials
 from ast_study import AstStudyTrials
 from ast_aruco import batch_aruco_analysis
 from metric_analyzers import AstHandAnalyzer
-import asterisk_data_manager as datamanager
+import data_manager as datamanager
 import ast_trial as t
 
 

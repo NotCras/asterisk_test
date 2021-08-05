@@ -7,8 +7,8 @@ Handles a single asterisk trial. Manages reading in, conditioning, and filtering
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from ast_plotting import AsteriskPlotting as aplt
-from ast_calculations import AsteriskCalculations as acalc
+from data_plotting import AsteriskPlotting as aplt
+from data_calculations import AsteriskCalculations as acalc
 from metric_calculation import AstMetrics as am
 from trial_labelling import AsteriskLabelling as al
 import pdb

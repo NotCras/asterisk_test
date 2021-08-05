@@ -7,8 +7,8 @@ from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan,
 import pandas as pd
 import matplotlib.pyplot as plt
 from ast_trial import AstTrial
-from ast_plotting import AsteriskPlotting
-from ast_calculations import AsteriskCalculations
+from data_plotting import AsteriskPlotting
+from data_calculations import AsteriskCalculations
 import pdb
 
 

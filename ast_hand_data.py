@@ -10,11 +10,11 @@ from pathlib import Path
 import csv
 import pdb
 import matplotlib.pyplot as plt
-import asterisk_data_manager as datamanager
+import data_manager as datamanager
 import ast_trial as trial
 from ast_hand_info import HandInfo
 from ast_averaging import AveragedTrial
-from ast_plotting import AsteriskPlotting as aplt
+from data_plotting import AsteriskPlotting as aplt
 
 
 class AstHandTrials:

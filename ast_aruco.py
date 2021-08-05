@@ -15,7 +15,7 @@ import sys, os, time, pdb
 import cv2
 import pandas as pd
 import matplotlib.pyplot as plt
-import asterisk_data_manager as datamanager
+import data_manager as datamanager
 from cv2 import aruco
 from pathlib import Path
 from math import isclose

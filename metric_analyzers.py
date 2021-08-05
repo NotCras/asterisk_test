@@ -7,9 +7,9 @@ import csv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import asterisk_data_manager as datamanager
+import data_manager as datamanager
 from ast_hand_data import AstHandTrials
-from ast_plotting import AsteriskPlotting
+from data_plotting import AsteriskPlotting
 import pdb
 
 from scipy import stats
