@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from ast_plotting import AsteriskPlotting as aplt
 from ast_calculations import AsteriskCalculations as acalc
 from metric_calculation import AstMetrics as am
+from trial_labelling import AsteriskLabelling as al
 import pdb
 from ast_hand_info import HandInfo
 from scipy import stats
@@ -82,14 +83,9 @@ class AstTrial:
 
             self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
-            if self.total_distance < 0.1:
-                self.data_labels.append("no_mvt")
-                print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
+            self.assess_data_labels()
 
-            if self.assess_path_deviation():
-                self.data_labels.append("deviation")
-                print(f"Detected major deviation in {self.generate_name()}. Labelled trial.")
-
+            # TODO: move into a function?
             if do_metrics and self.poses is not None and "no_mvt" not in self.data_labels:
                 self.update_all_metrics()
 
@@ -114,18 +110,12 @@ class AstTrial:
         self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
         self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
-        if self.total_distance < 0.1:
-            self.labels.append("no_mvt")
-            print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
+        self.assess_data_labels()
 
-        if self.assess_path_deviation():
-            self.labels.append("deviation")
-            print(f"Detected major deviation in {self.generate_name()}. Labelled trial.")
-
-        if do_metrics and self.poses is not None and "no_mvt" not in self.labels:
+        if do_metrics and self.poses is not None and "no_mvt" not in self.data_labels:
             self.update_all_metrics()
 
-    def add_data_by_data(self, path_df, condition_df=True, do_metrics=True):
+    def add_data_by_df(self, path_df, condition_df=True, do_metrics=True):
         """
         Add object path data as a dataframe. By default, will run dataframe through conditioning function
         """
@@ -140,15 +130,9 @@ class AstTrial:
         self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
         self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
-        if self.total_distance < 0.1:
-            self.labels.append("no_mvt")
-            print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
+        self.assess_data_labels()
 
-        if self.assess_path_deviation():
-            self.labels.append("deviation")
-            print(f"Detected major deviation in {self.generate_name()}. Labelled trial.")
-
-        if do_metrics and self.poses is not None and "no_mvt" not in self.labels:
+        if do_metrics and self.poses is not None and "no_mvt" not in self.data_labels:
             self.update_all_metrics()
 
     def _read_file(self, file_name, folder="aruco_data/", norm_data=True):
@@ -313,10 +297,26 @@ class AstTrial:
         Generator to go through each pose in order
         """
         if self.filtered and use_filtered:
-            pass
+            x_list, y_list, t_list = self.get_poses(use_filtered=True)
         else:
-            pass
-        pass
+            x_list, y_list, t_list = self.get_poses(use_filtered=False)
+
+        for x_val, y_val, t_val in zip(x_list, y_list, t_list):
+            yield x_val, y_val, t_val  # TODO: horribly clunky, redo more elegant when I have the chance
+
+    def assess_data_labels(self):
+        """
+        Assesses the labels on the data, adds labels to data_labels.
+        """
+        if self.total_distance < 0.1:
+            self.data_labels.append("no_mvt")
+            print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
+
+        if al.assess_path_deviation():
+            self.data_labels.append("deviation")
+            print(f"Detected major deviation in {self.generate_name()}. Labelled trial.")
+
+        return self.data_labels
 
     def plot_trial(self, use_filtered=True, show_plot=True, save_plot=False, angle_interval=None):
         """
@@ -446,32 +446,6 @@ class AstTrial:
         Returns last pose as an array. Returns both filtered and unfiltered data if obj is filtered
         """
         return self.poses.dropna().tail(1).to_numpy()[0]
-
-    def assess_path_deviation(self, threshold=40):
-        """
-        Returns true if value
-        :return:
-        """
-        last_target_pt = self.target_line[-1]
-        path_x, path_y, _ = self.get_poses()
-
-        for x, y in zip(path_x[1:], path_y[1:]):
-            if x == 0 and y == 0:  # skip points at the origin
-                continue
-
-            # noise at the origin makes HUGE deviations... how should I avoid it?
-            # avoid points that are really short
-            mag_pt = np.sqrt(x ** 2 + y ** 2)
-            if mag_pt < 0.1:
-                continue
-
-            angle_btwn = acalc.angle_between(last_target_pt, [x,y])
-
-            if angle_btwn > threshold or angle_btwn < -threshold:
-                print(f"Greater than {threshold} deg deviation detected ({angle_btwn}) at pt: ({x}, {y})")
-                return True
-
-        return False
 
     def generate_target_line(self, n_samples=100, no_norm=0):
         """

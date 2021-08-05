@@ -9,8 +9,9 @@ import pdb
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from ast_calculations import AsteriskCalculations
-from ast_plotting import AsteriskPlotting
+from ast_calculations import AsteriskCalculations as acalc
+from metric_calculation import AstMetrics as am
+from ast_plotting import AsteriskPlotting as aplt
 from ast_trial import AstTrial
 
 
@@ -27,11 +28,11 @@ class AsteriskLabelling:
         test_df = ast_trial.poses
 
         last_point = ast_trial.get_last_pose()
-        dm = AsteriskCalculations.t_distance([last_point[0], last_point[1]], [0, 0])
+        dm = acalc.t_distance([last_point[0], last_point[1]], [0, 0])
         dx = last_point[0]
         dy = last_point[1]
 
-        _, s_check = AsteriskCalculations.calc_mvt_efficiency(ast_trial)
+        _, s_check = am.calc_mvt_efficiency(ast_trial)
         s = 0
         sx = test_df["x"].abs().sum()  # TODO: or do filtered...
         sy = test_df["y"].abs().sum()
@@ -44,24 +45,34 @@ class AsteriskLabelling:
         if sx > 2*dx:
             pass  # significant backtracking
 
-
-
         pass
 
     @staticmethod
-    def check_data_direction(trial_label, data):
+    def assess_path_deviation(ast_trial, threshold=40):
         """
-        True if data doesn't deviate too much, False if it does
-        """
+        Returns true if value
+        :return:
+        """  # TODO: get a debug function for this?
+        last_target_pt = ast_trial.target_line[-1]
+        path_x, path_y, _ = ast_trial.get_poses()
 
-        # go through each point
+        for x, y in zip(path_x[1:], path_y[1:]):
+            if x == 0 and y == 0:  # skip points at the origin
+                continue
 
-        # determine the angle
+            # noise at the origin makes HUGE deviations... how should I avoid it?
+            # avoid points that are really short
+            mag_pt = np.sqrt(x ** 2 + y ** 2)
+            if mag_pt < 0.1:
+                continue
 
-        # check with the trial_label's angle, make sure its within +/- 50 degrees
+            angle_btwn = acalc.angle_between(last_target_pt, [x, y])
 
-        # return True if its ok, False if its not
-        pass
+            if angle_btwn > threshold or angle_btwn < -threshold:
+                print(f"Greater than {threshold} deg deviation detected ({angle_btwn}) at pt: ({x}, {y})")
+                return True
+
+        return False
 
     @staticmethod
     def check_for_movement(data, threshold=10, rot_threshold=15):
@@ -119,8 +130,7 @@ class AsteriskLabelling:
         data = data.round(4)
 
         # rotate everything to c direction
-        rotated_df = AsteriskCalculations.rotate_points(data,
-                                                        AsteriskCalculations.rotations[translation_label])
+        rotated_df = acalc.rotate_points(data, acalc.rotations[translation_label])
 
         if debug_rotation:
             # plot the points
@@ -130,7 +140,7 @@ class AsteriskLabelling:
             plt.plot(x, y, color="xkcd:dark orange")
 
             # plot the target line
-            tar_x, tar_y = AsteriskPlotting.get_c(100)
+            tar_x, tar_y = aplt.get_c(100)
             plt.plot(tar_x*100, tar_y*100, color="xkcd:dark blue")
 
             # show plot
