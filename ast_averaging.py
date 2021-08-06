@@ -16,10 +16,10 @@ class AveragedTrial(AstTrial):
     rotations = {"a": 270, "b": 315, "c": 0, "d": 45, "e": 90,
                  "f": 135, "g": 180, "h": 225, "n": 0}
 
-    def __init__(self):
+    def __init__(self, trials=None, sample_points=25,):
         super(AveragedTrial, self).__init__()  # for making an empty AsteriskTrialData object
 
-        self.subject = []  # TODO: maybe make subject a set? Maybe also make a direction and rotation label set?
+        self.subject = set()
         self.names = []  # names of trials averaged
         self.averaged_trials = []  # actual AsteriskTrialData objects that were averaged
         # self.pose_average = []  # maybe just use poses
@@ -34,9 +34,12 @@ class AveragedTrial(AstTrial):
         self.total_distance_sd = None
         self.metrics_sd = None
 
-        # TODO: change add data functions to work for averaging
-        # TODO: incorporate labelling
+        if trials is not None:
+            self.calculate_avg_line(trials, sample_points=sample_points)  # avg metrics happens inside here
 
+            self.assess_data_labels()
+
+    # TODO: change add data functions to work for averaging -> add data then rerun the average calculation?
 
     def _get_attributes(self, trials_to_average):
         """
@@ -128,7 +131,7 @@ class AveragedTrial(AstTrial):
 
         metric_names = ["dist", "t_fd", "r_fd", "mvt_eff", "btwn", "max_err", "max_a_reg", "max_a_loc", "arc_len"]
 
-        dist_vals = []
+        dist_vals = []  # TODO: I'm pretty sure I can make this more elegant. Keeping this way for now
         t_fd_vals = []
         r_fd_vals = []
         # fd_vals = []
@@ -242,7 +245,7 @@ class AveragedTrial(AstTrial):
 
         for i, t in enumerate(rotated_target_line):
             t_x = t[0]
-            points = self._get_points(rotated_data, t_x, 0.5 / sample_points, use_filtered=False)
+            points = self._get_points(rotated_data, t_x, 0.5 / sample_points, use_filtered=use_filtered)
             averaged_point = points.mean(axis=0)  # averages each column in DataFrame
 
             avg_line = avg_line.append(averaged_point, ignore_index=True)
@@ -322,11 +325,11 @@ class AveragedTrial(AstTrial):
         avg_ads_up = pd.DataFrame()
         avg_ads_down = pd.DataFrame()
 
-        if all_points is None:
-            all_points = self.all_points  # for now, setting this just in case
-
         if all_avgs is None:
-            avg_pts = self._rotate_points(self.poses, self.rotations[self.trial_translation], use_filtered=use_filtered)
+            avg_pts = AsteriskCalculations.rotate_points(self.poses, self.rotations[self.trial_translation],
+                                                         use_filtered=use_filtered)
+        else:
+            avg_pts = all_avgs
 
         r_target_x, r_target_y = AsteriskPlotting.get_c(sample_points)
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
@@ -375,9 +378,9 @@ class AveragedTrial(AstTrial):
             avg_ads_up = avg_ads_up.append(ad_up, ignore_index=True)
             avg_ads_down = avg_ads_down.append(ad_down, ignore_index=True)
 
-        correct_ads = self._rotate_points(avg_ads, -1 * self.rotations[self.trial_translation])
-        correct_ads_up = self._rotate_points(avg_ads_up, -1 * self.rotations[self.trial_translation])
-        correct_ads_down = self._rotate_points(avg_ads_down, -1 * self.rotations[self.trial_translation])
+        correct_ads = AsteriskCalculations.rotate_points(avg_ads, -1 * self.rotations[self.trial_translation])
+        correct_ads_up = AsteriskCalculations.rotate_points(avg_ads_up, -1 * self.rotations[self.trial_translation])
+        correct_ads_down = AsteriskCalculations.rotate_points(avg_ads_down, -1 * self.rotations[self.trial_translation])
 
         self.pose_ad = correct_ads
         self.pose_ad_up = correct_ads_up
@@ -437,7 +440,7 @@ class AveragedTrial(AstTrial):
         plt.plot(a_x, a_y, label="avg", linewidth=2, color="tab:purple") #"xkcd:burnt orange")
 
         if with_ad:
-            self.plot_sd("tab:purple", testing=True) #"xkcd:burnt orange", testing=True)
+            self.plot_sd("tab:purple") #"xkcd:burnt orange", testing=True)
 
         # self.plot_line_contributions()
 
@@ -457,57 +460,33 @@ class AveragedTrial(AstTrial):
             plt.legend()
             plt.show()
 
-    def plot_sd(self, color, use_filtered=False, testing=False):
+    def plot_sd(self, color, use_filtered=False):
         """
         plot the standard deviations as a confidence interval around the averaged line
         :param color: color for sd polygon, must be compatible with matplotlib.
         :param use_filtered: enables option to use filtered or unfiltered data. Defaults to False
         """
         avg_x, avg_y, _ = self.get_poses(use_filtered=use_filtered)
-        # TODO: declutter this. Testing should not be false ever?
-        if not testing:
-            ad_x, ad_y, _ = self.get_poses_ad()
 
-            # necessary for building the polygon
-            r_avg_x = list(reversed(avg_x))
-            r_avg_y = list(reversed(avg_y))
-            r_ad_x = list(reversed(ad_x))
-            r_ad_y = list(reversed(ad_y))
+        ad_x_up, ad_y_up, _ = self.get_poses_ad(which_set=1)
+        ad_x_down, ad_y_down, _ = self.get_poses_ad(which_set=2)
 
-            # pdb.set_trace()
+        # necessary for building the polygon
+        r_ad_x = list(reversed(ad_x_down))
+        r_ad_y = list(reversed(ad_y_down))
 
-            poly = []
-            for ax, ay, dx, dy in zip(avg_x, avg_y, ad_x, ad_y):
-                pt = [ax+dx, ay+dy]
-                poly.append(pt)
+        poly = []
+        for ax, ay in zip(ad_x_up, ad_y_up):
+            pt = [ax, ay]
+            poly.append(pt)
 
-            # add last point for nicer looking plot
-            last_pose = self.get_last_pose()
-            poly.append([last_pose[0], last_pose[1]])
+        # add last point for nicer looking plot
+        last_pose = self.get_last_pose()
+        poly.append([last_pose[0], last_pose[1]])
 
-            for ax, ay, dx, dy in zip(r_avg_x, r_avg_y, r_ad_x, r_ad_y):
-                pt = [ax-dx, ay-dy]
-                poly.append(pt)
-        else:
-            ad_x_up, ad_y_up, _ = self.get_poses_ad(which_set=1)
-            ad_x_down, ad_y_down, _ = self.get_poses_ad(which_set=2)
-
-            # necessary for building the polygon
-            r_ad_x = list(reversed(ad_x_down))
-            r_ad_y = list(reversed(ad_y_down))
-
-            poly = []
-            for ax, ay in zip(ad_x_up, ad_y_up):
-                pt = [ax, ay]
-                poly.append(pt)
-
-            # add last point for nicer looking plot
-            last_pose = self.get_last_pose()
-            poly.append([last_pose[0], last_pose[1]])
-
-            for ax, ay in zip(r_ad_x, r_ad_y):
-                pt = [ax, ay]
-                poly.append(pt)
+        for ax, ay in zip(r_ad_x, r_ad_y):
+            pt = [ax, ay]
+            poly.append(pt)
 
         polyg = plt.Polygon(poly, color=color, alpha=0.4)
         plt.gca().add_patch(polyg)

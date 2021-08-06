@@ -14,7 +14,7 @@ class AsteriskCalculations:
         pass
 
     @staticmethod
-    def get_points_df(points, x_val, bounds):
+    def points_within_bounds_df(points, x_val, bounds):
         """
         Function which gets all the points that fall in a specific value range in a dataframe
         :param points: list of all points to sort
@@ -31,7 +31,7 @@ class AsteriskCalculations:
         return points_in_bounds
 
     @staticmethod
-    def get_points_list(points, x_val, bounds):
+    def points_within_bounds_list(points, x_val, bounds):
         """
         Get points in a list that fall within the bounds
         """
@@ -53,18 +53,18 @@ class AsteriskCalculations:
 
     @staticmethod
     def t_distance(pose1, pose2):
-        """ euclidean distance between two poses
-        :param pose1
-        :param pose2
+        """
+        Euclidean distance between two poses
         """
         return np.sqrt((pose1[0] - pose2[0]) ** 2 + (pose1[1] - pose2[1]) ** 2)
 
     @staticmethod
     def r_distance(pose1, pose2):
         """
-
+        Rotational distance between two poses
         """
-        pass
+        # TODO: do I even need this? Its just two subtracting the two rotations right?
+        return pose1[2] - pose2[2]
 
     @staticmethod
     def angle_between(pose1, pose2):
@@ -117,7 +117,8 @@ class AsteriskCalculations:
         Rotate points so they are horizontal, used in averaging
         :param points: points is a dataframe with 'x', 'y', 'rmag' columns
         :param ang: angle to rotate data
-        """  # TODO: make more efficient with apply function or something?
+        """
+        # TODO: make more efficient with apply function or something?
         rad = np.radians(ang)
         rotated_line = pd.DataFrame(columns=['x', 'y', 'rmag'])
 

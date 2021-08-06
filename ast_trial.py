@@ -312,7 +312,7 @@ class AstTrial:
             self.data_labels.append("no_mvt")
             print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
 
-        if al.assess_path_deviation():
+        if al.assess_path_deviation(self):
             self.data_labels.append("deviation")
             print(f"Detected major deviation in {self.generate_name()}. Labelled trial.")
 
@@ -446,6 +446,24 @@ class AstTrial:
         Returns last pose as an array. Returns both filtered and unfiltered data if obj is filtered
         """
         return self.poses.dropna().tail(1).to_numpy()[0]
+
+    def ping_labels(self, labels_2_ping):
+        """
+        Check whether an asterisk trial object has specific labels. Will tell you which labels were triggered
+        """
+        result = False
+        triggered_labels = []
+
+        if self.data_labels:
+            for label in self.data_labels:
+                if label in labels_2_ping:
+                    result = True
+                    triggered_labels.append(label)
+
+        else:  # there are no labels on the object
+            pass
+
+        return result, triggered_labels
 
     def generate_target_line(self, n_samples=100, no_norm=0):
         """

@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 from data_calculations import AsteriskCalculations as acalc
 from metric_calculation import AstMetrics as am
 from data_plotting import AsteriskPlotting as aplt
-from ast_trial import AstTrial
 
 
 class AsteriskLabelling:

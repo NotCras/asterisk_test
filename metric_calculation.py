@@ -109,12 +109,12 @@ class AstMetrics:
 
         while x_max <= ast_trial.total_distance:
             # print(f"Now at {x_center} || {x_max}/{ast_trial.total_distance}")
-            bounded_points = AsteriskCalculations.get_points_df(points, x_center, bound_size)
+            bounded_points = AsteriskCalculations.points_within_bounds_df(points, x_center, bound_size)
             b_x = pd.Series.to_list(bounded_points["x"].dropna())
             b_y = pd.Series.to_list(bounded_points["y"].dropna())
             bounded_points_not_df = np.column_stack((b_x, b_y))
 
-            target_points = AsteriskCalculations.get_points_list(targets, x_center, bound_size)
+            target_points = AsteriskCalculations.points_within_bounds_list(targets, x_center, bound_size)
 
             try:
                 area_calculated = sm.area_between_two_curves(bounded_points_not_df, target_points)
