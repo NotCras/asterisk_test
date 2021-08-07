@@ -103,7 +103,7 @@ class AsteriskLabelling:
         rot_magnitude = last_val["rmag"].to_numpy()[0]
 
         # need to look at how far is acceptable (starting with 1 cm)
-        if magnitude > threshold or rot_magnitude > rot_threshold:
+        if magnitude > threshold or rot_magnitude > rot_threshold:  # TODO: and?
             return True, (magnitude, threshold), (rot_magnitude, rot_threshold)
         else:
             return False, (magnitude, threshold), (rot_magnitude, rot_threshold)

@@ -504,10 +504,8 @@ class ArucoPoseDetect:
                 # next_corners = next_corners[0].squeeze()
 
                 #print(f"calculating angle, {next_corners}")
-                rel_angle = self.angle_between(
-                    init_corners[0] - init_corners[2], next_corners[0] - next_corners[2])
-                rel_rvec, rel_tvec = self.relative_position(
-                    init_rvec, init_tvec, next_rvec, next_tvec)
+                rel_angle = self.angle_between(init_corners[0] - init_corners[2], next_corners[0] - next_corners[2])
+                rel_rvec, rel_tvec = self.relative_position(init_rvec, init_tvec, next_rvec, next_tvec)
 
                 translation_val = np.round(np.linalg.norm(rel_tvec), 4)
                 rotation_val = rel_angle * 180 / np.pi
