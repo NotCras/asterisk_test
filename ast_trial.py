@@ -89,7 +89,7 @@ class AstTrial:
             if do_metrics and self.poses is not None and "no_mvt" not in self.data_labels:
                 self.update_all_metrics()
 
-    def add_hand(self, hand_name):
+    def add_hand_info(self, hand_name):
         """
         If you didn't make the object with a file_name, a function to set hand in painless manner
         :param hand_name: name of hand to make
@@ -145,16 +145,18 @@ class AstTrial:
         try:
             # print(f"Reading file: {total_path}")
             df_temp = pd.read_csv(total_path, skip_blank_lines=True)
-
-            # TODO: insert garbage checks
-
-            # print(f"Now at data conditioning.")
-            df = self._condition_df(df_temp, norm_data=norm_data)
-
         except Exception as e:  # TODO: add more specific except clauses
             # print(e)
             df = None
             print(f"{total_path} has failed to read csv")
+
+        try:
+            # print(f"Now at data conditioning.")
+            df = self._condition_df(df_temp, norm_data=norm_data)
+        except Exception as e:
+            # print(e)
+            df = None
+            print(f"{total_path} has failed at data conditioning")
 
         return df
 
@@ -186,7 +188,7 @@ class AstTrial:
 
         # occasionally get an outlier value (probably from vision algorithm), I filter them out here
         #inlier_df = self._remove_outliers(df, ["x", "y", "rmag"])
-        if len(df) > 10:  # for some trials with movement, this destroys the data. 10 is arbitrary
+        if len(df) > 10:  # for some trials with movement, this destroys the data. 10 is arbitrary value that works
             for col in ["x", "y", "rmag"]:
                 # see: https://stackoverflow.com/questions/23199796/detect-and-exclude-outliers-in-pandas-data-frame
                 # q_low = df_to_fix[col].quantile(0.01)
@@ -229,12 +231,15 @@ class AstTrial:
         return f"{self.subject}_{self.hand.get_name()}_{self.trial_translation}_" \
                f"{self.trial_rotation}_{self.trial_num}"
 
-    def save_data(self, file_name_overwrite=None):
+    def save_data(self, folder=None, file_name_overwrite=None):
         """
         Saves pose data as a new csv file
         :param file_name_overwrite: optional parameter, will save as generate_name unless a different name is specified
-        """
-        folder = "trial_paths/"
+        """ # TODO: add ability to specific your own folder
+
+        if folder is None:
+            folder = "trial_paths/"
+
         if file_name_overwrite is None:
             new_file_name = f"{self.generate_name()}.csv"
 
@@ -296,11 +301,14 @@ class AstTrial:
         """
         Generator to go through each pose in order
         """
+        # TODO: need to refactor code to use this
+        # get the data you want
         if self.filtered and use_filtered:
             x_list, y_list, t_list = self.get_poses(use_filtered=True)
         else:
             x_list, y_list, t_list = self.get_poses(use_filtered=False)
 
+        # iterate through it!
         for x_val, y_val, t_val in zip(x_list, y_list, t_list):
             yield x_val, y_val, t_val  # TODO: horribly clunky, redo more elegant when I have the chance
 
@@ -312,13 +320,18 @@ class AstTrial:
             self.data_labels.append("no_mvt")
             print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
 
-        if al.assess_path_deviation(self):
-            self.data_labels.append("deviation")
+        deviated, perc = al.assess_path_deviation(self)
+
+        if deviated and perc > 0.2:
+            self.data_labels.append("major deviation")
             print(f"Detected major deviation in {self.generate_name()}. Labelled trial.")
+        elif deviated:
+            self.data_labels.append("deviation")
+            print(f"Detected minor deviation in {self.generate_name()}. Labelled trial.")
 
         return self.data_labels
 
-    def plot_trial(self, use_filtered=True, show_plot=True, save_plot=False, angle_interval=None):
+    def plot_trial(self, use_filtered=True, show_plot=True, save_plot=False, provide_notes=False, angle_interval=None):
         """
         Plot the poses in the trial, using marker size to denote the error in twist from the desired twist
         :param use_filtered: Gives option to return filtered or unfiltered data
@@ -365,6 +378,10 @@ class AstTrial:
 
         plt.title(f"Plot: {self.generate_name()}")
 
+        if provide_notes:
+            # TODO: provide notes on the plot in the bottom left corner including labels...
+            self.plot_notes()
+
         if save_plot:
             plt.savefig(f"results/pics/plot_{self.generate_name()}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
@@ -374,6 +391,18 @@ class AstTrial:
         if show_plot:
             plt.legend()
             plt.show()
+
+    def plot_notes(self):
+        """
+        Plots the labels and trial ID in the bottom left corner of the plot
+        """ # TODO: implement this!
+        note = "Labels: "
+        for l in self.data_labels:
+            note = f"{note} {l}"
+
+        # TODO: need to check I got the right coordinates
+        plt.text(0.1, 0.2, self.generate_name(), transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
+        plt.text(0.1, 0.1, note, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
 
     def plot_orientations(self, marker_scale=25, line_length=0.01, positions=[0.3, 0.55, 0.75], scale=0.25):
         """
@@ -447,7 +476,7 @@ class AstTrial:
         """
         return self.poses.dropna().tail(1).to_numpy()[0]
 
-    def ping_labels(self, labels_2_ping):
+    def check_labels(self, labels_2_check):
         """
         Check whether an asterisk trial object has specific labels. Will tell you which labels were triggered
         """
@@ -455,8 +484,8 @@ class AstTrial:
         triggered_labels = []
 
         if self.data_labels:
-            for label in self.data_labels:
-                if label in labels_2_ping:
+            for label in self.data_labels:  # TODO: there's definitely a more elegant way to do this
+                if label in labels_2_check:
                     result = True
                     triggered_labels.append(label)
 
@@ -494,10 +523,10 @@ class AstTrial:
             final_target_ln = target_line[:target_line_length]
 
         else:  # covering for no movement
+            # unfortunately,  we register a very small translation here, but this is only in case no_mvt fails
             distance_travelled = acalc.t_distance([0, 0], target_line[1])
-            final_target_ln = target_line[:2]  # TODO: unfortunately,  we register a very small translation here
+            final_target_ln = target_line[:2]
 
-        # TODO: distance travelled has error because it is built of target line... maybe use last_obj_pose instead?
         return final_target_ln, distance_travelled
 
     def generate_target_rot(self, n_samples=50):
@@ -547,7 +576,7 @@ class AstTrial:
         except RuntimeWarning:
             max_error = 0
 
-        try:  # TODO: move all these try excepts to asterisk calculations
+        try:  # TODO: move all these try excepts to asterisk metrics
             area_btwn = am.calc_area_btwn_curves(self)
         except:
             area_btwn = -1

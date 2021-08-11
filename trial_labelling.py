@@ -48,13 +48,16 @@ class AsteriskLabelling:
         pass
 
     @staticmethod
-    def assess_path_deviation(ast_trial, threshold=40):
+    def assess_path_deviation(ast_trial, threshold=25):
         """
-        Returns true if value
-        :return:
+        Returns percentage of points on the path that are out of bounds
         """  # TODO: get a debug function for this?
         last_target_pt = ast_trial.target_line[-1]
         path_x, path_y, _ = ast_trial.get_poses()
+
+        num_pts = len(path_x)
+        pts_deviated = 0
+        result = False
 
         for x, y in zip(path_x[1:], path_y[1:]):
             if x == 0 and y == 0:  # skip points at the origin
@@ -70,9 +73,13 @@ class AsteriskLabelling:
 
             if angle_btwn > threshold or angle_btwn < -threshold:
                 print(f"Greater than {threshold} deg deviation detected ({angle_btwn}) at pt: ({x}, {y})")
-                return True
+                # count this towards the number of points that are out of bounds
+                pts_deviated += 1
+                result = True
 
-        return False
+        perc_deviated = pts_deviated / num_pts
+
+        return result, perc_deviated
 
     @staticmethod
     def check_for_movement(data, threshold=10, rot_threshold=15):
