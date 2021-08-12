@@ -48,6 +48,27 @@ class AsteriskLabelling:
         pass
 
     @staticmethod
+    def assess_initial_position(ast_trial, threshold=0.05, to_check=10):
+        """
+        Checks that trial data starts at the center, within a circle around the center pose
+        """
+
+        # check the first 50 points for falling within the initial position
+        path_x, path_y, _ = ast_trial.get_poses()
+        observation = False
+
+        # if we don't have a point that falls within our threshold range
+        # in the number of points to check, there is a problem
+        for n in range(to_check):
+            pt_x = path_x[n]
+            pt_y = path_y[n]
+
+            if pt_x < threshold and pt_y < threshold:
+                observation = True
+
+        return observation
+
+    @staticmethod
     def assess_path_deviation(ast_trial, threshold=25):
         """
         Returns percentage of points on the path that are out of bounds
@@ -82,7 +103,7 @@ class AsteriskLabelling:
         return result, perc_deviated
 
     @staticmethod
-    def check_for_movement(data, threshold=10, rot_threshold=15):
+    def assess_movement(data, threshold=10, rot_threshold=15):
         """
         True if there's sufficient movement, False if there is not
 
@@ -116,7 +137,7 @@ class AsteriskLabelling:
             return False, (magnitude, threshold), (rot_magnitude, rot_threshold)
 
     @staticmethod
-    def check_no_backtracking(data, translation_label, threshold=5, debug_rotation=False):
+    def assess_no_backtracking(data, translation_label, threshold=5, debug_rotation=False):
         """
         True if no (or little) backtracking, False is there is
 
@@ -186,7 +207,7 @@ class AsteriskLabelling:
         return True, (c_val, threshold)
 
     @staticmethod
-    def check_poor_metric_performance(data):
+    def assess_poor_metrics(data):
         """
         True if poor performance
         Hold on this one, used in hand data
@@ -209,9 +230,9 @@ if __name__ == "__main__":
 
     df = df.set_index("frame")
 
-    mvt_check, (tmag, mvt_threshold), (rot_magnitude, rot_threshold) = AsteriskLabelling.check_for_movement(df)
-    back_check, (cumulative, back_threshold) = AsteriskLabelling.check_no_backtracking(df, trial_translation,
-                                                                                       debug_rotation=True)
+    mvt_check, (tmag, mvt_threshold), (rot_magnitude, rot_threshold) = AsteriskLabelling.assess_movement(df)
+    back_check, (cumulative, back_threshold) = AsteriskLabelling.assess_no_backtracking(df, trial_translation,
+                                                                                        debug_rotation=True)
 
     print(f"{trial} -> mvt: {mvt_check}, {tmag} v {mvt_threshold} | {rot_magnitude} v {rot_threshold}")
     print(f"{trial} -> backtrack: {back_check}, {cumulative} v {back_threshold}")

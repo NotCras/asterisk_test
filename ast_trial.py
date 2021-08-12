@@ -100,17 +100,20 @@ class AstTrial:
         """
         self.hand = HandInfo(hand_name)
 
-    def assess_data_labels(self):
+    def assess_data_labels(self, no_mvt_threshold=0.1, init_threshold=0.05, init_num_pts=10):
         """
         Assesses the labels on the data, adds labels to data_labels.
         """
-        if self.total_distance < 0.1:
+        # check whether total distance is an acceptable distance to consider it actually movement
+        if self.total_distance < no_mvt_threshold:
             self.data_labels.append("no_mvt")
             print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
 
-        deviated, dev_perc = al.assess_path_deviation(self)
+        # check that data starts near center
+        if not al.assess_initial_position(threshold=init_threshold, to_check=init_num_pts):
+            self.data_labels.append("not centered")
 
-        # TODO: backtracking and shuttling
+        deviated, dev_perc = al.assess_path_deviation(self)
 
         if deviated and dev_perc > 0.2:
             self.data_labels.append("major deviation")
@@ -118,6 +121,8 @@ class AstTrial:
         elif deviated:
             self.data_labels.append("deviation")
             print(f"Detected minor deviation in {self.generate_name()}. Labelled trial.")
+
+        # TODO: backtracking and shuttling
 
         return self.data_labels
 
