@@ -19,7 +19,7 @@ from scipy import stats
 class AstTrial:
     def __init__(self, data=None, file_name=None, folder=None, do_metrics=True, norm_data=True,
                  controller_label=None, condition_data=True):
-        """
+        """ # TODO: comment for constructor
         Class to represent a single asterisk test trial.
         :param data: - name of the file that you want to import data from
 
@@ -46,30 +46,29 @@ class AstTrial:
 
         try:
             # Data can either be a dataframe or a filename
-            if data is not None and isinstance(data, pd.DataFrame):
-                self.add_data_by_df(data, condition_df=condition_data,
-                                    do_metrics=do_metrics, norm_data=norm_data)
-                # will need to add demographic data separately
+            # if a dataframe is provided, add that data
+            try:
+                if data is not None and isinstance(data, pd.DataFrame):
+                    self.add_data_by_df(data, condition_df=condition_data,
+                                        do_metrics=do_metrics, norm_data=norm_data)
+                    # will need to add demographic data separately
+            except Exception as e:
+                raise IndexError("Dataframe is not formed correctly.")
 
+            # if a filename is provided and we don't have dataframe data
             if file_name is not None and data is None and isinstance(file_name, str):
-                s, h, t, r, e = file_name.split("_")
-                n, _ = e.split(".")
 
-                self.hand = HandInfo(h)
-                self.data_demographics(s, t, r, n)
+                self.demographics_from_filename(filename=file_name)
 
                 self.add_data_by_file(file_name, condition_data=condition_data,
                                       do_metrics=do_metrics, norm_data=norm_data)
 
-            elif file_name is not None and data is not None:
-                s, h, t, r, e = file_name.split("_")
-                n, _ = e.split(".")
-
-                self.hand = HandInfo(h)
-                self.data_demographics(s, t, r, n)
+            # if a filename is provided and a dataframe is provided
+            elif file_name is not None and data is not None and isinstance(file_name, str):
+                self.demographics_from_filename(filename=file_name)
 
             else:
-                raise TypeError
+                raise TypeError("Filename failed.")
 
         except Exception as e:
             print(e)
@@ -77,12 +76,20 @@ class AstTrial:
 
         # if file_name:
         #     print(self.generate_name())
-        self.controller_label = controller_label  # TODO: combine with data_labels but as a dictionary?
+        self.controller_label = controller_label  # TODO: integrate controller label into the plot title
 
         self.filtered = False
         self.window_size = 0
 
-        # TODO: integrate controller label into the plot title
+    def demographics_from_filename(self, file_name):
+        """
+        Takes a file_name and gets relevant information out
+        """
+        s, h, t, r, e = file_name.split("_")
+        n, _ = e.split(".")
+
+        self.add_hand_info(h)
+        self.data_demographics(s, t, r, n)
 
     def data_demographics(self, subject=None, translation=None, rotation=None, number=None):
         """
@@ -112,6 +119,7 @@ class AstTrial:
         # check that data starts near center
         if not al.assess_initial_position(threshold=init_threshold, to_check=init_num_pts):
             self.data_labels.append("not centered")
+            print(f"Data for {self.generate_name()} failed, did not start at center.")
 
         deviated, dev_perc = al.assess_path_deviation(self)
 
@@ -584,7 +592,6 @@ class AstTrial:
         """
         Updates all metric values on the object.
         """
-
         if redo_target_line:
             self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
             self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
