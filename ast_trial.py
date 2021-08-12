@@ -599,28 +599,14 @@ class AstTrial:
         translation_fd, rotation_fd = am.calc_frechet_distance(self)
         # fd = am.calc_frechet_distance_all(self)
 
-        try:
-            mvt_efficiency, arc_len = am.calc_mvt_efficiency(self)
-        except RuntimeWarning:
-            mvt_efficiency = -1
-            arc_len = -1
+        mvt_efficiency, arc_len = am.calc_mvt_efficiency(self)
 
-        try:
-            max_error = am.calc_max_error(self, arc_len)
-        except RuntimeWarning:
-            max_error = 0
+        max_error = am.calc_max_error(self, arc_len)
 
-        try:  # TODO: move all these try excepts to asterisk metrics
-            area_btwn = am.calc_area_btwn_curves(self)
-        except:
-            area_btwn = -1
+        area_btwn = am.calc_area_btwn_curves(self)
 
-        try:  # this one is particularly troublesome
-            max_area_region, max_area_loc = am.calc_max_area_region(self)
-        except IndexError:
-            print("Max area region failed")
-            max_area_region = -1
-            max_area_loc = -1
+        # this one is particularly troublesome
+        max_area_region, max_area_loc = am.calc_max_area_region(self)
 
         # TODO: Make getters for each metric - can also return none if its not calculated
         metric_dict = {"trial": self.generate_name(), "dist": self.total_distance,
