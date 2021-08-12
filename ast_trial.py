@@ -17,10 +17,11 @@ from scipy import stats
 
 
 class AstTrial:
-    def __init__(self, file_name=None, folder=None, do_metrics=True, norm_data=True, controller_label=None):
+    def __init__(self, data=None, file_name=None, folder=None, do_metrics=True, norm_data=True,
+                 controller_label=None, condition_data=True):
         """
         Class to represent a single asterisk test trial.
-        :param file_name: - name of the file that you want to import data from
+        :param data: - name of the file that you want to import data from
 
         Class contains:
         :attribute hand: - hand object with info for hand involved in the trial (see above)
@@ -40,54 +41,57 @@ class AstTrial:
         :attribute dist_along_translation: - float
         :attribute dist_along_twist: - float
         """
-        if file_name:
-            s, h, t, r, e = file_name.split("_")
-            n, _ = e.split(".")
-            self.hand = HandInfo(h)
 
-            # Data will not be filtered in this step
-            data = self._read_file(file_name, norm_data=norm_data)
-            self.poses = data[["x", "y", "rmag"]]
+        self.data_labels = []
 
-        else:
-            s, t, r, n = None, None, None, None
-            self.hand = None
+        try:
+            # Data can either be a dataframe or a filename
+            if data is not None and isinstance(data, pd.DataFrame):
+                self.add_data_by_df(data, condition_df=condition_data,
+                                    do_metrics=do_metrics, norm_data=norm_data)
+                # will need to add demographic data separately
 
-        self.subject = s
-        self.trial_translation = t
-        self.trial_rotation = r
-        self.trial_num = n
+            if file_name is not None and data is None and isinstance(file_name, str):
+                s, h, t, r, e = file_name.split("_")
+                n, _ = e.split(".")
 
-        if file_name:
-            print(self.generate_name())
+                self.hand = HandInfo(h)
+                self.data_demographics(s, t, r, n)
+
+                self.add_data_by_file(file_name, condition_data=condition_data,
+                                      do_metrics=do_metrics, norm_data=norm_data)
+
+            elif file_name is not None and data is not None:
+                s, h, t, r, e = file_name.split("_")
+                n, _ = e.split(".")
+
+                self.hand = HandInfo(h)
+                self.data_demographics(s, t, r, n)
+
+            else:
+                raise TypeError
+
+        except Exception as e:
+            print(e)
+            print("AstTrial loading failed.")
+
+        # if file_name:
+        #     print(self.generate_name())
+        self.controller_label = controller_label  # TODO: combine with data_labels but as a dictionary?
 
         self.filtered = False
         self.window_size = 0
 
-        self.target_line = None  # the straight path in the direction that this trial is
-        self.target_rotation = None
-
-        # metrics - predefining them
-        self.total_distance = None  # total_distance is built in because of how integral it is
-        self.metrics = None  # pd series that contains all metrics in it... populate it with update_all_metrics
-
         # TODO: integrate controller label into the plot title
-        self.controller_label = controller_label  # TODO: combine with data_labels but as a dictionary?
-        self.data_labels = []  # list of string labels that indicate qualitative (automated) observations about the data
 
-        if file_name:
-            self.target_line, self.total_distance = self.generate_target_line(100)  #, no_norm_len=norm_data)  # 100 samples
-
-            # if not norm_data:
-            #     self.target_line = [item * 2 *  for item in self.target_line]
-
-            self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
-
-            self.assess_data_labels()
-
-            # TODO: move into a function?
-            if do_metrics and self.poses is not None and "no_mvt" not in self.data_labels:
-                self.update_all_metrics()
+    def data_demographics(self, subject=None, translation=None, rotation=None, number=None):
+        """
+        Add demographics to your data
+        """
+        self.subject = subject
+        self.trial_translation = translation
+        self.trial_rotation = rotation
+        self.trial_num = number
 
     def add_hand_info(self, hand_name):
         """
@@ -96,7 +100,28 @@ class AstTrial:
         """
         self.hand = HandInfo(hand_name)
 
-    def add_data_by_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True):
+    def assess_data_labels(self):
+        """
+        Assesses the labels on the data, adds labels to data_labels.
+        """
+        if self.total_distance < 0.1:
+            self.data_labels.append("no_mvt")
+            print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
+
+        deviated, dev_perc = al.assess_path_deviation(self)
+
+        # TODO: backtracking and shuttling
+
+        if deviated and dev_perc > 0.2:
+            self.data_labels.append("major deviation")
+            print(f"Detected major deviation in {self.generate_name()}. Labelled trial.")
+        elif deviated:
+            self.data_labels.append("deviation")
+            print(f"Detected minor deviation in {self.generate_name()}. Labelled trial.")
+
+        return self.data_labels
+
+    def add_data_by_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True, condition_data=True):
         """
         Add object path data as a file. By default, will run data through conditioning function
         """
@@ -115,13 +140,13 @@ class AstTrial:
         if do_metrics and self.poses is not None and "no_mvt" not in self.data_labels:
             self.update_all_metrics()
 
-    def add_data_by_df(self, path_df, condition_df=True, do_metrics=True):
+    def add_data_by_df(self, path_df, condition_df=True, do_metrics=True, norm_data=True):
         """
         Add object path data as a dataframe. By default, will run dataframe through conditioning function
         """
         # TODO: add translation, rotation, and other labels
         if condition_df:
-            data = self._condition_df(path_df)
+            data = self._condition_df(path_df, norm_data)
         else:
             data=path_df
 
@@ -135,7 +160,7 @@ class AstTrial:
         if do_metrics and self.poses is not None and "no_mvt" not in self.data_labels:
             self.update_all_metrics()
 
-    def _read_file(self, file_name, folder="aruco_data/", norm_data=True):
+    def _read_file(self, file_name, folder="aruco_data/", norm_data=True, condition_data=True):
         """
         Function to read file and save relevant data in the object
         :param file_name: name of file to read in
@@ -144,19 +169,20 @@ class AstTrial:
         total_path = f"{folder}{file_name}"
         try:
             # print(f"Reading file: {total_path}")
-            df_temp = pd.read_csv(total_path, skip_blank_lines=True)
+            df = pd.read_csv(total_path, skip_blank_lines=True)
         except Exception as e:  # TODO: add more specific except clauses
             # print(e)
-            df = None
             print(f"{total_path} has failed to read csv")
+            return None
 
-        try:
-            # print(f"Now at data conditioning.")
-            df = self._condition_df(df_temp, norm_data=norm_data)
-        except Exception as e:
-            # print(e)
-            df = None
-            print(f"{total_path} has failed at data conditioning")
+        if condition_data:
+            try:
+                # print(f"Now at data conditioning.")
+                df = self._condition_df(df, norm_data=norm_data)
+            except Exception as e:
+                # print(e)
+                print(f"{total_path} has failed at data conditioning. There's a problem with the data.")
+                return None
 
         return df
 
@@ -230,6 +256,15 @@ class AstTrial:
         """
         return f"{self.subject}_{self.hand.get_name()}_{self.trial_translation}_" \
                f"{self.trial_rotation}_{self.trial_num}"
+
+    def crop_data(self, start_i=1, end_i=None):
+        """
+        Enables you to crop data
+        """
+        if end_i is None:
+            end_i = self.poses.shape[0] - 1
+
+        self.poses = self.poses.loc[start_i:end_i]
 
     def save_data(self, folder=None, file_name_overwrite=None):
         """
@@ -312,25 +347,6 @@ class AstTrial:
         for x_val, y_val, t_val in zip(x_list, y_list, t_list):
             yield x_val, y_val, t_val  # TODO: horribly clunky, redo more elegant when I have the chance
 
-    def assess_data_labels(self):
-        """
-        Assesses the labels on the data, adds labels to data_labels.
-        """
-        if self.total_distance < 0.1:
-            self.data_labels.append("no_mvt")
-            print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
-
-        deviated, perc = al.assess_path_deviation(self)
-
-        if deviated and perc > 0.2:
-            self.data_labels.append("major deviation")
-            print(f"Detected major deviation in {self.generate_name()}. Labelled trial.")
-        elif deviated:
-            self.data_labels.append("deviation")
-            print(f"Detected minor deviation in {self.generate_name()}. Labelled trial.")
-
-        return self.data_labels
-
     def plot_trial(self, use_filtered=True, show_plot=True, save_plot=False, provide_notes=False, angle_interval=None):
         """
         Plot the poses in the trial, using marker size to denote the error in twist from the desired twist
@@ -401,8 +417,9 @@ class AstTrial:
             note = f"{note} {l}"
 
         # TODO: need to check I got the right coordinates
-        plt.text(0.1, 0.2, self.generate_name(), transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
-        plt.text(0.1, 0.1, note, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
+        # TODO: get ax
+        # plt.text(0.1, 0.2, self.generate_name(), transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
+        # plt.text(0.1, 0.1, note, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
 
     def plot_orientations(self, marker_scale=25, line_length=0.01, positions=[0.3, 0.55, 0.75], scale=0.25):
         """
@@ -558,10 +575,15 @@ class AstTrial:
 
         return target_rot
 
-    def update_all_metrics(self, use_filtered=True):
+    def update_all_metrics(self, use_filtered=True, redo_target_line=False):
         """
         Updates all metric values on the object.
         """
+
+        if redo_target_line:
+            self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
+            self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
+
         translation_fd, rotation_fd = am.calc_frechet_distance(self)
         # fd = am.calc_frechet_distance_all(self)
 
