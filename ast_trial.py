@@ -17,7 +17,7 @@ from scipy import stats
 
 
 class AstTrial:
-    def __init__(self, data=None, file_name=None, folder=None, do_metrics=True, norm_data=True,
+    def __init__(self, file_name, data=None, folder=None, do_metrics=True, norm_data=True,
                  controller_label=None, condition_data=True):
         """ # TODO: comment for constructor
         Class to represent a single asterisk test trial.
@@ -43,6 +43,12 @@ class AstTrial:
         """
 
         self.data_labels = []
+        self.poses = None
+
+        self.controller_label = controller_label  # TODO: integrate controller label into the plot title
+
+        self.filtered = False
+        self.window_size = 0
 
         try:
             # Data can either be a dataframe or a filename
@@ -57,15 +63,14 @@ class AstTrial:
 
             # if a filename is provided and we don't have dataframe data
             if file_name is not None and data is None and isinstance(file_name, str):
-
-                self.demographics_from_filename(filename=file_name)
+                self.demographics_from_filename(file_name=file_name)
 
                 self.add_data_by_file(file_name, condition_data=condition_data,
                                       do_metrics=do_metrics, norm_data=norm_data)
 
             # if a filename is provided and a dataframe is provided
             elif file_name is not None and data is not None and isinstance(file_name, str):
-                self.demographics_from_filename(filename=file_name)
+                self.demographics_from_filename(file_name=file_name)
 
             else:
                 raise TypeError("Filename failed.")
@@ -76,10 +81,6 @@ class AstTrial:
 
         # if file_name:
         #     print(self.generate_name())
-        self.controller_label = controller_label  # TODO: integrate controller label into the plot title
-
-        self.filtered = False
-        self.window_size = 0
 
     def demographics_from_filename(self, file_name):
         """
@@ -117,7 +118,7 @@ class AstTrial:
             print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
 
         # check that data starts near center
-        if not al.assess_initial_position(threshold=init_threshold, to_check=init_num_pts):
+        if not al.assess_initial_position(self, threshold=init_threshold, to_check=init_num_pts):
             self.data_labels.append("not centered")
             print(f"Data for {self.generate_name()} failed, did not start at center.")
 
@@ -138,12 +139,10 @@ class AstTrial:
         """
         Add object path data as a file. By default, will run data through conditioning function
         """
-        # TODO: add translation, rotation, and other labels
-        self.hand = HandInfo(handinfo_name)
-
         # Data will not be filtered in this step
-        data = self._read_file(file_name, norm_data=norm_data)
-        self.poses = data[["x", "y", "rmag"]]
+        path_df = self._read_file(file_name, condition_data=condition_data, norm_data=norm_data)
+
+        self.poses = path_df[["x", "y", "rmag"]]
 
         self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
         self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
@@ -157,7 +156,8 @@ class AstTrial:
         """
         Add object path data as a dataframe. By default, will run dataframe through conditioning function
         """
-        # TODO: add translation, rotation, and other labels
+        path_df = path_df.set_index("frame")
+
         if condition_df:
             data = self._condition_df(path_df, norm_data)
         else:
@@ -183,6 +183,7 @@ class AstTrial:
         try:
             # print(f"Reading file: {total_path}")
             df = pd.read_csv(total_path, skip_blank_lines=True)
+            df = df.set_index("frame")
         except Exception as e:  # TODO: add more specific except clauses
             # print(e)
             print(f"{total_path} has failed to read csv")
@@ -208,7 +209,7 @@ class AstTrial:
         3) remove extreme outlier values in data
         """
         # df_numeric = df.apply(pd.to_numeric)
-        df = df.set_index("frame")
+        #df = df.set_index("frame")
 
         # df_numeric.columns = ["pitch", "rmag", "roll", "tmag", "x", "y", "yaw", "z"]
         # TODO: is there a way I can make this directly hit each column without worrying about the order?
@@ -423,16 +424,15 @@ class AstTrial:
 
     def plot_notes(self):
         """
-        Plots the labels and trial ID in the bottom left corner of the plot
-        """ # TODO: implement this!
-        note = "Labels: "
+        Plots the labels and trial ID in the upper left corner of the plot
+        """
+        note = "Labels:"
         for l in self.data_labels:
-            note = f"{note} {l}"
+            note = f"{note} {l} |"
 
-        # TODO: need to check I got the right coordinates
-        # TODO: get ax
-        # plt.text(0.1, 0.2, self.generate_name(), transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
-        # plt.text(0.1, 0.1, note, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
+        ax = plt.gca()
+        # plt.text(0.1, 0.2, self.generate_name()) #, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
+        plt.text(-0.1, 1.1, note, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
 
     def plot_orientations(self, marker_scale=25, line_length=0.01, positions=[0.3, 0.55, 0.75], scale=0.25):
         """
@@ -457,7 +457,7 @@ class AstTrial:
                 x = x_data[idx]
                 y = y_data[idx]
                 t = t_data[idx] * 2 # multiply by 2 to make it on a scale of 180
-                print(t)
+                # print(t)
 
                 plt.plot(x, y, marker="s", markersize=marker_size, color="xkcd:slate", alpha=0.7)
                 # makes a custom, square marker with rotation built in
@@ -619,6 +619,6 @@ class AstTrial:
 
 
 if __name__ == '__main__':
-    test = AstTrial("sub1_2v2_c_n_1.csv", do_metrics=True, norm_data=True)
+    test = AstTrial(file_name="sub1_3v3_d_n_3.csv", do_metrics=True, norm_data=True)
     #print(test.metrics)
-    test.plot_trial(use_filtered=False)
+    test.plot_trial(use_filtered=False, provide_notes=True)

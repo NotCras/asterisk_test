@@ -52,7 +52,6 @@ class AsteriskLabelling:
         """
         Checks that trial data starts at the center, within a circle around the center pose
         """
-
         # check the first 50 points for falling within the initial position
         path_x, path_y, _ = ast_trial.get_poses()
         observation = False
