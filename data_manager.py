@@ -158,7 +158,7 @@ def generate_options(key):
     return opt.get_option(key)
 
 
-def generate_t_r_pairs(hand_name, no_rotations=False):
+def generate_t_r_pairs(hand_name, no_rotations=False, do_t_n=True):
     """
     Generator that feeds all trial combinations pertaining to a specific hand
     :param hand_name: name of hand specified
@@ -169,11 +169,14 @@ def generate_t_r_pairs(hand_name, no_rotations=False):
     rotations = generate_options("rotations")
 
     for t in translations:
-        if t == "n":  # necessary to divide rotations because cw and ccw only happen with no translation
+        if t == "n" and do_t_n:  # necessary to divide rotations because cw and ccw only happen with no translation
             if hand_name in generate_options("hands_only_n"):
                 continue
             else:
                 rot = n_trans_rot_opts
+        elif t == "n":
+            continue
+
         else:
             if hand_name in generate_options("hands_only_n") or no_rotations:
                 rot = "n"
@@ -184,7 +187,7 @@ def generate_t_r_pairs(hand_name, no_rotations=False):
             yield t, r
 
 
-def generate_names_with_s_h(subject_name, hand_name, no_rotations=False):
+def generate_names_with_s_h(subject_name, hand_name, no_rotations=False, do_t_n=True):
     """
     Generates all trial combinations with a specific hand name
     :param subject_name: name of subject
@@ -193,7 +196,7 @@ def generate_names_with_s_h(subject_name, hand_name, no_rotations=False):
     """
     num = generate_options("numbers")
 
-    for t, r in generate_t_r_pairs(hand_name, no_rotations=no_rotations):
+    for t, r in generate_t_r_pairs(hand_name, no_rotations=no_rotations, do_t_n=do_t_n):
         for n in num:
             yield subject_name, hand_name, t, r, n
 

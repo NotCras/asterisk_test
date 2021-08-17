@@ -275,8 +275,16 @@ class AstTrial:
         """
         Enables you to crop data
         """
+        data_size = self.poses.shape[0]
+
+        if start_i <= 0:
+            start_i = 1
+
         if end_i is None:
-            end_i = self.poses.shape[0] - 1
+            end_i = data_size - 1
+        elif end_i >= data_size:
+            print(f"Too large ending index")
+            end_i = data_size - 1
 
         self.poses = self.poses.loc[start_i:end_i]
 
@@ -619,6 +627,6 @@ class AstTrial:
 
 
 if __name__ == '__main__':
-    test = AstTrial(file_name="sub1_3v3_d_n_3.csv", do_metrics=True, norm_data=True)
+    test = AstTrial(file_name="sub1_3v3_e_n_2.csv", do_metrics=True, norm_data=True)
     #print(test.metrics)
     test.plot_trial(use_filtered=False, provide_notes=True)
