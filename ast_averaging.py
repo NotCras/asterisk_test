@@ -3,16 +3,16 @@ Handles averaging multiple AstTrial objects in one direction. Handles both the p
 """
 
 import numpy as np
-from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan, radians, mean, std
+from numpy import sqrt, mean, std
 import pandas as pd
 import matplotlib.pyplot as plt
-from ast_trial import AstTrial
+from ast_trial import AstBasicData, AstTrial
 from data_plotting import AsteriskPlotting
 from data_calculations import AsteriskCalculations
 import pdb
 
 
-class AveragedTrial(AstTrial):
+class AveragedTrial(AstBasicData):
     rotations = {"a": 270, "b": 315, "c": 0, "d": 45, "e": 90,
                  "f": 135, "g": 180, "h": 225, "n": 0}
 
@@ -447,7 +447,7 @@ class AveragedTrial(AstTrial):
         plt.title(f"Averaged: {self.hand.get_name()}, {self.trial_translation}, {self.trial_rotation}")
         plt.legend('', frameon=False)
 
-        self.plot_orientations(marker_scale=25, line_length=0.015, scale=1)
+        self._plot_orientations(marker_scale=25, line_length=0.015, scale=1)
 
         if save_plot:
             plt.savefig(f"results/pics/avgdebug_{self.hand.get_name()}_{len(self.subject)}subs_{self.trial_translation}_"

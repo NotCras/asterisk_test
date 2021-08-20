@@ -332,7 +332,7 @@ class AstHandTrials:
             plt.plot(data_x, data_y, color=colors[i], label='trajectory', linestyle=linestyle)
 
             # plot orientation error
-            t.plot_orientations(marker_scale=15, line_length=0.025, scale=1)
+            t._plot_orientations(marker_scale=15, line_length=0.025, scale=1)
 
             if stds:  # only for AsteriskAverage objs
                 t.plot_sd(colors[i])

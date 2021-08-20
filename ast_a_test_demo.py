@@ -28,7 +28,7 @@ def run_ast_study():
     subjects = datamanager.generate_options("subjects")
     hand_names = ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]  # "m2stiff",
 
-    # failed_files = []  # TODO: add ability to collect failed files
+    # failed_files = []  # TODO: make a log of everything that happens when data is run
 
     for h in hand_names:
         print(f"Running: {h}, {subjects}")
@@ -36,7 +36,7 @@ def run_ast_study():
 
         print("Analyzing aruco codes on viz data...")
         for s in subjects:
-            batch_aruco_analysis(s, h, no_rotations=False, home=home_directory)
+            batch_aruco_analysis(s, h, no_rotations=False, home=home_directory, indices=False, crop=False)
 
         for rot in ['n']:  # , "m15", "p15"]:
             print(f"Getting {h} ({rot}) data...")
