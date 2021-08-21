@@ -136,6 +136,38 @@ class AsteriskLabelling:
             return False, (magnitude, threshold), (rot_magnitude, rot_threshold)
 
     @staticmethod
+    def assess_pathtype(ast_trial, backtrack_threshold=0.1, shuttling_threshold=2.0, use_filtered=False):
+        """
+        Assess if there is backtracking (significant negative progress in target direction)
+        or shuttling (significant movement mostly-orthogonal to target direction).
+        Will only work for AstTrials, because AveragedTrial averaging erases this data.
+
+        Returns a list of labels
+        """
+        if ast_trial.is_avg_trial:
+            print("Data is averaged, backtrack and shuttling assessment does not apply.")
+            return []
+
+        # rotate data to C
+        rotated_data = acalc.rotate_points(ast_trial.poses, acalc.rotations[ast_trial.trial_translation],
+                                           use_filtered=use_filtered)
+
+        prev_row = None  # TODO: make this into a pandas row of zeros
+        # go through each point
+        for row in rotated_data.iterrows():
+            if prev_row is None:
+                dx = row['x'] - 0
+                dy = row['y'] - 0
+
+            else:
+                dx = row['x'] - prev_row['x']
+                dy = row['y'] - prev_row['y']
+
+            s = np.sqrt(dx**2 + dy**2)
+
+        pass  # TODO: not done! Need to continue implementing the checks, accumulator variables
+
+    @staticmethod
     def assess_no_backtracking(data, translation_label, threshold=5, debug_rotation=False):
         """
         True if no (or little) backtracking, False is there is
