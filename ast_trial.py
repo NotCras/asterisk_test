@@ -21,22 +21,25 @@ class AstBasicData:
     """
     Base class for Asterisk Trial classes -> AstTrial and AveragedTrial so far
     """
-    def __init__(self, data, subject_label=None,  translation_label=None, rotation_label=None, number_label=None):
-        self.subject, self.trial_translation, self.trial_rotation, self.trial_num = None, None, None, None
+    def __init__(self, data, subject_label=None,  translation_label=None, rotation_label=None,
+                 number_label=None, controller_label=None):
+        self.subject, self.trial_translation, self.trial_rotation, \
+            self.trial_num, self.controller_label = None, None, None, None, None
         self.data_demographics(subject=subject_label, translation=translation_label,
-                               rotation=rotation_label, number=number_label)
+                               rotation=rotation_label, number=number_label, controller=controller_label)
 
         self.poses = data[["x", "y", "rmag"]]
 
         self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
         self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
-        self.data_labels = []
+        self.path_labels = []
+        self.metrics = None
 
         self.filtered = False
         self.window_size = 0
 
-    def data_demographics(self, subject=None, translation=None, rotation=None, number=None):
+    def data_demographics(self, subject=None, translation=None, rotation=None, number=None, controller=None):
         """
         Add demographics to your data
         """
@@ -44,6 +47,7 @@ class AstBasicData:
         self.trial_translation = translation
         self.trial_rotation = rotation
         self.trial_num = number
+        self.controller_label = controller
 
     def add_data_by_df(self, df):
         self.poses = df[["x", "y", "rmag"]]
@@ -63,11 +67,16 @@ class AstBasicData:
         Generates the codified name of the trial
         :return: string name of trial
         """
-        return f"{self.subject}_{self.hand.get_name()}_{self.trial_translation}_" \
-               f"{self.trial_rotation}_{self.trial_num}"
+        return f"{self.hand.get_name()}_{self.trial_translation}_{self.trial_rotation}_" \
+               f"{self.subject}_{self.trial_num}"
 
     def generate_plot_title(self):
-        pass
+        """
+        Generates the codified name of the trial for the plot title (it includes controller_label)
+        :return: string name of trial
+        """
+        return f"{self.hand.get_name()}_{self.controller_label}_{self.trial_translation}_" \
+               f"{self.trial_rotation}_{self.subject}_{self.trial_num}"
 
     def get_last_pose(self):
         """
@@ -153,7 +162,8 @@ class AstBasicData:
 
         # get last object pose and use it for determining how far target line should go
 
-        last_obj_pose = self.poses.tail(1).to_numpy()[0]
+        # last_obj_pose = self.poses.tail(1).to_numpy()[0]
+        last_obj_pose = self.get_last_pose()
 
         target_line_length = acalc.narrow_target(last_obj_pose, target_line)
 
@@ -201,32 +211,32 @@ class AstBasicData:
 
         return target_rot
 
-    def assess_data_labels(self, no_mvt_threshold=0.1, init_threshold=0.05, init_num_pts=10):
+    def assess_path_labels(self, no_mvt_threshold=0.1, init_threshold=0.05, init_num_pts=10, dev_perc_threshold=0.1):
         """
-        Assesses the labels on the data, adds labels that fit to data_labels.
+        Assesses the labels on the data, adds labels that fit to path_labels.
         """
         # check whether total distance is an acceptable distance to consider it actually movement
         if self.total_distance < no_mvt_threshold:
-            self.data_labels.append("no_mvt")
+            self.path_labels.append("no_mvt")
             print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
 
         # check that data starts near center
         if not al.assess_initial_position(self, threshold=init_threshold, to_check=init_num_pts):
-            self.data_labels.append("not centered")
+            self.path_labels.append("not centered")
             print(f"Data for {self.generate_name()} failed, did not start at center.")
 
         deviated, dev_perc = al.assess_path_deviation(self)
 
-        if deviated and dev_perc > 0.2:
-            self.data_labels.append("major deviation")
-            print(f"Detected major deviation in {self.generate_name()}. Labelled trial.")
+        if deviated and dev_perc > dev_perc_threshold:
+            self.path_labels.append("major deviation")
+            print(f"Detected major deviation in {self.generate_name()} at {dev_perc}%. Labelled trial.")
         elif deviated:
-            self.data_labels.append("deviation")
-            print(f"Detected minor deviation in {self.generate_name()}. Labelled trial.")
+            self.path_labels.append("deviation")
+            print(f"Detected minor deviation in {self.generate_name()} at {dev_perc}%. Labelled trial.")
 
         # TODO: backtracking and shuttling
 
-        return self.data_labels
+        return self.path_labels
 
     def check_labels(self, labels_2_check):
         """
@@ -235,8 +245,8 @@ class AstBasicData:
         result = False
         triggered_labels = []
 
-        if self.data_labels:
-            for label in self.data_labels:  # TODO: there's definitely a more elegant way to do this
+        if self.path_labels:
+            for label in self.path_labels:  # TODO: there's definitely a more elegant way to do this
                 if label in labels_2_check:
                     result = True
                     triggered_labels.append(label)
@@ -277,8 +287,112 @@ class AstBasicData:
     def plot_trial(self):
         pass
 
-    def update_all_metrics(self):
-        pass
+    def _plot_notes(self):
+        """
+        Plots the labels and trial ID in the upper left corner of the plot
+        """
+        note = "Labels:"
+        for l in self.path_labels:
+            note = f"{note} {l} |"
+
+        ax = plt.gca()
+        # plt.text(0.1, 0.2, self.generate_name()) #, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
+        plt.text(-0.1, 1.1, note, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
+
+    def _plot_orientations(self, marker_scale=25, line_length=0.01, positions=[0.3, 0.55, 0.75], scale=0.25):
+        """
+        Makes a dial at points indicating the current rotation at that point.
+        It won't do it for every point, that is indicated in positions.
+        A straight up line indicates no rotation.
+        Default values are tuned for a single line plot
+        :param scale:
+        :return:
+        """
+        # TODO: make positions not mutable so the error stops annoying me
+        marker_size = str(int(marker_scale*scale))
+        x_data, y_data, t_data = self.get_poses()
+        size_data = len(x_data)
+
+        dox = 0.
+        doy = scale * 0.01
+
+        if positions is not None:
+            for spot in positions:
+                idx = int(spot * size_data)
+                x = x_data[idx]
+                y = y_data[idx]
+                t = t_data[idx] * 2 # multiply by 2 to make it on a scale of 180
+                # print(t)
+
+                plt.plot(x, y, marker="s", markersize=marker_size, color="xkcd:slate", alpha=0.7)
+                # makes a custom, square marker with rotation built in
+                # plt.plot(x, y, marker=(4, 0, t), markersize=marker_size, color="xkcd:slate", alpha=0.7)
+                dx = scale * line_length * np.sin(np.pi*t/180.)
+                dy = scale * line_length * np.cos(np.pi*t/180.)
+
+                # plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
+                # plt.plot(x, y+doy, markersize=line_length, color="xkcd:aqua green")
+                plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:cream")
+                # plt.pie([t, 180-y], center=[x,y], radius=0.005)
+
+        else:
+            # go through each point
+            for x, y, t in zip(x_data, y_data, t_data):
+                plt.plot(x, y, marker="s", markersize=marker_size, color="xkcd:slate", alpha=0.7)
+                dx = scale * line_length * np.cos(np.pi * t / 180.)
+                dy = scale * line_length * np.sin(np.pi * t / 180.)
+
+                # plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
+                # plt.plot(x, y+doy, markersize=1, color="xkcd:aqua green")
+                plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:cream")
+
+                # poly = [[x, y], [x + dox, y + doy], [x + dx, y + dy]]
+                # polyg = plt.Polygon(poly, color="xkcd:cream", alpha=0.9)
+                # plt.gca().add_patch(polyg)
+
+        # always includes the last point
+        x = x_data[size_data-1]
+        y = y_data[size_data-1]
+        t = t_data[size_data-1] * 2
+        #print(f"{x}, {y}, r {t}")
+
+        plt.plot(x, y, marker="s", markersize=marker_size, color="xkcd:slate", alpha=0.7)
+        dx = scale * line_length * np.sin(np.pi * t / 180.)
+        dy = scale * line_length * np.cos(np.pi * t / 180.)
+
+        # plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
+        # plt.plot(x, y + doy, markersize=1, color="xkcd:aqua green")
+        plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:cream")
+        # plt.pie([t, 180-y], center=[x, y], radius=0.005)
+
+    def update_all_metrics(self, use_filtered=True, redo_target_line=False):
+        """
+        Updates all metric values on the object.
+        """
+        if redo_target_line:
+            self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
+            self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
+
+        translation_fd, rotation_fd = am.calc_frechet_distance(self)
+        # fd = am.calc_frechet_distance_all(self)
+
+        mvt_efficiency, arc_len = am.calc_mvt_efficiency(self)
+
+        max_error = am.calc_max_error(self, arc_len)
+
+        area_btwn = am.calc_area_btwn_curves(self)
+
+        # this one is particularly troublesome
+        max_area_region, max_area_loc = am.calc_max_area_region(self)
+
+        # TODO: Make getters for each metric - can also return none if its not calculated
+        metric_dict = {"trial": self.generate_name(), "dist": self.total_distance,
+                       "t_fd": translation_fd, "r_fd": rotation_fd,  # "fd": fd
+                       "max_err": max_error, "mvt_eff": mvt_efficiency, "arc_len": arc_len,
+                       "area_btwn": area_btwn, "max_a_reg": max_area_region, "max_a_loc": max_area_loc}
+
+        self.metrics = pd.Series(metric_dict)
+        return self.metrics
 
 
 class AstTrial(AstBasicData):
@@ -291,7 +405,7 @@ class AstTrial(AstBasicData):
         Class to represent a single asterisk test trial.
         """
 
-        self.data_labels = []
+        self.path_labels = []
         self.poses = None
 
         self.controller_label = controller_label  # TODO: integrate controller label into the plot title
@@ -324,6 +438,8 @@ class AstTrial(AstBasicData):
             else:
                 raise TypeError("Filename failed.")
 
+            print(self.generate_name())
+
         except Exception as e:
             print(e)
             print("AstTrial loading failed.")
@@ -353,9 +469,9 @@ class AstTrial(AstBasicData):
         self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
         self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
-        self.assess_data_labels()
+        self.assess_path_labels()
 
-        if do_metrics and self.poses is not None and "no_mvt" not in self.data_labels:
+        if do_metrics and self.poses is not None and "no_mvt" not in self.path_labels:
             self.update_all_metrics()
 
     def add_data_by_df(self, path_df, condition_df=True, do_metrics=True, norm_data=True):
@@ -374,9 +490,9 @@ class AstTrial(AstBasicData):
         self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
         self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
-        self.assess_data_labels()
+        self.assess_path_labels()
 
-        if do_metrics and self.poses is not None and "no_mvt" not in self.data_labels:
+        if do_metrics and self.poses is not None and "no_mvt" not in self.path_labels:
             self.update_all_metrics()
 
     def _read_file(self, file_name, folder="aruco_data/", norm_data=True, condition_data=True):
@@ -517,10 +633,9 @@ class AstTrial(AstBasicData):
 
         # plt.gca().set_aspect('equal', adjustable='box')
 
-        plt.title(f"Plot: {self.generate_name()}") # TODO: make a new method for plot titling, separate from this func
+        plt.title(f"Plot: {self.generate_plot_title()}")
 
         if provide_notes:
-            # TODO: provide notes on the plot in the bottom left corner including labels...
             self._plot_notes()
 
         if save_plot:
@@ -532,118 +647,6 @@ class AstTrial(AstBasicData):
         if show_plot:
             plt.legend()
             plt.show()
-
-    def generate_plot_title(self):
-        # TODO: implement this!
-        pass
-
-    def _plot_notes(self):
-        """
-        Plots the labels and trial ID in the upper left corner of the plot
-        """
-        note = "Labels:"
-        for l in self.data_labels:
-            note = f"{note} {l} |"
-
-        ax = plt.gca()
-        # plt.text(0.1, 0.2, self.generate_name()) #, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
-        plt.text(-0.1, 1.1, note, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
-
-    def _plot_orientations(self, marker_scale=25, line_length=0.01, positions=[0.3, 0.55, 0.75], scale=0.25):
-        """
-        Makes a dial at points indicating the current rotation at that point.
-        It won't do it for every point, that is indicated in positions.
-        A straight up line indicates no rotation.
-        Default values are tuned for a single line plot
-        :param scale:
-        :return:
-        """
-        # TODO: make positions not mutable so the error stops annoying me
-        marker_size = str(int(marker_scale*scale))
-        x_data, y_data, t_data = self.get_poses()
-        size_data = len(x_data)
-
-        dox = 0.
-        doy = scale * 0.01
-
-        if positions is not None:
-            for spot in positions:
-                idx = int(spot * size_data)
-                x = x_data[idx]
-                y = y_data[idx]
-                t = t_data[idx] * 2 # multiply by 2 to make it on a scale of 180
-                # print(t)
-
-                plt.plot(x, y, marker="s", markersize=marker_size, color="xkcd:slate", alpha=0.7)
-                # makes a custom, square marker with rotation built in
-                # plt.plot(x, y, marker=(4, 0, t), markersize=marker_size, color="xkcd:slate", alpha=0.7)
-                dx = scale * line_length * np.sin(np.pi*t/180.)
-                dy = scale * line_length * np.cos(np.pi*t/180.)
-
-                # plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
-                # plt.plot(x, y+doy, markersize=line_length, color="xkcd:aqua green")
-                plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:cream")
-                # plt.pie([t, 180-y], center=[x,y], radius=0.005)
-
-        else:
-            # go through each point
-            for x, y, t in zip(x_data, y_data, t_data):
-                plt.plot(x, y, marker="s", markersize=marker_size, color="xkcd:slate", alpha=0.7)
-                dx = scale * line_length * np.cos(np.pi * t / 180.)
-                dy = scale * line_length * np.sin(np.pi * t / 180.)
-
-                # plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
-                # plt.plot(x, y+doy, markersize=1, color="xkcd:aqua green")
-                plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:cream")
-
-                # poly = [[x, y], [x + dox, y + doy], [x + dx, y + dy]]
-                # polyg = plt.Polygon(poly, color="xkcd:cream", alpha=0.9)
-                # plt.gca().add_patch(polyg)
-
-        # always includes the last point
-        x = x_data[size_data-1]
-        y = y_data[size_data-1]
-        t = t_data[size_data-1] * 2
-        #print(f"{x}, {y}, r {t}")
-
-        plt.plot(x, y, marker="s", markersize=marker_size, color="xkcd:slate", alpha=0.7)
-        dx = scale * line_length * np.sin(np.pi * t / 180.)
-        dy = scale * line_length * np.cos(np.pi * t / 180.)
-
-        # plt.plot([x, x + dox], [y, y + doy], linewidth=1, color="xkcd:cream")
-        # plt.plot(x, y + doy, markersize=1, color="xkcd:aqua green")
-        plt.plot([x, x + dx], [y, y + dy], linewidth=1, color="xkcd:cream")
-        # plt.pie([t, 180-y], center=[x, y], radius=0.005)
-
-    def update_all_metrics(self, use_filtered=True, redo_target_line=False):
-        """
-        Updates all metric values on the object.
-        """
-        if redo_target_line:
-            self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
-            self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
-
-        translation_fd, rotation_fd = am.calc_frechet_distance(self)
-        # fd = am.calc_frechet_distance_all(self)
-
-        mvt_efficiency, arc_len = am.calc_mvt_efficiency(self)
-
-        max_error = am.calc_max_error(self, arc_len)
-
-        area_btwn = am.calc_area_btwn_curves(self)
-
-        # this one is particularly troublesome
-        max_area_region, max_area_loc = am.calc_max_area_region(self)
-
-        # TODO: Make getters for each metric - can also return none if its not calculated
-        metric_dict = {"trial": self.generate_name(), "dist": self.total_distance,
-                       "t_fd": translation_fd, "r_fd": rotation_fd,  # "fd": fd
-                       "max_err": max_error, "mvt_eff": mvt_efficiency, "arc_len": arc_len,
-                       "area_btwn": area_btwn, "max_a_reg": max_area_region, "max_a_loc": max_area_loc}
-
-        self.metrics = pd.Series(metric_dict)
-        return self.metrics
-
 
 if __name__ == '__main__':
     test = AstTrial(file_name="sub1_3v3_d_n_3.csv", do_metrics=True, norm_data=True)

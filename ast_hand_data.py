@@ -391,7 +391,7 @@ class AstHandTrials:
 
         if plot_contributions:
             for a in avgs:
-                a.plot_line_contributions()
+                a._plot_line_contributions()
 
         # TODO: add orientation markers to each line so we have some idea of orientation along the path
         # TODO: add attributes for object shape, size, and initial position!
