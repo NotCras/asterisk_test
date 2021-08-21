@@ -25,8 +25,8 @@ def run_ast_study():
     home_directory = Path(__file__).parent.absolute()
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
-    subjects = datamanager.generate_options("subjects")
-    hand_names = ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]  # "m2stiff",
+    subjects = datamanager.generate_options("subjects")  # TODO: debug different hands
+    hand_names = ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"] # "m2stiff",
 
     # failed_files = []  # TODO: make a log of everything that happens when data is run
 
@@ -51,7 +51,7 @@ def run_ast_study():
             data.save_all_data()
 
             print("Calculating averages...")
-            data.calc_averages( rotation="n")
+            data.calc_averages(rotation="n")
 
             print("Saving plots...")
 

@@ -136,13 +136,13 @@ class AstHandTrials:
 
                 try:
                     trial_data = trial.AstTrial(f"{asterisk_trial}.csv")
-                    print(f"{trial_data.generate_name()}, labels: {trial_data.data_labels}")
+                    print(f"{trial_data.generate_name()}, labels: {trial_data.path_labels}")
 
                     # TODO: remove this exclusion here, add into averaging and plotting functions an exclude parameter
-                    # which will take a list of data_labels that we should not include in the formulation
+                    # which will take a list of path_labels that we should not include in the formulation
                     # have an attribute which shows which labels are excluded from the averaging so that
                     # we know when to re-rerun averaging
-                    if "no_mvt" not in trial_data.data_labels and "deviation" not in trial_data.data_labels:
+                    if "no_mvt" not in trial_data.path_labels and "deviation" not in trial_data.path_labels:
 
                         gathered_data.append(trial_data)
 
