@@ -321,7 +321,7 @@ class AstHandTrials:
 
         if len(avg_labels) == 8:
             # plot target lines as dotted lines
-            self.plot_all_target_lines(colors) # TODO: maybe make set colors for each direction
+            self.plot_all_target_lines(colors)  # TODO: maybe make set colors for each direction
         else:
             self.plot_all_target_lines(colors, avg_labels)
 
