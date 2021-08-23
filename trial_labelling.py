@@ -136,7 +136,7 @@ class AsteriskLabelling:
             return False, (magnitude, threshold), (rot_magnitude, rot_threshold)
 
     @staticmethod
-    def assess_pathtype(ast_trial, backtrack_threshold=0.1, shuttling_threshold=2.0, use_filtered=False):
+    def assess_path_movement(ast_trial, backtrack_threshold=0.1, shuttling_threshold=2.0, use_filtered=False):
         """
         Assess if there is backtracking (significant negative progress in target direction)
         or shuttling (significant movement mostly-orthogonal to target direction).
@@ -144,15 +144,19 @@ class AsteriskLabelling:
 
         Returns a list of labels
         """
+        observations = []  # TODO: make this a set to reduce duplicates? Or maybe I can use duplicates to assess more...
         if ast_trial.is_avg_trial:
             print("Data is averaged, backtrack and shuttling assessment does not apply.")
-            return []
+            return observations
 
         # rotate data to C
         rotated_data = acalc.rotate_points(ast_trial.poses, acalc.rotations[ast_trial.trial_translation],
                                            use_filtered=use_filtered)
 
-        prev_row = None  # TODO: make this into a pandas row of zeros
+        prev_row = None
+        # pd.Series({'x':0, 'y':0, 'rmag':0})
+        backtrack_accumulator = 0
+
         # go through each point
         for row in rotated_data.iterrows():
             if prev_row is None:
@@ -165,7 +169,23 @@ class AsteriskLabelling:
 
             s = np.sqrt(dx**2 + dy**2)
 
-        pass  # TODO: not done! Need to continue implementing the checks, accumulator variables
+            # assess for backtracking
+            if dx < 0:
+                backtrack_accumulator += dx
+
+                if backtrack_accumulator >= backtrack_threshold:
+                    observations.append("backtracking")
+            else:
+                backtrack_accumulator = 0
+
+            # assess for shuttling
+            mvt_ratio = s / dx  # amount of path per amount of movement in target direction
+
+            if mvt_ratio > shuttling_threshold:
+                observations.append("shuttling")  # TODO: is there any more logic I want to put into this?
+
+        return observations  # TODO: need to process observations before we send them out?
+
 
     @staticmethod
     def assess_no_backtracking(data, translation_label, threshold=5, debug_rotation=False):

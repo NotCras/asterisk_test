@@ -234,7 +234,13 @@ class AstBasicData:
             self.path_labels.append("deviation")
             print(f"Detected minor deviation in {self.generate_name()} at {dev_perc}%. Labelled trial.")
 
-        # TODO: backtracking and shuttling
+        mvt_observations = al.assess_path_movement(self)  # TODO: make more in depth?
+
+        if "backtracking" in mvt_observations:
+            self.path_labels.append("backtracking")
+
+        if "shuttling" in mvt_observations:
+            self.path_labels.append("shuttling")
 
         return self.path_labels
 
