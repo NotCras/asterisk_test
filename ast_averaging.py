@@ -49,6 +49,7 @@ class AveragedTrial(AstBasicData):
             self.data_demographics()
             self.calculate_avg_line(sample_points=sample_points)  # avg metrics happens inside here
             self.assess_labels(mode=2)
+            self.update_all_metrics()
 
     def data_demographics(self, subject=None, translation=None, rotation=None, number=None, controller=None):
         """
@@ -169,7 +170,7 @@ class AveragedTrial(AstBasicData):
             else:
                 return True
         else:
-            print("must be a list to enforce demographic expectation")
+            # print("must be a list to enforce demographic expectation")
             return True  # its true because we won't enforce the expectation
 
         # how do we do hand, trial translation, trial rotation, trial num?
@@ -252,7 +253,7 @@ class AveragedTrial(AstBasicData):
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
 
         if self.trial_translation == "x":
-            pass # TODO: multiple translation labels breaks on the next line, if I want to actually implement that
+            pass  # TODO: multiple translation labels breaks on the next line, if I want to actually implement that
 
         rotated_data = AsteriskCalculations.rotate_points(data_points, self.rotations[self.trial_translation],
                                            use_filtered=use_filtered_data)
@@ -286,7 +287,8 @@ class AveragedTrial(AstBasicData):
             # use_filtered is not used above because we just calculated average... there won't be a filtered version
             # and I want to make it so that applying a moving average is a conscious step for the user
 
-        self.calc_avg_metrics()
+        #self.calc_avg_metrics()
+        self.average_metrics(mode=2)
 
         print(f"Averaged: {self.generate_name()}")
         return correct_avg
@@ -487,6 +489,11 @@ class AveragedTrial(AstBasicData):
 
         for t in self.averaged_trialset:
             metrics = t.metrics
+
+            if metrics is None:
+                print(t.generate_name())
+                continue
+
             dist_vals.append(metrics["dist"])
             t_fd_vals.append(metrics["t_fd"])
             r_fd_vals.append(metrics["r_fd"])
@@ -657,39 +664,40 @@ class AveragedTrial(AstBasicData):
 if __name__ == '__main__':
     # demo and test
     h = "2v2"
-    t = "b"
+    t = "d"
+    r = "p15"
     w = 10
-    test1 = AstTrial(f'sub1_{h}_{t}_n_1.csv')
+    test1 = AstTrial(f'sub1_{h}_{t}_{r}_1.csv')
     test1.moving_average(window_size=w)
-    test2 = AstTrial(f'sub1_{h}_{t}_n_2.csv')
+    test2 = AstTrial(f'sub1_{h}_{t}_{r}_2.csv')
     test2.moving_average(window_size=w)
-    test3 = AstTrial(f'sub1_{h}_{t}_n_3.csv')
+    test3 = AstTrial(f'sub1_{h}_{t}_{r}_3.csv')
     test3.moving_average(window_size=w)
-    test4 = AstTrial(f'sub1_{h}_{t}_n_4.csv')
+    test4 = AstTrial(f'sub1_{h}_{t}_{r}_4.csv')
     test4.moving_average(window_size=w)
-    test5 = AstTrial(f'sub1_{h}_{t}_n_5.csv')
+    test5 = AstTrial(f'sub1_{h}_{t}_{r}_5.csv')
     test5.moving_average(window_size=w)
 
-    test6 = AstTrial(f'sub2_{h}_{t}_n_1.csv')
+    test6 = AstTrial(f'sub2_{h}_{t}_{r}_1.csv')
     test6.moving_average(window_size=w)
-    test7 = AstTrial(f'sub2_{h}_{t}_n_2.csv')
+    test7 = AstTrial(f'sub2_{h}_{t}_{r}_2.csv')
     test7.moving_average(window_size=w)
-    test8 = AstTrial(f'sub2_{h}_{t}_n_3.csv')
+    test8 = AstTrial(f'sub2_{h}_{t}_{r}_3.csv')
     test8.moving_average(window_size=w)
-    test9 = AstTrial(f'sub2_{h}_{t}_n_4.csv')
+    test9 = AstTrial(f'sub2_{h}_{t}_{r}_4.csv')
     test9.moving_average(window_size=w)
-    test10 = AstTrial(f'sub2_{h}_{t}_n_5.csv')
+    test10 = AstTrial(f'sub2_{h}_{t}_{r}_5.csv')
     test10.moving_average(window_size=w)
 
-    test11 = AstTrial(f'sub3_{h}_{t}_n_1.csv')
+    test11 = AstTrial(f'sub3_{h}_{t}_{r}_1.csv')
     test11.moving_average(window_size=w)
-    test12 = AstTrial(f'sub3_{h}_{t}_n_2.csv')
+    test12 = AstTrial(f'sub3_{h}_{t}_{r}_2.csv')
     test12.moving_average(window_size=w)
-    test13 = AstTrial(f'sub3_{h}_{t}_n_3.csv')
+    test13 = AstTrial(f'sub3_{h}_{t}_{r}_3.csv')
     test13.moving_average(window_size=w)
-    test14 = AstTrial(f'sub3_{h}_{t}_n_4.csv')
+    test14 = AstTrial(f'sub3_{h}_{t}_{r}_4.csv')
     test14.moving_average(window_size=w)
-    test15 = AstTrial(f'sub3_{h}_{t}_n_5.csv')
+    test15 = AstTrial(f'sub3_{h}_{t}_{r}_5.csv')
     test15.moving_average(window_size=w)
 
     #test16 = AstTrial(f'sub1_2v2_c_n_1.csv')

@@ -211,12 +211,12 @@ class AstBasicData:
 
         return target_rot
 
-    def assess_path_labels(self, no_mvt_threshold=0.1, init_threshold=0.05, init_num_pts=10, dev_perc_threshold=0.1):
+    def assess_path_labels(self, no_mvt_threshold=0.1, init_threshold=0.05, init_num_pts=10, dev_perc_threshold=0.10):
         """
         Assesses the labels on the data, adds labels that fit to path_labels.
         """
         # check whether total distance is an acceptable distance to consider it actually movement
-        if self.total_distance < no_mvt_threshold:
+        if self.total_distance < no_mvt_threshold:  # TODO: should this be arc len based? Or incorporate arc len too?
             self.path_labels.append("no_mvt")
             print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
 
@@ -293,7 +293,7 @@ class AstBasicData:
     def plot_trial(self):
         pass
 
-    def _plot_notes(self):
+    def _plot_notes(self):  # TODO: move to aplt, make it take in a list of labels so HandTranslation can also use it
         """
         Plots the labels and trial ID in the upper left corner of the plot
         """
@@ -413,6 +413,7 @@ class AstTrial(AstBasicData):
 
         self.path_labels = []
         self.poses = None
+        self.metrics = None
 
         self.controller_label = controller_label  # TODO: integrate controller label into the plot title
 
@@ -449,6 +450,7 @@ class AstTrial(AstBasicData):
         except Exception as e:
             print(e)
             print("AstTrial loading failed.")
+            raise ImportError("Filename failed, AstTrial failed to generate.")
 
         # if file_name:
         #     print(self.generate_name())
@@ -476,6 +478,7 @@ class AstTrial(AstBasicData):
         self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
         self.assess_path_labels()
+        print(self.path_labels)
 
         if do_metrics and self.poses is not None and "no_mvt" not in self.path_labels:
             self.update_all_metrics()
@@ -655,6 +658,11 @@ class AstTrial(AstBasicData):
             plt.show()
 
 if __name__ == '__main__':
-    test = AstTrial(file_name="sub1_3v3_d_n_3.csv", do_metrics=True, norm_data=True)
-    #print(test.metrics)
+    test = AstTrial(file_name="sub2_2v2_d_p15_2.csv", do_metrics=True, norm_data=True)
+    print(f"name: {test.generate_name()}")
+    print(f"tot dist: {test.total_distance}")
+    print(f"path labels: {test.path_labels}")
+    print(f"metrics: {test.metrics}")
+
+    test.moving_average(window_size=10)
     test.plot_trial(use_filtered=False, provide_notes=True)

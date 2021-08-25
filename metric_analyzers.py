@@ -70,28 +70,31 @@ class AstHandAnalyzer:
         self.analyzers = dir_analyzers
         # print(complete_df)
         # complete_df = complete_df.set_index("trial")
-        self.metrics = complete_df
+        self.all_metrics = complete_df
 
         avg_df = pd.DataFrame()
         avg_sd_df = pd.DataFrame()
+        all_avg_metrics = pd.DataFrame()
         for a in hd.averages:
-            avg_df = avg_df.append(a.metrics, ignore_index=True)
-            avg_sd_df = avg_sd_df.append(a.metric_sds, ignore_index=True)
+            avg_df = avg_df.append(a.avg_metrics, ignore_index=True)
+            avg_sd_df = avg_sd_df.append(a.avg_metric_sds, ignore_index=True)
+            all_avg_metrics = all_avg_metrics.append(a.metrics, ignore_index=True)
 
-        # pdb.set_trace()
         avg_df = avg_df.set_index("trial")
         avg_sd_df = avg_sd_df.set_index("trial")
+        all_avg_metrics = all_avg_metrics.set_index("trial")
 
         self.avg_metrics = avg_df
         self.avg_metric_sds = avg_sd_df
+        self.all_avg_metrics = all_avg_metrics
 
     def save_data(self, file_name_overwrite=None):
         """
         Saves the report as a csv file
         :return:
         """
-        names = ["metrics", "avg_metrics", "metric_sds"]
-        data = [self.metrics, self.avg_metrics, self.avg_metric_sds]
+        names = ["all_metrics", "all_avg_metrics", "avg_metrics", "avg_metric_sds"]
+        data = [self.all_metrics, self.all_avg_metrics, self.avg_metrics, self.avg_metric_sds]
 
         for n, d in zip(names, data):
             if file_name_overwrite is None:
@@ -235,3 +238,19 @@ class AstHandComparison:
             plt.show()
 
         return plt
+
+
+if __name__ == '__main__':
+    h = "2v2"
+    rot = "n"
+    subjects = ["sub1", "sub2", "sub3"]
+
+    print(f"Getting {h} ({rot}) data...")
+    data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
+    data.filter_data(10)  # don't use if you're using an asterisk_study obj
+    data.calc_averages()
+    results = AstHandAnalyzer(data)
+
+    print(f"Average Metrics: {results.avg_metrics}")
+    print(f"Standard deviations of average metrics: {results.avg_metric_sds}")
+    print(f"Metrics of the average lines: {results.all_avg_metrics}")

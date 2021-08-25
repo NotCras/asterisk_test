@@ -145,7 +145,7 @@ class AsteriskLabelling:
         Returns a list of labels
         """
         observations = []  # TODO: make this a set to reduce duplicates? Or maybe I can use duplicates to assess more...
-        if ast_trial.is_avg_trial:
+        if ast_trial.is_avg_trial():
             print("Data is averaged, backtrack and shuttling assessment does not apply.")
             return observations
 
@@ -159,13 +159,14 @@ class AsteriskLabelling:
 
         # go through each point
         for row in rotated_data.iterrows():
+
             if prev_row is None:
-                dx = row['x'] - 0
-                dy = row['y'] - 0
+                dx = row[1]['x'] - 0
+                dy = row[1]['y'] - 0
 
             else:
-                dx = row['x'] - prev_row['x']
-                dy = row['y'] - prev_row['y']
+                dx = row[1]['x'] - prev_row[1]['x']
+                dy = row[1]['y'] - prev_row[1]['y']
 
             s = np.sqrt(dx**2 + dy**2)
 
@@ -179,10 +180,13 @@ class AsteriskLabelling:
                 backtrack_accumulator = 0
 
             # assess for shuttling
-            mvt_ratio = s / dx  # amount of path per amount of movement in target direction
+            if dx > 0:
+                mvt_ratio = s / dx  # amount of path per amount of movement in target direction
 
-            if mvt_ratio > shuttling_threshold:
-                observations.append("shuttling")  # TODO: is there any more logic I want to put into this?
+                if mvt_ratio > shuttling_threshold:
+                    observations.append("shuttling")  # TODO: is there any more logic I want to put into this?
+            else:
+                pass  # this handles a string of 0,0 points
 
         return observations  # TODO: need to process observations before we send them out?
 

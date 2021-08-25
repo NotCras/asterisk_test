@@ -27,6 +27,7 @@ class AstHandTranslation:
         """
         self.hand = HandInfo(hand_name)
         self.subjects_containing = subjects
+
         if blocklist_file is not None:
             blocklist = self._check_blocklist(blocklist_file)
         else:
@@ -154,13 +155,13 @@ class AstHandTranslation:
                 if trial_number:  # if we want a specific trial, look for it
                     if (t.subject == subjects) and (t.trial_num == trial_number):
                         for l in t.path_labels:
-                            if l in exclude_path_labels:
+                            if exclude_path_labels is not None and l in exclude_path_labels:
                                 continue  # skip trial if it has that path_label
 
                         dfs.append(t)
                     elif (t.subject in subjects) and (t.trial_num == trial_number):
                         for l in t.path_labels:
-                            if l in exclude_path_labels:
+                            if exclude_path_labels is not None and l in exclude_path_labels:
                                 continue  # skip trial if it has that path_label
 
                         dfs.append(t)
@@ -168,7 +169,7 @@ class AstHandTranslation:
                 else:  # otherwise, grab trial as long as it has the right subject
                     if t.subject == subjects or t.subject in subjects:
                         for l in t.path_labels:
-                            if l in exclude_path_labels:
+                            if exclude_path_labels is not None and l in exclude_path_labels:
                                 continue  # skip trial if it has that path_label
 
                         dfs.append(t)
@@ -190,7 +191,7 @@ class AstHandTranslation:
             if t.subject == subjects or t.subject in subjects:
                 # check if trial has a path_label that we don't want to include
                 for l in t.path_labels:
-                    if l in exclude_path_labels:
+                    if exclude_path_labels is not None and l in exclude_path_labels:
                         continue  # skip trial if it has that path_label
 
                 # if it passes path_label check, add it to the
@@ -262,6 +263,7 @@ class AstHandTranslation:
         """
         for key in self.data.keys():
             for t in self.data[key]:
+                print(f"Moving Average of size {window_size} is on {t.generate_name()}")
                 t.moving_average(window_size)
 
         self.filtered = True
@@ -342,7 +344,7 @@ class AstHandTranslation:
             # TODO: add ability to make comparison plot between n, m15, and p15
             # TODO: have an ability to plot a single average trial
 
-    def plot_ast_avg(self, subjects=None, show_plot=True, save_plot=False,
+    def plot_ast_avg(self, subjects=None, show_plot=True, save_plot=False, include_notes=True,
                      linestyle="solid", plot_contributions=False, exclude_path_labels=None):
         """
         Plots the data from one subject, averaging all of the data in each direction
@@ -355,6 +357,7 @@ class AstHandTranslation:
         # TODO: should we do the same for filtered vs unfiltered?
         if self.averages and subjects is None:
             # if we have averages and the user does not specify subjects just use the averages we have
+            subjects = self.subjects_containing
             avgs = self.averages
 
         elif self.averages and subjects is not None:
@@ -367,6 +370,9 @@ class AstHandTranslation:
             avgs = self.calc_averages(subjects=subjects, exclude_path_labels=exclude_path_labels)
 
         plt = self._make_plot(avgs, use_filtered=False, stds=True, linestyle=linestyle)
+
+        if include_notes:
+            self._plot_notes()
 
         if plot_contributions:
             for a in avgs:
@@ -386,6 +392,24 @@ class AstHandTranslation:
         if show_plot:
             # plt.legend()  # TODO: showing up weird, need to fix
             plt.show()
+
+    def _plot_notes(self):  # TODO: move to aplt, make it take in a list of labels so HandTranslation can also use it
+        """
+        Plots the labels and trial ID in the upper left corner of the plot
+        """
+        note = "Labels:"
+
+        labels = set()
+        for a in self.averages:
+            for l in a.trialset_labels:
+                labels.add(l)
+
+        for l in list(labels):
+            note = f"{note} {l} |"
+
+        ax = plt.gca()
+        # plt.text(0.1, 0.2, self.generate_name()) #, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
+        plt.text(-0.1, 1.1, note, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
 
     def plot_all_target_lines(self, specific_lines=None):
         """
@@ -457,7 +481,7 @@ class AstHandTranslation:
                 plt.plot(ideal_xs[i], ideal_ys[i], color=aplt.get_dir_color(dir), label='ideal', linestyle='--')
 
 if __name__ == '__main__':
-    h = AstHandTranslation(["sub1", "sub2", "sub3"], "2v2", rotation="n")
+    h = AstHandTranslation(["sub1", "sub2", "sub3"], "2v2", rotation="p15")
     h.filter_data()
 
     # # subject 1 averages
@@ -481,6 +505,6 @@ if __name__ == '__main__':
     # plt.clf()
     # h.plot_avg_data(rotation="m15", subjects=None,  show_plot=False, save_plot=True)
     # plt.clf()
-    h.plot_ast_avg(rotation="n", subjects=None, show_plot=True, save_plot=False)
+    h.plot_ast_avg(subjects=None, show_plot=True, save_plot=False)
 
 
