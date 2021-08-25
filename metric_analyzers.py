@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import data_manager as datamanager
-from ast_hand_data import AstHandTrials
+from ast_hand_translation import AstHandTranslation
 from data_plotting import AsteriskPlotting
 import pdb
 

@@ -17,7 +17,7 @@ from ast_averaging import AveragedTrial
 from data_plotting import AsteriskPlotting as aplt
 
 
-class AstHandTrials:
+class AstHandTranslation:
     def __init__(self, subjects, hand_name, rotation='n', blocklist_file=None):
         """
         Class to hold all the data pertaining to a specific hand.
@@ -457,7 +457,7 @@ class AstHandTrials:
                 plt.plot(ideal_xs[i], ideal_ys[i], color=aplt.get_dir_color(dir), label='ideal', linestyle='--')
 
 if __name__ == '__main__':
-    h = AstHandTrials(["sub1", "sub2", "sub3"], "2v2", rotation="n")
+    h = AstHandTranslation(["sub1", "sub2", "sub3"], "2v2", rotation="n")
     h.filter_data()
 
     # # subject 1 averages

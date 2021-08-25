@@ -4,7 +4,7 @@ The entire pipeline from aruco analysis of vision data to metric calculations.
 """
 
 from pathlib import Path
-from ast_hand_data import AstHandTrials
+from ast_hand_translation import AstHandTranslation
 from ast_study import AstStudyTrials
 from ast_aruco import batch_aruco_analysis
 from metric_analyzers import AstHandAnalyzer
@@ -41,7 +41,7 @@ def run_ast_study():
         for rot in ['n']:  # , "m15", "p15"]:
             print(f"Getting {h} ({rot}) data...")
             # data = AstHandTrials(subjects, h, rotation="n", blocklist_file="trial_blocklist.csv")
-            data = AstHandTrials(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
+            data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
             # data = study.return_hand(h)
 
             print(f"Getting {h} data...")
