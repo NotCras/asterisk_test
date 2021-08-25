@@ -17,7 +17,7 @@ from ast_hand_info import HandInfo
 from scipy import stats
 
 
-class AstBasicData:
+class AstBasicData:  # TODO: move into its own file
     """
     Base class for Asterisk Trial classes -> AstTrial and AveragedTrial so far
     """
@@ -77,6 +77,15 @@ class AstBasicData:
         """
         return f"{self.hand.get_name()}_{self.controller_label}_{self.trial_translation}_" \
                f"{self.trial_rotation}_{self.subject}_{self.trial_num}"
+
+    def is_ast_trial(self):
+        pass
+
+    def is_avg_trial(self):
+        pass
+
+    def is_rot_trial(self):
+        pass
 
     def get_last_pose(self):
         """
@@ -573,6 +582,9 @@ class AstTrial(AstBasicData):
         return isinstance(self, AstTrial)
 
     def is_avg_trial(self):
+        return False
+
+    def is_rot_trial(self):
         return False
 
     def is_trial(self, subject_name, hand_name, translation_name, rotation_name, trial_num=None):

@@ -143,6 +143,9 @@ class AveragedTrial(AstBasicData):
     def is_avg_trial(self):
         return True
 
+    def is_rot_trial(self):
+        return False
+
     def add_trial(self, trial, rerun_avg=True):
         self.averaged_trialset.append(trial)
         self.data_demographics()

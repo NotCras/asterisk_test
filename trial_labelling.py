@@ -4,7 +4,6 @@
 File for assessing labels to put on an asterisk trial object. [NOT DONE]
 """
 
-import pdb
 
 import numpy as np
 import pandas as pd
@@ -14,7 +13,7 @@ from metric_calculation import AstMetrics as am
 from data_plotting import AsteriskPlotting as aplt
 
 
-class AsteriskLabelling:
+class AsteriskLabelling:  # TODO: add in rotational variants to metrics to work with cw/ccw trials
 
     @staticmethod
     def assess_distances(ast_trial, use_filtered=True):
