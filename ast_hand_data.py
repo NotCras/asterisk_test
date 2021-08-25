@@ -18,7 +18,7 @@ from data_plotting import AsteriskPlotting as aplt
 
 
 class AstHandTrials:
-    def __init__(self, subjects, hand_name, rotation=None, blocklist_file=None):
+    def __init__(self, subjects, hand_name, rotation='n', blocklist_file=None):
         """
         Class to hold all the data pertaining to a specific hand.
         Combines data from all subjects
@@ -32,7 +32,8 @@ class AstHandTrials:
         else:
             blocklist = None
 
-        self.data = self._gather_hand_data(subjects, rotation, blocklist=blocklist)
+        self.set_rotation = rotation
+        self.data = self._gather_hand_data(subjects, blocklist=blocklist)
         self.filtered = False
         self.window_size = None
         self.averages = []
@@ -51,7 +52,7 @@ class AstHandTrials:
 
         return blocked_files
 
-    def _gather_hand_data(self, subjects, rotation=None, blocklist=None):
+    def _gather_hand_data(self, subjects, blocklist=None):
         """
         Returns a dictionary with the data for the hand, sorted by task.
         Each key,value pair of dictionary is:
@@ -60,43 +61,18 @@ class AstHandTrials:
         :param subjects: list of subjects to get
         """
         data_dictionary = dict()
-        if rotation is None:
-            for t, r in datamanager.generate_t_r_pairs(self.hand.get_name()):
-                key = f"{t}_{r}"
-                data = self._make_asterisk_trials_from_filenames(subjects, t, r,
-                                                                 datamanager.generate_options("numbers"),
-                                                                 blocklist=blocklist)
-                if data:
-                    data_dictionary[key] = data
-                else:
-                    print(f"{key} not included, no valid data")
 
-        elif rotation in datamanager.generate_options("rotations"):
-            for t in datamanager.generate_options("translations"):
-                key = f"{t}_{rotation}"
-                data = self._make_asterisk_trials_from_filenames(subjects, t, rotation,
-                                                                 datamanager.generate_options("numbers"),
-                                                                 blocklist=blocklist)
-                if data:
-                    data_dictionary[key] = data
-                    # pdb.set_trace()
-                else:
-                    print(f"{key} not included, no valid data")
-                    # pdb.set_trace()
-
-        elif rotation in datamanager.generate_options("rotations_n_trans"):
-            key = f"n_{rotation}"
-            data = self._make_asterisk_trials_from_filenames(subjects, "n", rotation,
+        for t in datamanager.generate_options("translations"):
+            key = f"{t}_{self.set_rotation}"
+            data = self._make_asterisk_trials_from_filenames(subjects, t, self.set_rotation,
                                                              datamanager.generate_options("numbers"),
                                                              blocklist=blocklist)
             if data:
                 data_dictionary[key] = data
+                # pdb.set_trace()
             else:
                 print(f"{key} not included, no valid data")
-
-        else:
-            print("invalid key")
-            data_dictionary = None
+                # pdb.set_trace()
 
         return data_dictionary
 
@@ -120,8 +96,6 @@ class AstHandTrials:
         :param rotation_label: name of rotation trials
         :param trial_num: trial numbers to include, default parameter
         """
-        # TODO: Change things so that we have some way to know when the trials were all no mvt or deviation
-        # TODO: make a report txt file which sa
         # Maybe make it return None? then we can return all dictionary keys that don't return none in the other func
 
         gathered_data = list()
@@ -158,7 +132,7 @@ class AstHandTrials:
         label = f"{ast_trial.trial_translation}_{ast_trial.trial_rotation}"
         self.data[label].append(ast_trial)
 
-    def _get_ast_set(self, subjects, trial_number=None, rotation_type="n", exclude_path_labels=None):
+    def _get_ast_set(self, subjects, trial_number=None, exclude_path_labels=None):
         """
         Picks out an asterisk of data (all translational directions) with specific parameters
         :param subjects: specify the subject or subjects you want
@@ -170,7 +144,7 @@ class AstHandTrials:
         translations = datamanager.generate_options("translations")  # ["a", "b", "c", "d", "e", "f", "g", "h"]
 
         for direction in translations:
-            dict_key = f"{direction}_{rotation_type}"
+            dict_key = f"{direction}_{self.set_rotation}"
             # TODO: maybe we set the rotation type per hand trial... might be easier to handle
             trials = self.data[dict_key]
             # print(f"For {subject_to_run} and {trial_number}: {direction}")
@@ -201,14 +175,14 @@ class AstHandTrials:
 
         return dfs
 
-    def _get_ast_dir(self, direction_label, subjects, rotation_label="n", exclude_path_labels=None):
+    def _get_ast_dir(self, direction_label, subjects, exclude_path_labels=None):
         """
         Get all of the trials for a specific direction. You can specify subject too
         :param direction_label: translation direction
         :param subjects: subject or list of subjects to include
         :param rotation_label: rotation label, defaults to "n"
         """
-        dict_key = f"{direction_label}_{rotation_label}"
+        dict_key = f"{direction_label}_{self.set_rotation}"
         direction_trials = self.data[dict_key]
         gotten_trials = []
 
@@ -232,7 +206,7 @@ class AstHandTrials:
         # TODO: implement this
         pass
 
-    def _average_dir(self, translation, rotation, subject=None, exclude_path_labels=None):
+    def _average_dir(self, translation, subject=None, exclude_path_labels=None):
         """
         Averages a set of asterisk_trial paths. We run this on groups of paths of the same direction.
         :param translation: trial direction to average
@@ -242,21 +216,21 @@ class AstHandTrials:
         """
         if subject is None:  # get batches of data by trial type, if no subjects given, defaults to all subjects
             trials = self._get_ast_dir(direction_label=translation, subjects=self.subjects_containing,
-                                       rotation_label=rotation, exclude_path_labels=exclude_path_labels)
+                                       exclude_path_labels=exclude_path_labels)
 
         else:
             trials = self._get_ast_dir(direction_label=translation, subjects=subject,
-                                       rotation_label=rotation, exclude_path_labels=exclude_path_labels)
+                                       exclude_path_labels=exclude_path_labels)
 
         if trials:
             average = AveragedTrial(trials=trials)
             return average
 
         else:
-            print(f"No trials for {translation}_{rotation}, skipping averaging.")
+            print(f"No trials for {translation}_{self.set_rotation}, skipping averaging.")
             return None
 
-    def calc_averages(self, subjects=None, rotation=None, exclude_path_labels=None):
+    def calc_averages(self, subjects=None, exclude_path_labels=None):
         """
         calculate and store all averages
         :param subjects: subject(s) to include in the average. Defaults to all subjects in object
@@ -269,24 +243,14 @@ class AstHandTrials:
         dirs = self._get_directions_in_data()
         print(f"Directions included: {dirs}")
 
-        if rotation is None:
-            # TODO: make this smarter, so that we base the list on what exists on object
-            for t, r in datamanager.generate_t_r_pairs(self.hand.get_name()):
-                # make sure that we only include translations that are in the data
-                if t in dirs:  # TODO: also look at rotations
-                    print(f"Averaging {t}")
-                    avg = self._average_dir(t, r, subjects)
-                    if avg is not None:
-                        averages.append(avg)
-        else:
-            for t in datamanager.generate_options("translations"):
-                # make sure that we only include translations that are in the data
-                if t in dirs:
-                    print(f"Averaging {t}")
-                    avg = self._average_dir(translation=t, rotation=rotation,
-                                            subject=subjects, exclude_path_labels=exclude_path_labels)
-                    if avg is not None:
-                        averages.append(avg)
+        for t in datamanager.generate_options("translations"):
+            # make sure that we only include translations that are in the data
+            if t in dirs:
+                print(f"Averaging {t}")
+                avg = self._average_dir(translation=t, subject=subjects,
+                                        exclude_path_labels=exclude_path_labels)
+                if avg is not None:
+                    averages.append(avg)
 
         self.averages = averages
         return averages
@@ -378,7 +342,7 @@ class AstHandTrials:
             # TODO: add ability to make comparison plot between n, m15, and p15
             # TODO: have an ability to plot a single average trial
 
-    def plot_ast_avg(self, rotation="n", subjects=None, show_plot=True, save_plot=False,
+    def plot_ast_avg(self, subjects=None, show_plot=True, save_plot=False,
                      linestyle="solid", plot_contributions=False, exclude_path_labels=None):
         """
         Plots the data from one subject, averaging all of the data in each direction
@@ -387,15 +351,20 @@ class AstHandTrials:
         :param show_plot: flag to show plot. Default is true
         :param save_plot: flat to save plot as a file. Default is False
         """
-        if subjects is None:
-            subjects = self.subjects_containing
 
-        # TODO: check that specifying subjects works ok when an average was already calculated
-        if self.averages:
+        # TODO: should we do the same for filtered vs unfiltered?
+        if self.averages and subjects is None:
+            # if we have averages and the user does not specify subjects just use the averages we have
             avgs = self.averages
 
+        elif self.averages and subjects is not None:
+            # if we have averages but the user specifies specific subjects, rerun averaage
+            avgs = self.calc_averages(subjects=subjects, exclude_path_labels=exclude_path_labels)
+
         else:
-            avgs = self.calc_averages(subjects=subjects, rotation=rotation, exclude_path_labels=exclude_path_labels)
+            # otherwise just run the average on everything
+            subjects = self.subjects_containing
+            avgs = self.calc_averages(subjects=subjects, exclude_path_labels=exclude_path_labels)
 
         plt = self._make_plot(avgs, use_filtered=False, stds=True, linestyle=linestyle)
 
@@ -405,10 +374,10 @@ class AstHandTrials:
 
         # TODO: add orientation markers to each line so we have some idea of orientation along the path
         # TODO: add attributes for object shape, size, and initial position!
-        plt.title(f"Avg {self.hand.get_name()}, {subjects}, {rotation}, Cube (0.25 span), 0.75 depth init pos")
+        plt.title(f"Avg {self.hand.get_name()}, {subjects}, {self.set_rotation}, Cube (0.25 span), 0.75 depth init pos")
 
         if save_plot:
-            plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{rotation}.jpg", format='jpg')
+            plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{self.set_rotation}.jpg", format='jpg')
 
             # name -> tuple: subj, hand  names
             print("Figure saved.")
