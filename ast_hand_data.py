@@ -321,9 +321,9 @@ class AstHandTrials:
 
         if len(avg_labels) == 8:
             # plot target lines as dotted lines
-            self.plot_all_target_lines(colors)  # TODO: maybe make set colors for each direction
+            self.plot_all_target_lines()
         else:
-            self.plot_all_target_lines(colors, avg_labels)
+            self.plot_all_target_lines(specific_lines=avg_labels)
 
         # plot data
         for i, t in enumerate(trials):
@@ -408,7 +408,7 @@ class AstHandTrials:
             # plt.legend()  # TODO: showing up weird, need to fix
             plt.show()
 
-    def plot_all_target_lines(self, order_of_colors, specific_lines=None):
+    def plot_all_target_lines(self, specific_lines=None):
         """
         Plot all target lines on a plot for easy reference
         :param order_of_colors:
@@ -426,8 +426,9 @@ class AstHandTrials:
             ideal_xs = [x_a, x_b, x_c, x_d, x_e, x_f, x_g, x_h]
             ideal_ys = [y_a, y_b, y_c, y_d, y_e, y_f, y_g, y_h]
 
-            for i in range(8):
-                plt.plot(ideal_xs[i], ideal_ys[i], color=order_of_colors[i], label='ideal', linestyle='--')
+            dirs = datamanager.generate_options("translations")
+            for i, d in enumerate(dirs):
+                plt.plot(ideal_xs[i], ideal_ys[i], color=aplt.get_dir_color(d), label='ideal', linestyle='--')
 
         else:  # there are specific directions you want to plot, and only those directions
             ideal_xs = list()
@@ -473,8 +474,8 @@ class AstHandTrials:
                 ideal_xs.append(x_h)
                 ideal_ys.append(y_h)
 
-            for i in range(len(ideal_xs)):
-                plt.plot(ideal_xs[i], ideal_ys[i], color=order_of_colors[i], label='ideal', linestyle='--')
+            for i, dir in specific_lines:
+                plt.plot(ideal_xs[i], ideal_ys[i], color=aplt.get_dir_color(dir), label='ideal', linestyle='--')
 
 if __name__ == '__main__':
     h = AstHandTrials(["sub1", "sub2", "sub3"], "2v2", rotation="n")

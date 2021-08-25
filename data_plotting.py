@@ -6,9 +6,16 @@ class AsteriskPlotting:
     """
     Resources for asterisk plots
     """
+    colors = ["tab:blue", "tab:purple", "tab:red", "tab:olive", "tab:cyan", "tab:green", "tab:pink", "tab:orange"]
 
     def __init__(self):
         pass
+
+    @staticmethod
+    def get_dir_color(dir):  # TODO: finalize colors based on color wheel?
+        colors = {"a": "tab:blue", "b": "tab:purple", "c": "tab:red", "d": "tab:olive",
+                  "e": "tab:cyan", "f": "tab:green", "g": "tab:pink", "h": "tab:orange"}
+        return colors[dir]
 
     @staticmethod
     def round_half_up(n, decimals=0):
