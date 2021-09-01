@@ -4,7 +4,7 @@ The entire pipeline from aruco analysis of vision data to metric calculations.
 """
 
 from pathlib import Path
-from ast_hand_data import AstHandTrials
+from ast_hand_translation import AstHandTranslation
 from ast_study import AstStudyTrials
 from ast_aruco import batch_aruco_analysis
 from metric_analyzers import AstHandAnalyzer
@@ -25,23 +25,24 @@ def run_ast_study():
     home_directory = Path(__file__).parent.absolute()
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
-    subjects = datamanager.generate_options("subjects")
-    hand_names = ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"]  # "m2stiff",
+    subjects = datamanager.generate_options("subjects")  # TODO: debug different hands
+    hand_names = ["2v2", "2v3", "3v3", "barrett"]
+    # ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"] # "m2stiff",
 
-    # failed_files = []  # TODO: add ability to collect failed files
+    # failed_files = []  # TODO: make a log of everything that happens when data is run
 
     for h in hand_names:
         print(f"Running: {h}, {subjects}")
         # input("Please press <ENTER> to continue")  # added this for debugging by hand
 
-        print("Analyzing aruco codes on viz data...")
-        for s in subjects:
-            batch_aruco_analysis(s, h, no_rotations=False, home=home_directory)
+        # print("Analyzing aruco codes on viz data...")
+        # for s in subjects:
+        #     batch_aruco_analysis(s, h, no_rotations=False, home=home_directory, indices=False, crop=False)
 
-        for rot in ['n']:  # , "m15", "p15"]:
+        for rot in ['n']: #['m15', 'p15']:  #['n']:  # , "m15", "p15"]:
             print(f"Getting {h} ({rot}) data...")
             # data = AstHandTrials(subjects, h, rotation="n", blocklist_file="trial_blocklist.csv")
-            data = AstHandTrials(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
+            data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
             # data = study.return_hand(h)
 
             print(f"Getting {h} data...")
@@ -51,11 +52,11 @@ def run_ast_study():
             data.save_all_data()
 
             print("Calculating averages...")
-            data.calc_averages( rotation="n")
+            data.calc_averages()
 
             print("Saving plots...")
 
-            data.plot_ast_avg(rotation=rot, show_plot=False, save_plot=True)
+            data.plot_ast_avg(show_plot=False, save_plot=True)
             for a in data.averages:
                 a.avg_debug_plot(show_plot=False, save_plot=True, use_filtered=True)
 

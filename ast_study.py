@@ -2,7 +2,7 @@
 
 
 import matplotlib.pyplot as plt
-from ast_hand_data import AstHandTrials
+from ast_hand_translation import AstHandTranslation
 
 from pathlib import Path
 
@@ -24,7 +24,7 @@ class AstStudyTrials:
         data_dictionary = dict()
         for h in hands:
             key = h
-            data_dictionary[h] = AstHandTrials(subjects, h, rotation)
+            data_dictionary[h] = AstHandTranslation(subjects, h, rotation)
 
         return data_dictionary
 

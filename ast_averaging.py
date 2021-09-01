@@ -3,98 +3,181 @@ Handles averaging multiple AstTrial objects in one direction. Handles both the p
 """
 
 import numpy as np
-from numpy import sin, cos, pi, linspace, sqrt, abs, arctan2, zeros, floor, nan, radians, mean, std
+from numpy import sqrt, mean, std
 import pandas as pd
 import matplotlib.pyplot as plt
-from ast_trial import AstTrial
+from ast_trial import AstBasicData, AstTrial
+from ast_hand_info import HandInfo
 from data_plotting import AsteriskPlotting
 from data_calculations import AsteriskCalculations
 import pdb
 
 
-class AveragedTrial(AstTrial):
+class AveragedTrial(AstBasicData):
+    """
+    Class handles averaging a set of AstTrial objects: averaging the path and metrics
+    """
     rotations = {"a": 270, "b": 315, "c": 0, "d": 45, "e": 90,
                  "f": 135, "g": 180, "h": 225, "n": 0}
 
-    def __init__(self, trials=None, sample_points=25,):
-        super(AveragedTrial, self).__init__()  # for making an empty AsteriskTrialData object
+    def __init__(self, trials=None, sample_points=25):
+        # super(AveragedTrial, self).__init__()  # for making an empty AsteriskTrialData object
 
         self.subject = set()
+        self.hand = None
         self.names = []  # names of trials averaged
-        self.averaged_trials = []  # actual AsteriskTrialData objects that were averaged
-        # self.pose_average = []  # maybe just use poses
-        self.pose_ad = None
+        self.averaged_trialset = []  # actual AsteriskTrialData objects that were averaged
+        self.poses = None
         self.pose_ad_up = None
         self.pose_ad_down = None
+        self.filtered = False
+        self.window_size = 0
+
+        self.target_line, self.target_rotation = None, None
 
         # just reminding that these are here
         self.total_distance = None
-        self.metrics = None
+        self.metrics = None  # metrics calculated on the averaged line
+        self.avg_metrics = None  # average metrics averaged from AstTrial objects included
+        self.avg_metrics_sd = None
 
-        self.total_distance_sd = None
-        self.metrics_sd = None
+        self.path_labels = []  # labels assessed specifically on the averaged line
+        self.trialset_labels = []  # labels contained inside the data
 
         if trials is not None:
-            self.calculate_avg_line(trials, sample_points=sample_points)  # avg metrics happens inside here
+            self.averaged_trialset = trials
+            self.data_demographics()
+            self.calculate_avg_line(sample_points=sample_points)  # avg metrics happens inside here
+            self.assess_labels(mode=2)
+            self.update_all_metrics()
 
-            self.assess_data_labels()
-
-    # TODO: change add data functions to work for averaging -> add data then rerun the average calculation?
-
-    def _get_attributes(self, trials_to_average):
+    def data_demographics(self, subject=None, translation=None, rotation=None, number=None, controller=None):
         """
-        gets the attributes from the trials
-        (currently only looks at the first trial
+        Get data demographics from the data to average.
+        Subject, translation, rotation, and number parameters are used differently here.
+        They will serve as list parameters to set the expectation of what data you have in the averaged trial.
+
+        To make everything work, if there is more than one translation/rotation/hand it will mark it with an 'x'
+
         """
-        # collect the asterisktrialdata objects, get attributes
-        self.names = []  # if rerunning an average with same object, make sure these lists are empty
-        self.averaged_trials = []
-        subjects = []
-        for t_n in trials_to_average:
-            self.names.append(t_n.generate_name())
-            self.averaged_trials.append(t_n)
-            subjects.append(t_n.subject)
+        names = []
+        subjects = set()
+        hands = set()
+        translations = set()
+        rotations = set()
+        numbers = set()
+        controllers = set()
 
-        self.subject = set(subjects)
-        # first take attributes of first asterisktrialdata object and take its attributes
+        # if we have trials to average, then go through them and pull out the relevant info
+        if self.averaged_trialset:
+            for a in self.averaged_trialset:
+                names.append(a.generate_name())
+                subjects.add(a.subject)
+                hands.add(a.hand.get_name())
+                translations.add(a.trial_translation)
+                rotations.add(a.trial_rotation)
+                numbers.add(a.trial_num)
+                controllers.add(a.controller_label)  # TODO: need to add removal of Nones in each set
 
-        trial = trials_to_average[0]
-        self.hand = trial.hand
-        self.trial_translation = trial.trial_translation
-        self.trial_rotation = trial.trial_rotation
-        self.trial_num = trial.trial_num
-        self.target_line = trial.target_line
-        return trials_to_average
+        if not self._set_check(subject, subjects) or not self._set_check(translation, translations) or \
+                not self._set_check(rotation, rotations) or not self._set_check(controller, controllers):
+            print("Averaged Trial demographics do not match expected demographics")
 
-    def get_poses_ad(self, which_set=0):
-        """
-        Separates poses into x, y, theta for easy plotting.
-        direction is 0 for up, 1 for down
-        """
-        # get the poses
-        if which_set == 1:
-            x = self.pose_ad_up["x"]
-            y = self.pose_ad_up["y"]
-            twist = self.pose_ad_up["rmag"]
-
-        elif which_set == 2:
-            x = self.pose_ad_down["x"]
-            y = self.pose_ad_down["y"]
-            twist = self.pose_ad_down["rmag"]
-
+        if len(hands) > 1:
+            print("there is more than one hand here!")
+            single_hand = None
+        elif len(hands) == 1:  # TODO: what is the list is empty?
+            single_hand = list(hands)[0]
         else:
-            x = self.pose_ad["x"]
-            y = self.pose_ad["y"]
-            twist = self.pose_ad["rmag"]
+            single_hand = ""
 
-        return_x = pd.Series.to_list(x.dropna())
-        return_y = pd.Series.to_list(y.dropna())
-        return_twist = pd.Series.to_list(twist.dropna())
+        if len(translations) > 1:
+            print("there is more than one translation here!")
+            single_t = "x"
+        elif len(translations) == 1:
+            single_t = list(translations)[0]
+        else:
+            single_t = ""
 
-        return return_x, return_y, return_twist
+        if len(rotations) > 1:
+            print("there is more than one translation here!")
+            single_r = "x"
+        elif len(rotations) == 1:
+            single_r = list(rotations)[0]
+        else:
+            single_r = ""
+
+        if len(controllers) > 1:
+            print("there is more than one translation here!")
+            single_c = "x"
+        elif len(controllers) == 0:
+            single_c = list(controllers)[0]
+        else:
+            single_c = ""
+
+        self.subject = subjects
+        self.names = names
+        self.hand = HandInfo(single_hand)
+        self.trial_translation = single_t
+        self.trial_rotation = single_r
+        self.trial_num = numbers  # no real need for this?
+        self.controller_label = single_c
+
+    def generate_name(self):
+        """
+        Generates the codified name of the averaged trial.
+        If there are multiple translation labels or multiple rotation labels, puts down 'x' instead.
+        If no handinfo object included, omits the hand name
+        """
+        if self.hand is None:
+            return f"Hands__{self.trial_translation}__{self.trial_rotation}__{self.subject}"
+        else:
+            return f"{self.hand.get_name()}__{self.trial_translation}__{self.trial_rotation}__{self.subject}"
+
+    def generate_plot_title(self):
+        pass  # TODO: for later, same gist as in AstBasicData
+
+    def is_ast_trial(self):
+        return False
+
+    def is_avg_trial(self):
+        return True
+
+    def add_trial(self, trial, rerun_avg=True):
+        self.averaged_trialset.append(trial)
+        self.data_demographics()
+
+        if rerun_avg:
+            self.calculate_avg_line()
+            self.average_metrics(mode=2)
+            self.assess_path_labels()
+
+    def add_data_by_df(self, df, name='x_x_x_x_0'):  # don't use this
+        trial = AstTrial(file_name=name, data=df)  # TODO: need to figure out a better way for naming...
+        self.add_trial(trial)
+
+    def _set_check(self, expected, observed_set):
+        if expected is not None and isinstance(expected, list):
+            expected.sort()
+            observed_list = list(observed_set)
+            observed_list.sort()
+            if not expected == observed_list:
+                print("the subject list is not as expected")
+                print(f"{expected}")
+                print(" vs ")
+                print(f"{observed_set}")
+                return False
+            else:
+                return True
+        else:
+            # print("must be a list to enforce demographic expectation")
+            return True  # its true because we won't enforce the expectation
+
+        # how do we do hand, trial translation, trial rotation, trial num?
+        # should not take target line from a trial, should get a full target line
 
     def _get_points(self, points, x_val, bounds, use_filtered=False):
-        """
+        """ # TODO: get out of this object
         Function which gets all the points that fall in a specific value range
         :param points: list of all points to sort
         :param x_val: x value to look around
@@ -119,76 +202,6 @@ class AveragedTrial(AstTrial):
             points_in_bounds = points[(points['x'] >= lo_val) & (points['x'] <= hi_val)]
 
         return points_in_bounds
-
-    def _calc_avg_metrics(self):
-        """
-        Calculates the average metric values
-        """  # TODO: do we want to analyze on filtered or unfiltered data here? Should we force it to be one way?
-        # go through each trial, grab relevant values and add them to sum
-        # first index is the value, second is the standard deviation of the value
-        values = {"dist": (0, 0), "t_fd": (0, 0), "r_fd": (0, 0), "mvt_eff": (0, 0), "btwn": (0, 0), # "fd": self.fd
-                  "max_err": (0, 0), "max_a_reg": (0, 0), "max_a_loc": (0, 0), "arc_len": (0, 0)}
-
-        metric_names = ["dist", "t_fd", "r_fd", "mvt_eff", "btwn", "max_err", "max_a_reg", "max_a_loc", "arc_len"]
-
-        dist_vals = []  # TODO: I'm pretty sure I can make this more elegant. Keeping this way for now
-        t_fd_vals = []
-        r_fd_vals = []
-        # fd_vals = []
-        mvt_eff_vals = []
-        btwn_vals = []
-        err_vals = []
-        reg_vals = []
-        loc_vals = []
-        arc_lens = []
-
-        for t in self.averaged_trials:
-            metrics = t.metrics
-            dist_vals.append(metrics["dist"])
-            t_fd_vals.append(metrics["t_fd"])
-            r_fd_vals.append(metrics["r_fd"])
-            mvt_eff_vals.append(metrics["mvt_eff"])
-            btwn_vals.append(metrics["area_btwn"])
-            # fd_vals.append(metrics["fd"])
-            err_vals.append(metrics["max_err"])
-            reg_vals.append(metrics["max_a_reg"])
-            loc_vals.append(metrics["max_a_loc"])
-            arc_lens.append(metrics["arc_len"])
-
-        try:
-            for key, value_list in zip(metric_names, [dist_vals, t_fd_vals, r_fd_vals, mvt_eff_vals, btwn_vals, #fd_vals
-                                                      err_vals, reg_vals, loc_vals, arc_lens]):
-                values[key] = (mean(value_list), std(value_list))
-
-        except Exception as e:
-            print("Averaging Metrics Failed")
-            print(f"Metric that failed: {key}")
-            print(e)
-            # TODO: make the rest of the metrics that failed a null value and keep the successes
-            null_val = (0., 0.)
-
-            # set all the keys to a null value
-            for key in metric_names:
-                values[key] = null_val
-
-
-        metric_dict = {"trial": self.generate_name(), "dist": values["dist"][0],
-                       "t_fd": values["t_fd"][0], "r_fd": values["r_fd"][0],  # "fd": values["fd"][0]
-                       "max_err": values["max_err"][0], "mvt_eff": values["mvt_eff"][0],
-                       "arc_len": values["arc_len"][0], "area_btwn": values["btwn"][0],
-                       "max_a_reg": values["max_a_reg"][0], "max_a_loc": values["max_a_loc"][0]}
-
-        self.metrics = pd.Series(metric_dict)
-
-        metric_sd_dict = {"trial": self.generate_name(), "dist": values["dist"][1],
-                       "t_fd": values["t_fd"][1], "r_fd": values["r_fd"][1],  # "fd": values["fd"][1]
-                       "max_err": values["max_err"][1], "mvt_eff": values["mvt_eff"][1],
-                       "arc_len": values["arc_len"][1], "area_btwn": values["btwn"][1],
-                       "max_a_reg": values["max_a_reg"][1], "max_a_loc": values["max_a_loc"][1]}
-
-        self.metric_sds = pd.Series(metric_sd_dict) # TODO: add into one pd dataframe -> value, sd?
-
-        return self.metrics
 
     def _get_prev_avgs(self, i, avg_pts, at_avg_pt):
         """
@@ -215,18 +228,22 @@ class AveragedTrial(AstTrial):
 
         return prev_avg, next_avg
 
-    def calculate_avg_line(self, trials, sample_points=25, show_debug=False, calc_ad=True, use_filtered=False):
+    def calculate_avg_line(self, sample_points=25, show_debug=False, calc_ad=True, use_filtered_data=False):
         """
         redoing averaging so that average deviation calculations are done separately after the fact
         """
         # TODO: enable ability to average on filtered data as well
 
-        trials = self._get_attributes(trials)
+        if self.averaged_trialset:
+            trials = self.averaged_trialset
+        else:
+            print("No trials to average")
+            return None
 
         # get all the data
         data_points = pd.DataFrame()  # makes an empty dataframe
         for t in trials:
-            if not t.filtered and use_filtered:
+            if not t.filtered and use_filtered_data:
                 t.moving_average()
 
             data_points = data_points.append(t.poses)  # put all poses in one dataframe for easy access
@@ -235,8 +252,11 @@ class AveragedTrial(AstTrial):
         r_target_x, r_target_y = AsteriskPlotting.get_c(sample_points)
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
 
+        if self.trial_translation == "x":
+            pass  # TODO: multiple translation labels breaks on the next line, if I want to actually implement that
+
         rotated_data = AsteriskCalculations.rotate_points(data_points, self.rotations[self.trial_translation],
-                                           use_filtered=use_filtered)
+                                           use_filtered=use_filtered_data)
         avg_line = pd.DataFrame()
 
         # otherwise, very low chance we will start at 0,0 -> we know it does if the test was set up properly
@@ -245,7 +265,7 @@ class AveragedTrial(AstTrial):
 
         for i, t in enumerate(rotated_target_line):
             t_x = t[0]
-            points = self._get_points(rotated_data, t_x, 0.5 / sample_points, use_filtered=use_filtered)
+            points = self._get_points(rotated_data, t_x, 0.5 / sample_points, use_filtered=use_filtered_data)
             averaged_point = points.mean(axis=0)  # averages each column in DataFrame
 
             avg_line = avg_line.append(averaged_point, ignore_index=True)
@@ -253,18 +273,104 @@ class AveragedTrial(AstTrial):
         correct_avg = AsteriskCalculations.rotate_points(avg_line, -1 * self.rotations[self.trial_translation])
         self.poses = correct_avg
 
+        self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
+        self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
+
         if show_debug and not calc_ad:
             print("Showing avg debug plot without average deviations.")
             self.avg_debug_plot(with_ad=False, show_plot=True, use_filtered=use_filtered)
 
         # for now, also running avg dev calculation right here, it will also show debug plot
         if calc_ad:
-            self.calculate_avg_dev(rotated_data, sample_points=sample_points,
-                                   show_debug=show_debug, use_filtered=use_filtered)
+            self.calculate_avg_dev(all_points=rotated_data, sample_points=sample_points,
+                                   show_debug=show_debug)
+            # use_filtered is not used above because we just calculated average... there won't be a filtered version
+            # and I want to make it so that applying a moving average is a conscious step for the user
 
-        self._calc_avg_metrics()
+        #self.calc_avg_metrics()
+        self.average_metrics(mode=2)
 
-        print(f"Averaged: {self.hand.get_name()} :: {self.subject}_{self.trial_translation}_{self.trial_rotation}")
+        print(f"Averaged: {self.generate_name()}")
+        return correct_avg
+
+    def calculate_avg_dev(self, all_points, sample_points=25, show_debug=False,
+                          show_pt_debug=False, use_filtered_data=False, use_filtered=False):
+        """
+        Goes through our set of averages and calculates the average deviation of the trials for each avg point
+        """
+        if not self.averaged_trialset or self.poses is None:
+            self.calculate_avg_line(use_filtered_data=use_filtered_data)
+
+
+        avg_ads = pd.DataFrame()
+        avg_ads_up = pd.DataFrame()
+        avg_ads_down = pd.DataFrame()
+
+        avg_pts = AsteriskCalculations.rotate_points(self.poses, self.rotations[self.trial_translation],
+                                                         use_filtered=use_filtered)
+
+        r_target_x, r_target_y = AsteriskPlotting.get_c(sample_points)
+        rotated_target_line = np.column_stack((r_target_x, r_target_y))
+
+        # calculate the average magnitude that each point is away from the average line
+        tmags = []
+        tmags.append(0)
+        for i, t in enumerate(rotated_target_line):
+            t_x = t[0]
+            avg_tmag = self._calc_avg_tmag(avg_pts.iloc[i], all_points, t_x, sample_points=sample_points,
+                                           use_filtered=use_filtered)
+            tmags.append(avg_tmag)
+
+        # go through all the averages, at each point calculate the average deviation
+        for i in range(0, len(avg_pts)):
+            avg_pt = avg_pts.iloc[i]
+            # get the points
+            prev_avg, next_avg = self._get_prev_avgs(i, avg_pts, avg_pt)
+
+            dx = next_avg['x'] - prev_avg['x']
+            dy = next_avg['y'] - prev_avg['y']
+            dlen = sqrt(dx * dx + dy * dy)
+            vx = tmags[i] * -dy / dlen
+            vy = tmags[i] * dx / dlen
+
+            # add calculated offsets to a dataframe
+            if dlen < 1e-10:
+                # vec_offset.append((-dy, dx))
+                vec_offset = pd.Series({"x": -dy, "y": dx, "rmag": 0})  # TODO: calculate rmag later
+            else:
+                # vec_offset.append((vx, vy))
+                vec_offset = pd.Series({"x": vx, "y": vy, "rmag": 0})  # TODO: calculate rmag later
+
+            ad_up = pd.Series({"x": avg_pt['x'] + vec_offset['x'], "y": avg_pt['y'] + vec_offset['y'], "rmag": 0})
+            ad_down = pd.Series({"x": avg_pt['x'] - vec_offset['x'], "y": avg_pt['y'] - vec_offset['y'], "rmag": 0})
+
+            if show_pt_debug and i in [5, 10, 15, 22, 23]:
+                # if i in [23]:
+                #     pdb.set_trace()
+
+                pts_at_pt = self._get_points(all_points, rotated_target_line[i-1][0], 0.5 / sample_points)
+
+                self._debug_avg_dev(i, vec_offset['x'], vec_offset['y'], tmags[i],
+                                    pts_at_pt, next_avg, avg_pt, prev_avg, ad_up, ad_down)
+
+            avg_ads = avg_ads.append(vec_offset, ignore_index=True)
+            avg_ads_up = avg_ads_up.append(ad_up, ignore_index=True)
+            avg_ads_down = avg_ads_down.append(ad_down, ignore_index=True)
+
+        correct_ads = AsteriskCalculations.rotate_points(avg_ads, -1 * self.rotations[self.trial_translation])
+        correct_ads_up = AsteriskCalculations.rotate_points(avg_ads_up, -1 * self.rotations[self.trial_translation])
+        correct_ads_down = AsteriskCalculations.rotate_points(avg_ads_down, -1 * self.rotations[self.trial_translation])
+
+        self.pose_ad = correct_ads
+        self.pose_ad_up = correct_ads_up
+        self.pose_ad_down = correct_ads_down
+
+        if show_debug:
+            print("Showing avg debug plot with average deviations.")
+            self.avg_debug_plot(with_ad=True, show_plot=True,
+                                use_filtered_data=use_filtered_data, use_filtered=use_filtered)
+
+        return avg_ads
 
     def _calc_avg_tmag(self, avg_point, all_points, x_center, sample_points=25, use_filtered=False):
         """
@@ -315,91 +421,132 @@ class AveragedTrial(AstTrial):
         plt.title(f"Debugging the calculated points at {i}")
         plt.show()
 
-    def calculate_avg_dev(self, all_points=None, all_avgs=None, sample_points=25, show_debug=False,
-                          show_pt_debug=False, use_filtered=False):
+    def assess_labels(self, mode=2):
         """
-        Goes through our set of averages and calculates the average deviation of the trials for each avg point
+        Choose to do label assessment on the collection of AstTrials (mode 0), or on the averaged path (mode 1),
+        or both (mode 2)
         """
-        # TODO: check that we actually have averages
-        avg_ads = pd.DataFrame()
-        avg_ads_up = pd.DataFrame()
-        avg_ads_down = pd.DataFrame()
-
-        if all_avgs is None:
-            avg_pts = AsteriskCalculations.rotate_points(self.poses, self.rotations[self.trial_translation],
-                                                         use_filtered=use_filtered)
+        if mode == 0:
+            self.assess_trialset_labels()
+        elif mode == 1:
+            self.assess_path_labels()
+        elif mode == 2:
+            self.assess_trialset_labels()
+            self.assess_path_labels()
         else:
-            avg_pts = all_avgs
+            print("Wrong mode chosen.")
 
-        r_target_x, r_target_y = AsteriskPlotting.get_c(sample_points)
-        rotated_target_line = np.column_stack((r_target_x, r_target_y))
+    def assess_trialset_labels(self):
+        """
+        Collect all of the unique labels in the trialset
+        """
+        labels = []
 
-        # calculate the average magnitude that each point is away from the average line
-        tmags = []
-        tmags.append(0)
-        for i, t in enumerate(rotated_target_line):
-            t_x = t[0]
-            avg_tmag = self._calc_avg_tmag(avg_pts.iloc[i], all_points, t_x, sample_points)
-            tmags.append(avg_tmag)
+        for t in self.averaged_trialset:
+            for l in t.path_labels:
+                labels.append(l)
 
-        # go through all the averages, at each point calculate the average deviation
-        for i in range(0, len(avg_pts)):
-            avg_pt = avg_pts.iloc[i]
-            # get the points
-            prev_avg, next_avg = self._get_prev_avgs(i, avg_pts, avg_pt)
+        unique_labels = set(labels)
+        self.trialset_labels = unique_labels
+        return unique_labels
 
-            dx = next_avg['x'] - prev_avg['x']
-            dy = next_avg['y'] - prev_avg['y']
-            dlen = sqrt(dx * dx + dy * dy)
-            vx = tmags[i] * -dy / dlen
-            vy = tmags[i] * dx / dlen
+    def average_metrics(self, mode=2, use_filtered=False):
+        """
+        Choose to average the collection of metrics contained in the data to average (mode 0) or to
+        calculate metrics on the averaged line (mode 1), or both (mode 2).
+        """
+        if mode == 0:
+            self.calc_avg_metrics(use_filtered=use_filtered) # TODO: use_filtered option doesn't work here
+        elif mode == 1:
+            self.update_all_metrics(use_filtered=use_filtered)
+        elif mode == 2:
+            self.calc_avg_metrics(use_filtered=use_filtered)  # TODO: use_filtered option doesn't work here
+            self.update_all_metrics(use_filtered=use_filtered)
+        else:
+            print("Wrong mode chosen.")
 
-            # add calculated offsets to a dataframe
-            if dlen < 1e-10:
-                # vec_offset.append((-dy, dx))
-                vec_offset = pd.Series({"x": -dy, "y": dx, "rmag": 0})  # TODO: calculate rmag later
-            else:
-                # vec_offset.append((vx, vy))
-                vec_offset = pd.Series({"x": vx, "y": vy, "rmag": 0})  # TODO: calculate rmag later
+    def calc_avg_metrics(self, use_filtered=False):
+        """
+        Calculates the average metric values
+        """  # TODO: implement ability to switch between filtered and unfiltered metrics
+        # go through each trial, grab relevant values and add them to sum
+        # first index is the value, second is the standard deviation of the value
+        values = {"dist": (0, 0), "t_fd": (0, 0), "r_fd": (0, 0), "mvt_eff": (0, 0), "btwn": (0, 0), # "fd": self.fd
+                  "max_err": (0, 0), "max_a_reg": (0, 0), "max_a_loc": (0, 0), "arc_len": (0, 0)}
 
-            ad_up = pd.Series({"x": avg_pt['x'] + vec_offset['x'], "y": avg_pt['y'] + vec_offset['y'], "rmag": 0})
-            ad_down = pd.Series({"x": avg_pt['x'] - vec_offset['x'], "y": avg_pt['y'] - vec_offset['y'], "rmag": 0})
+        metric_names = ["dist", "t_fd", "r_fd", "mvt_eff", "btwn", "max_err", "max_a_reg", "max_a_loc", "arc_len"]
 
-            if show_pt_debug and i in [5, 10, 15, 22, 23]:
-                # if i in [23]:
-                #     pdb.set_trace()
+        dist_vals = []  # TODO: I'm pretty sure I can make this more elegant. Keeping this way for now
+        t_fd_vals = []
+        r_fd_vals = []
+        # fd_vals = []
+        mvt_eff_vals = []
+        btwn_vals = []
+        err_vals = []
+        reg_vals = []
+        loc_vals = []
+        arc_lens = []
 
-                pts_at_pt = self._get_points(all_points, rotated_target_line[i-1][0], 0.5 / sample_points)
+        for t in self.averaged_trialset:
+            metrics = t.metrics
 
-                self._debug_avg_dev(i, vec_offset['x'], vec_offset['y'], tmags[i],
-                                    pts_at_pt, next_avg, avg_pt, prev_avg, ad_up, ad_down)
+            if metrics is None:
+                print(t.generate_name())
+                continue
 
-            avg_ads = avg_ads.append(vec_offset, ignore_index=True)
-            avg_ads_up = avg_ads_up.append(ad_up, ignore_index=True)
-            avg_ads_down = avg_ads_down.append(ad_down, ignore_index=True)
+            dist_vals.append(metrics["dist"])
+            t_fd_vals.append(metrics["t_fd"])
+            r_fd_vals.append(metrics["r_fd"])
+            mvt_eff_vals.append(metrics["mvt_eff"])
+            btwn_vals.append(metrics["area_btwn"])
+            # fd_vals.append(metrics["fd"])
+            err_vals.append(metrics["max_err"])
+            reg_vals.append(metrics["max_a_reg"])
+            loc_vals.append(metrics["max_a_loc"])
+            arc_lens.append(metrics["arc_len"])
 
-        correct_ads = AsteriskCalculations.rotate_points(avg_ads, -1 * self.rotations[self.trial_translation])
-        correct_ads_up = AsteriskCalculations.rotate_points(avg_ads_up, -1 * self.rotations[self.trial_translation])
-        correct_ads_down = AsteriskCalculations.rotate_points(avg_ads_down, -1 * self.rotations[self.trial_translation])
+        try:
+            for key, value_list in zip(metric_names, [dist_vals, t_fd_vals, r_fd_vals, mvt_eff_vals, btwn_vals, #fd_vals
+                                                      err_vals, reg_vals, loc_vals, arc_lens]):
+                values[key] = (mean(value_list), std(value_list))
 
-        self.pose_ad = correct_ads
-        self.pose_ad_up = correct_ads_up
-        self.pose_ad_down = correct_ads_down
+        except Exception as e:
+            print("Averaging Metrics Failed")
+            print(f"Metric that failed: {key}")
+            print(e)
+            # TODO: make the rest of the metrics that failed a null value and keep the successes
+            null_val = (0., 0.)
 
-        if show_debug:
-            print("Showing avg debug plot with average deviations.")
-            self.avg_debug_plot(with_ad=True, show_plot=True, use_filtered=use_filtered)
+            # set all the keys to a null value
+            for key in metric_names:
+                values[key] = null_val
 
-        return avg_ads
+        metric_dict = {"trial": self.generate_name(), "dist": values["dist"][0],
+                       "t_fd": values["t_fd"][0], "r_fd": values["r_fd"][0],  # "fd": values["fd"][0]
+                       "max_err": values["max_err"][0], "mvt_eff": values["mvt_eff"][0],
+                       "arc_len": values["arc_len"][0], "area_btwn": values["btwn"][0],
+                       "max_a_reg": values["max_a_reg"][0], "max_a_loc": values["max_a_loc"][0]}
 
-    def plot_line_contributions(self):
+        self.avg_metrics = pd.Series(metric_dict)
+
+        metric_sd_dict = {"trial": self.generate_name(), "dist": values["dist"][1],
+                       "t_fd": values["t_fd"][1], "r_fd": values["r_fd"][1],  # "fd": values["fd"][1]
+                       "max_err": values["max_err"][1], "mvt_eff": values["mvt_eff"][1],
+                       "arc_len": values["arc_len"][1], "area_btwn": values["btwn"][1],
+                       "max_a_reg": values["max_a_reg"][1], "max_a_loc": values["max_a_loc"][1]}
+
+        self.avg_metric_sds = pd.Series(metric_sd_dict)  # TODO: add into one pd dataframe -> value, sd?
+
+        return self.avg_metrics
+
+    def _plot_line_contributions(self):
         """
         Plot circles where each trial stops contributing to the line average.
         """
         circle_colors = {"sub1": "xkcd:dark blue", "sub2": "xkcd:bordeaux", "sub3": "xkcd:forrest green"}
 
         a_x, a_y, _ = self.get_poses(use_filtered=False)
-        for t in self.averaged_trials:
+        for t in self.averaged_trialset:
             last_pose = t.get_last_pose()
 
             subject = t.subject
@@ -411,7 +558,7 @@ class AveragedTrial(AstTrial):
             # TODO: if dots are on the same place, jiggle them a little to the side so all are visible?
             plt.plot(a_x[index], a_y[index], marker='o', fillstyle='none', color=subject_color)
 
-    def avg_debug_plot(self, with_ad=True, show_plot=True, save_plot=False, use_filtered=False):
+    def avg_debug_plot(self, with_ad=True, show_plot=True, save_plot=False, use_filtered_data=False, use_filtered=False):
         """
         Plots one specific average together with all the data that was averaged for sanity checking the average.
         :param show_plot: flag to show plot. Default is true
@@ -420,9 +567,9 @@ class AveragedTrial(AstTrial):
 
         plt.figure(figsize=(7, 7))
         # plot the trials
-        for i, t in enumerate(self.averaged_trials):
+        for i, t in enumerate(self.averaged_trialset):
             # if we averaged with filtered data, just show the filtered data
-            if use_filtered and t.filtered:
+            if use_filtered_data and t.filtered:
                 f_x, f_y, _ = t.get_poses(use_filtered=True)
                 plt.plot(f_x, f_y, label=f"trial f_{i}", alpha=0.4, color="xkcd:blue grey") #color="xkcd:grey green")
 
@@ -436,7 +583,7 @@ class AveragedTrial(AstTrial):
                     plt.plot(f_x, f_y, label=f"trial f_{i}", alpha=0.8, color="xkcd:blue grey") #color="xkcd:grey green")
 
         # plot average
-        a_x, a_y, _ = self.get_poses(use_filtered=False)
+        a_x, a_y, _ = self.get_poses(use_filtered=use_filtered)
         plt.plot(a_x, a_y, label="avg", linewidth=2, color="tab:purple") #"xkcd:burnt orange")
 
         if with_ad:
@@ -447,7 +594,7 @@ class AveragedTrial(AstTrial):
         plt.title(f"Averaged: {self.hand.get_name()}, {self.trial_translation}, {self.trial_rotation}")
         plt.legend('', frameon=False)
 
-        self.plot_orientations(marker_scale=25, line_length=0.015, scale=1)
+        self._plot_orientations(marker_scale=25, line_length=0.015, scale=1)
 
         if save_plot:
             plt.savefig(f"results/pics/avgdebug_{self.hand.get_name()}_{len(self.subject)}subs_{self.trial_translation}_"
@@ -491,48 +638,71 @@ class AveragedTrial(AstTrial):
         polyg = plt.Polygon(poly, color=color, alpha=0.4)
         plt.gca().add_patch(polyg)
 
+    def get_poses_ad(self, which_set=1):
+        """
+        Separates poses into x, y, theta for easy plotting.
+        direction is 0 for up, 1 for down
+        """
+        # get the poses
+        if which_set == 1:
+            x = self.pose_ad_up["x"]
+            y = self.pose_ad_up["y"]
+            twist = self.pose_ad_up["rmag"]
+
+        else: # which_set == 2: # TODO: revisit this
+            x = self.pose_ad_down["x"]
+            y = self.pose_ad_down["y"]
+            twist = self.pose_ad_down["rmag"]
+
+        return_x = pd.Series.to_list(x.dropna())
+        return_y = pd.Series.to_list(y.dropna())
+        return_twist = pd.Series.to_list(twist.dropna())
+
+        return return_x, return_y, return_twist
+
 
 if __name__ == '__main__':
     # demo and test
     h = "2v2"
-    t = "b"
+    t = "d"
+    r = "p15"
     w = 10
-    test1 = AstTrial(f'sub1_{h}_{t}_n_1.csv')
+    test1 = AstTrial(f'sub1_{h}_{t}_{r}_1.csv')
     test1.moving_average(window_size=w)
-    test2 = AstTrial(f'sub1_{h}_{t}_n_2.csv')
+    test2 = AstTrial(f'sub1_{h}_{t}_{r}_2.csv')
     test2.moving_average(window_size=w)
-    test3 = AstTrial(f'sub1_{h}_{t}_n_3.csv')
+    test3 = AstTrial(f'sub1_{h}_{t}_{r}_3.csv')
     test3.moving_average(window_size=w)
-    test4 = AstTrial(f'sub1_{h}_{t}_n_4.csv')
+    test4 = AstTrial(f'sub1_{h}_{t}_{r}_4.csv')
     test4.moving_average(window_size=w)
-    test5 = AstTrial(f'sub1_{h}_{t}_n_5.csv')
+    test5 = AstTrial(f'sub1_{h}_{t}_{r}_5.csv')
     test5.moving_average(window_size=w)
 
-    test6 = AstTrial(f'sub2_{h}_{t}_n_1.csv')
+    test6 = AstTrial(f'sub2_{h}_{t}_{r}_1.csv')
     test6.moving_average(window_size=w)
-    test7 = AstTrial(f'sub2_{h}_{t}_n_2.csv')
+    test7 = AstTrial(f'sub2_{h}_{t}_{r}_2.csv')
     test7.moving_average(window_size=w)
-    test8 = AstTrial(f'sub2_{h}_{t}_n_3.csv')
+    test8 = AstTrial(f'sub2_{h}_{t}_{r}_3.csv')
     test8.moving_average(window_size=w)
-    test9 = AstTrial(f'sub2_{h}_{t}_n_4.csv')
+    test9 = AstTrial(f'sub2_{h}_{t}_{r}_4.csv')
     test9.moving_average(window_size=w)
-    test10 = AstTrial(f'sub2_{h}_{t}_n_5.csv')
+    test10 = AstTrial(f'sub2_{h}_{t}_{r}_5.csv')
     test10.moving_average(window_size=w)
 
-    test11 = AstTrial(f'sub3_{h}_{t}_n_1.csv')
+    test11 = AstTrial(f'sub3_{h}_{t}_{r}_1.csv')
     test11.moving_average(window_size=w)
-    test12 = AstTrial(f'sub3_{h}_{t}_n_2.csv')
+    test12 = AstTrial(f'sub3_{h}_{t}_{r}_2.csv')
     test12.moving_average(window_size=w)
-    test13 = AstTrial(f'sub3_{h}_{t}_n_3.csv')
+    test13 = AstTrial(f'sub3_{h}_{t}_{r}_3.csv')
     test13.moving_average(window_size=w)
-    test14 = AstTrial(f'sub3_{h}_{t}_n_4.csv')
+    test14 = AstTrial(f'sub3_{h}_{t}_{r}_4.csv')
     test14.moving_average(window_size=w)
-    test15 = AstTrial(f'sub3_{h}_{t}_n_5.csv')
+    test15 = AstTrial(f'sub3_{h}_{t}_{r}_5.csv')
     test15.moving_average(window_size=w)
 
-    # lines = [test1, test2, test3, test4, test5,
-    #          test6, test7, test8, test9, test10,
-    #          test11, test12, test13, test14, test15]
+    #test16 = AstTrial(f'sub1_2v2_c_n_1.csv')
+    #test16.moving_average(window_size=w)
+
     lines = [
              test1,
              test2,
@@ -546,6 +716,8 @@ if __name__ == '__main__':
              test9,
              test10,
 
+             #test16,  # including this causes it to error out, still can't handle multiple translation labels
+
              test11,
              test12,
              test13,
@@ -553,11 +725,12 @@ if __name__ == '__main__':
              test15
             ]
 
-    avgln = AveragedTrial()
-    avgln.calculate_avg_line(lines, show_debug=True, calc_ad=True, use_filtered=True)
-
-    # avgln.make_average_line(lines, show_rot_debug=False)
-    # print(avgln.metrics)
-    # print(avgln.metric_sds)
-    # avgln.avg_debug_plot()
-
+    avgln = AveragedTrial(trials=lines)
+    avgln.calculate_avg_line(show_debug=True, calc_ad=True, use_filtered_data=True)
+    print(f"names: {avgln.names}")
+    print(f"averaged line: {avgln.generate_name()}")
+    print(f"tot dist: {avgln.total_distance}")
+    print(f"path labels: {avgln.path_labels}")
+    print(f"trialset labels: {avgln.trialset_labels}")
+    print(f"metrics: {avgln.metrics}")
+    print(f"avg metrics: {avgln.avg_metrics}")
