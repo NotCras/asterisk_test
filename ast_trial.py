@@ -72,27 +72,8 @@ class AstBasicData:
 
     def generate_plot_title(self):
         """
-<<<<<<< HEAD
-        Enables you to crop data
-        """
-        data_size = self.poses.shape[0]
-
-        if start_i <= 0:
-            start_i = 1
-
-        if end_i is None:
-            end_i = data_size - 1
-        elif end_i >= data_size:
-            print(f"Too large ending index")
-            end_i = data_size - 1
-
-        self.poses = self.poses.loc[start_i:end_i]
-
-    def save_data(self, folder=None, file_name_overwrite=None):
-=======
         Generates the codified name of the trial for the plot title (it includes controller_label)
         :return: string name of trial
->>>>>>> master
         """
         return f"{self.hand.get_name()}_{self.controller_label}_{self.trial_translation}_" \
                f"{self.trial_rotation}_{self.subject}_{self.trial_num}"
@@ -160,8 +141,16 @@ class AstBasicData:
         """
         Enables you to crop data
         """
+        data_size = self.poses.shape[0]
+
+        if start_i <= 0:
+            start_i = 1
+
         if end_i is None:
-            end_i = self.poses.shape[0] - 1
+            end_i = data_size - 1
+        elif end_i >= data_size:
+            print(f"Too large ending index")
+            end_i = data_size - 1
 
         self.poses = self.poses.loc[start_i:end_i]
 
@@ -677,10 +666,6 @@ class AstTrial(AstBasicData):
             plt.show()
 
 if __name__ == '__main__':
-<<<<<<< HEAD
-    test = AstTrial(file_name="sub1_3v3_e_n_2.csv", do_metrics=True, norm_data=True)
-    #print(test.metrics)
-=======
     test = AstTrial(file_name="sub2_2v2_d_p15_2.csv", do_metrics=True, norm_data=True)
     print(f"name: {test.generate_name()}")
     print(f"tot dist: {test.total_distance}")
@@ -688,5 +673,4 @@ if __name__ == '__main__':
     print(f"metrics: {test.metrics}")
 
     test.moving_average(window_size=10)
->>>>>>> master
     test.plot_trial(use_filtered=False, provide_notes=True)
