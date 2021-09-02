@@ -150,8 +150,16 @@ class AstBasicData:  # TODO: move into its own file
         """
         Enables you to crop data
         """
+        data_size = self.poses.shape[0]
+
+        if start_i <= 0:
+            start_i = 1
+
         if end_i is None:
-            end_i = self.poses.shape[0] - 1
+            end_i = data_size - 1
+        elif end_i >= data_size:
+            print(f"Too large ending index")
+            end_i = data_size - 1
 
         self.poses = self.poses.loc[start_i:end_i]
 
