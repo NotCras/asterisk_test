@@ -38,8 +38,8 @@ class AveragedTrial(AstBasicData):
         # just reminding that these are here
         self.total_distance = None
         self.metrics = None  # metrics calculated on the averaged line
-        self.avg_metrics = None  # average metrics averaged from AstTrial objects included
-        self.avg_metrics_sd = None
+        self.metrics_avgd = None  # average metrics averaged from AstTrial objects included
+        self.metrics_avgd_sds = None
 
         self.path_labels = []  # labels assessed specifically on the averaged line
         self.trialset_labels = []  # labels contained inside the data
@@ -530,7 +530,7 @@ class AveragedTrial(AstBasicData):
                        "arc_len": values["arc_len"][0], "area_btwn": values["btwn"][0],
                        "max_a_reg": values["max_a_reg"][0], "max_a_loc": values["max_a_loc"][0]}
 
-        self.avg_metrics = pd.Series(metric_dict)
+        self.metrics_avgd = pd.Series(metric_dict)
 
         metric_sd_dict = {"trial": self.generate_name(), "dist": values["dist"][1],
                        "t_fd": values["t_fd"][1], "r_fd": values["r_fd"][1],  # "fd": values["fd"][1]
@@ -540,7 +540,7 @@ class AveragedTrial(AstBasicData):
 
         self.avg_metric_sds = pd.Series(metric_sd_dict)  # TODO: add into one pd dataframe -> value, sd?
 
-        return self.avg_metrics
+        return self.metrics_avgd
 
     def _plot_line_contributions(self):
         """
@@ -736,4 +736,4 @@ if __name__ == '__main__':
     print(f"path labels: {avgln.path_labels}")
     print(f"trialset labels: {avgln.trialset_labels}")
     print(f"metrics: {avgln.metrics}")
-    print(f"avg metrics: {avgln.avg_metrics}")
+    print(f"avg metrics: {avgln.metrics_avgd}")

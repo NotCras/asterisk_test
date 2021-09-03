@@ -76,16 +76,16 @@ class AstHandAnalyzer:
         avg_sd_df = pd.DataFrame()
         all_avg_metrics = pd.DataFrame()
         for a in hd.averages:
-            avg_df = avg_df.append(a.avg_metrics, ignore_index=True)
-            avg_sd_df = avg_sd_df.append(a.avg_metric_sds, ignore_index=True)
+            avg_df = avg_df.append(a.metrics_avgd, ignore_index=True)
+            avg_sd_df = avg_sd_df.append(a.metrics_avgd_sds, ignore_index=True)
             all_avg_metrics = all_avg_metrics.append(a.metrics, ignore_index=True)
 
         avg_df = avg_df.set_index("trial")
         avg_sd_df = avg_sd_df.set_index("trial")
         all_avg_metrics = all_avg_metrics.set_index("trial")
 
-        self.avg_metrics = avg_df
-        self.avg_metric_sds = avg_sd_df
+        self.metrics_avgd = avg_df
+        self.metrics_avgd_sds = avg_sd_df
         self.all_avg_metrics = all_avg_metrics
 
     def save_data(self, file_name_overwrite=None):
@@ -93,8 +93,8 @@ class AstHandAnalyzer:
         Saves the report as a csv file
         :return:
         """
-        names = ["all_metrics", "all_avg_metrics", "avg_metrics", "avg_metric_sds"]
-        data = [self.all_metrics, self.all_avg_metrics, self.avg_metrics, self.avg_metric_sds]
+        names = ["trial_metrics", "avg_trial_metrics", "trial_metrics_avgd", "trial_metric_avgd_sds"]
+        data = [self.all_metrics, self.all_avg_metrics, self.metrics_avgd, self.metrics_avgd_sds]
 
         for n, d in zip(names, data):
             if file_name_overwrite is None:
@@ -251,6 +251,6 @@ if __name__ == '__main__':
     data.calc_averages()
     results = AstHandAnalyzer(data)
 
-    print(f"Average Metrics: {results.avg_metrics}")
-    print(f"Standard deviations of average metrics: {results.avg_metric_sds}")
+    print(f"Average Metrics: {results.metrics_avgd}")
+    print(f"Standard deviations of average metrics: {results.metrics_avgd_sds}")
     print(f"Metrics of the average lines: {results.all_avg_metrics}")
