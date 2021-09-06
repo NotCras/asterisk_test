@@ -281,7 +281,7 @@ class AveragedTrial(AstBasicData):
 
         if show_debug and not calc_ad:
             print("Showing avg debug plot without average deviations.")
-            self.avg_debug_plot(with_ad=False, show_plot=True, use_filtered=use_filtered)
+            self.avg_debug_plot(with_ad=False, show_plot=True, use_filtered=use_filtered_data)
 
         # for now, also running avg dev calculation right here, it will also show debug plot
         if calc_ad:

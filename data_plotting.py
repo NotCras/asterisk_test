@@ -99,6 +99,7 @@ class AsteriskPlotting:
         """
         return the appropriate x and y coordinates for any direction
         """
+        # TODO: make it so we can customize the amount in each direction
         x_vals, y_vals = 0, 0
         if translation_label == "a":
             x_vals, y_vals = AsteriskPlotting.get_a(n_samples)

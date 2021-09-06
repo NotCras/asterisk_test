@@ -218,7 +218,8 @@ class AstBasicData:  # TODO: move into its own file
         #     target_rot = np.array([-last_rot])
 
         elif self.trial_rotation in ["p15", "m15"]:
-            target_rot = np.array([15])
+            target_val = self.target_rotation[1:]
+            target_rot = np.array([target_val])
 
         # elif self.trial_rotation == "m15":
         #     target_rot = np.array([-15])

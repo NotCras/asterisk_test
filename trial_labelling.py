@@ -101,6 +101,34 @@ class AsteriskLabelling:  # TODO: add in rotational variants to metrics to work 
         return result, perc_deviated
 
     @staticmethod
+    def assess_path_deviation_with_rotation(ast_trial_rot, threshold=0.1):
+        """
+        Returns percentage of points on the path that are out of bounds
+        """  # TODO: get a debug function for this?
+        last_target_pt = ast_trial_rot.target_line[-1]
+        path_x, path_y, _ = ast_trial_rot.get_poses()
+
+        num_pts = len(path_x)
+        pts_deviated = 0
+        result = False
+
+        for x, y in zip(path_x[1:], path_y[1:]):
+            if x == 0 and y == 0:  # skip points at the origin
+                continue
+
+            # for a AstTrialRotation, we don't care about the angle between b/c we (hopefully) are staying
+            # in one spot. So instead, we will look at whether the
+            if x > threshold or y > threshold:
+                print(f"Greater than {threshold} deviation from center detected at pt: ({x}, {y})")
+                # count this towards the number of points that are out of bounds
+                pts_deviated += 1
+                result = True
+
+        perc_deviated = pts_deviated / num_pts
+
+        return result, perc_deviated
+
+    @staticmethod
     def assess_movement(data, threshold=10, rot_threshold=15):
         """
         True if there's sufficient movement, False if there is not
