@@ -31,7 +31,7 @@ class AstBasicData:  # TODO: move into its own file
         self.poses = data[["x", "y", "rmag"]]
 
         self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
-        self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
+        self.target_rotation = self.generate_target_rot()
 
         self.path_labels = []
         self.metrics = None
@@ -53,7 +53,7 @@ class AstBasicData:  # TODO: move into its own file
         self.poses = df[["x", "y", "rmag"]]
 
         self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
-        self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
+        self.target_rotation = self.generate_target_rot() 
 
     def add_hand_info(self, hand_name):
         """
@@ -395,7 +395,7 @@ class AstBasicData:  # TODO: move into its own file
         """
         if redo_target_line:
             self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
-            self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
+            self.target_rotation = self.generate_target_rot()
 
         translation_fd, rotation_fd = am.calc_frechet_distance(self)
         # fd = am.calc_frechet_distance_all(self)
@@ -493,7 +493,7 @@ class AstTrial(AstBasicData):
         self.poses = path_df[["x", "y", "rmag"]]
 
         self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
-        self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
+        self.target_rotation = self.generate_target_rot()
 
         self.assess_path_labels()
         print(self.path_labels)
@@ -515,7 +515,7 @@ class AstTrial(AstBasicData):
         self.poses = data[["x", "y", "rmag"]]
 
         self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
-        self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
+        self.target_rotation = self.generate_target_rot()
 
         self.assess_path_labels()
 

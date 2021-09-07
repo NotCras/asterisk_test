@@ -19,22 +19,6 @@ class AstTrialRotation(AstTrial):
         super().__init__(file_name=file_name, data=data, controller_label=controller_label, do_metrics=False,
                          condition_data=condition_data, norm_data=norm_data)
 
-        # self.assess_path_labels()  # TODO: we want to change the default here, right?
-        # self.trial_translation = 'n'
-        # self.trial_rotation = rotation_label
-        # self.data_demographics(subject=subject_label, translation="n", rotation=rotation_label,
-        #                        number=number_label, controller=controller_label)
-        #
-        # if do_metrics and self.poses is not None and "no_mvt" not in self.path_labels:
-        #     self.update_all_metrics()
-
-        # target path is (0,0) and target rotation should be max rotation value
-        # TODO: will need to overwrite the generate rotation method
-
-        # TODO: assess path labels will have to change
-
-        # TODO: plot trial needs to be filled in... and check plot_orientations
-
         # TODO: will need to revisit how metrics are calculated
 
     def _read_file(self, file_name, folder="aruco_data/", norm_data=True, condition_data=True):
@@ -74,7 +58,7 @@ class AstTrialRotation(AstTrial):
         self.poses = path_df[["x", "y", "rmag"]]
 
         # self.target_line = self.generate_target_line(100)  # 100 samples
-        self.target_line, self.total_distance = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
+        self.target_line, self.total_distance = self.generate_target_rot()
 
         self.assess_path_labels()
         print(self.path_labels)
@@ -96,7 +80,7 @@ class AstTrialRotation(AstTrial):
         self.poses = data[["x", "y", "rmag"]]
 
         # self.target_line = self.generate_target_line(100)  # 100 samples
-        self.target_line, self.total_distance = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
+        self.target_line, self.total_distance = self.generate_target_rot()
 
         self.assess_path_labels()
 
