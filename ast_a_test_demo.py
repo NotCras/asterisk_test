@@ -27,7 +27,7 @@ def run_ast_study():
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
     subjects = datamanager.generate_options("subjects")  # TODO: debug different hands
-    hand_names = ["2v2", "2v3", "3v3", "barrett"]
+    hand_names = ["2v2", "2v3", "3v3", "barrett", "m2active", "basic", "modelvf", "m2stiff"]
     # ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"] # "m2stiff",
 
     # failed_files = []  # TODO: make a log of everything that happens when data is run
@@ -60,13 +60,13 @@ def run_ast_study():
             for a in data.averages:
                 a.avg_debug_plot(show_plot=False, save_plot=True, use_filtered=True)
 
-            print("Consolidating metrics together...")
-            results = AstHandAnalyzer(data)
-
-            print("Saving metric data...")
-            results.save_data(file_name_overwrite=f"{h}_{rot}")
-
-            print(f"{h} data generation is complete!")
+            # print("Consolidating metrics together...")
+            # results = AstHandAnalyzer(data)
+            #
+            # print("Saving metric data...")
+            # results.save_data(file_name_overwrite=f"{h}_{rot}")
+            #
+            # print(f"{h} data generation is complete!")
 
         for rot2 in datamanager.generate_options("rotations_n_trans"):
             print(f"Getting {h} ({rot2}) data...")

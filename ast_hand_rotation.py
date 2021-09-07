@@ -12,14 +12,6 @@ class AstHandRotation(AstHandTranslation):
         super().__init__(subjects, hand_name, rotation=None)
         # TODO: is it ok to just leave set_rotation var hanging around?
 
-    # TODO: this takes in trial rotations for cw and ccw each
-
-    # TODO: go through AstHandTranslation
-
-    # TODO: need to redo averaging function?
-
-    # TODO: replace all target lines function to better serve rotation plot?
-
     def _gather_hand_data(self, subjects, blocklist=None):
         """
         Returns a dictionary with the data for the hand, sorted by task.
