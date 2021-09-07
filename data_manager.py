@@ -101,7 +101,7 @@ class AstNaming:
         "translations": ["a", "b", "c", "d", "e", "f", "g", "h"],
         "translations_all": ["a", "b", "c", "d", "e", "f", "g", "h", "n"],
         "rotations": ["n", "m15", "p15"],
-        "rotations_n_trans": ["cw", "ccw"],
+        "rotations_n_trans": ["cw", "ccw"],  # TODO: maybe change to n_trans_rotations? or n_rotations
         "numbers": ["1", "2", "3", "4", "5"]
     }
     values = {  # TODO: make this use generate_options

@@ -12,6 +12,29 @@ from data_plotting import AsteriskPlotting
 from data_calculations import AsteriskCalculations
 import pdb
 
+class AveragedRotation:
+    """
+    Class functions as storage for averaged rotation trial values
+    """  # TODO: move to its own file
+    def __init__(self, direction, trials):
+        self.direction = direction
+
+        max_rots = []
+        max_translations = []
+
+        for t in trials:
+            max_rots.append(t.total_distance)
+            #pdb.set_trace()
+            #max_translations(t.metrics["t_fd"])
+
+        avg_max_rot = np.mean(max_rots)
+        std_max_rot = np.std(max_rots)
+        # avg_max_translation = np.mean(max_translations)
+        # std_max_translation = np.std(max_translations)
+
+        self.max_rot = (avg_max_rot, std_max_rot)
+        # self.max_trans = (avg_max_translation, std_max_translation)
+
 
 class AveragedTrial(AstBasicData):
     """

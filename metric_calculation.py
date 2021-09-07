@@ -69,18 +69,46 @@ class AstMetrics:
         return max_error  # ast_trial.metrics["arc_len"]   # divide it by arc length to normalize the value
 
     @staticmethod
-    def calc_mvt_efficiency(ast_trial, use_filtered=True):
+    def calc_rot_max_error(ast_trial, arc_length):
+        """
+        calculates the max error between the ast_trial path and its target line, focusing primarily on translation.
+        This function returns the largest magnitude of translation from the center, normalized by arc_length
+        Need arc length to be already calculated on the asterisk trial
+        """
+        try:
+            path_x, path_y, path_t = ast_trial.get_poses()
+
+            max_val = 0
+            for x, y in zip(path_x, path_y):
+                tmag = np.sqrt(x**2 + y **2)
+
+                if tmag > max_val:
+                    max_val = tmag
+
+            max_error = max_val / arc_length  # TODO: check - do we need to normalize by arc_length here?
+
+        except RuntimeWarning:
+            max_error = -1
+
+        return max_error  # ast_trial.metrics["arc_len"]   # divide it by arc length to normalize the value
+
+    @staticmethod
+    def calc_mvt_efficiency(ast_trial, use_filtered=True, with_rot=False):
         """
         Calculates the efficiency of movement of the trial
         amount of translation in trial direction / arc length of path
         returns mvt_eff, arc_length
-        """  # TODO only occurs with translation, add in rotation?
+        """
         total_dist_in_direction = ast_trial.total_distance
         o_x, o_y, o_path_ang = ast_trial.get_poses(use_filtered)
-        o_path_t = np.column_stack((o_x, o_y))
+
+        if with_rot:
+            o_path = np.column_stack((o_x, o_y, o_path_ang))
+        else:
+            o_path = np.column_stack((o_x, o_y))
 
         try:
-            trial_arc_length, _ = sm.get_arc_length(o_path_t)
+            trial_arc_length, _ = sm.get_arc_length(o_path)
 
             mvt_efficiency = total_dist_in_direction / trial_arc_length
 

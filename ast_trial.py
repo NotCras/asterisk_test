@@ -53,7 +53,7 @@ class AstBasicData:  # TODO: move into its own file
         self.poses = df[["x", "y", "rmag"]]
 
         self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
-        self.target_rotation = self.generate_target_rot() 
+        self.target_rotation = self.generate_target_rot()
 
     def add_hand_info(self, hand_name):
         """

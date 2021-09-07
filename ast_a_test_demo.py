@@ -5,6 +5,7 @@ The entire pipeline from aruco analysis of vision data to metric calculations.
 
 from pathlib import Path
 from ast_hand_translation import AstHandTranslation
+from ast_hand_rotation import AstHandRotation
 from ast_study import AstStudyTrials
 from ast_aruco import batch_aruco_analysis
 from metric_analyzers import AstHandAnalyzer
@@ -41,11 +42,10 @@ def run_ast_study():
 
         for rot in ['n']: #['m15', 'p15']:  #['n']:  # , "m15", "p15"]:
             print(f"Getting {h} ({rot}) data...")
-            # data = AstHandTrials(subjects, h, rotation="n", blocklist_file="trial_blocklist.csv")
             data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
             # data = study.return_hand(h)
 
-            print(f"Getting {h} data...")
+            print(f"Filtering data...")
             data.filter_data(10)  # don't use if you're using an asterisk_study obj
 
             print("Generating CSVs of paths...")
@@ -67,6 +67,23 @@ def run_ast_study():
             results.save_data(file_name_overwrite=f"{h}_{rot}")
 
             print(f"{h} data generation is complete!")
+
+        for rot2 in datamanager.generate_options("rotations_n_trans"):
+            print(f"Getting {h} ({rot2}) data...")
+            data = AstHandRotation(subjects, h)
+
+            print(f"Filtering data...")
+            data.filter_data(10)
+
+            print("Generating CSVs of paths...")
+            data.save_all_data()
+
+            print("Calculating averages...")
+            data.calc_averages()
+
+            print("Saving plots...")
+            data.plot_ast_avg(show_plot=False, save_plot=True)
+            data.save_all_data_plots()
 
     # print("Getting subplot figures, using Asterisk Study obj")
     # # I know this is stupidly redundant, but for my purposes I can wait

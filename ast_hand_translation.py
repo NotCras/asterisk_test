@@ -11,7 +11,7 @@ import csv
 import pdb
 import matplotlib.pyplot as plt
 import data_manager as datamanager
-import ast_trial as trial
+import ast_trial as atrial
 from ast_hand_info import HandInfo
 from ast_averaging import AveragedTrial
 from data_plotting import AsteriskPlotting as aplt
@@ -109,7 +109,7 @@ class AstHandTranslation:
                     continue
 
                 try:
-                    trial_data = trial.AstTrial(f"{asterisk_trial}.csv")
+                    trial_data = atrial.AstTrial(f"{asterisk_trial}.csv")
                     print(f"{trial_data.generate_name()}, labels: {trial_data.path_labels}")
 
                     gathered_data.append(trial_data)
@@ -237,7 +237,7 @@ class AstHandTranslation:
         :param subjects: subject(s) to include in the average. Defaults to all subjects in object
         :param rotation: refers to the rotation type ("n", "m15", "p15"). Defaults to all options
         """
-        averages = []
+        averages = []  # TODO: make this a dictionary for easier access?
         if subjects is None:  # if no subjects given, defaults to all subjects
             subjects = self.subjects_containing
 
@@ -276,6 +276,15 @@ class AstHandTranslation:
         for key in self.data.keys():
             for t in self.data[key]:
                 t.save_data()
+                # print(f"Saved: {t.generate_name()}")
+
+    def save_all_data_plots(self, use_filtered=True, provide_notes=True):
+        """
+        Saves each AsteriskTrialObject plot as a jpg file
+        """
+        for key in self.data.keys():
+            for t in self.data[key]:
+                t.plot_trial(use_filtered=use_filtered, provide_notes=provide_notes, show_plot=False, save_plot=True)
                 # print(f"Saved: {t.generate_name()}")
 
     def _make_plot(self, trials, use_filtered=True, stds=False, linestyle="solid"):
@@ -487,24 +496,12 @@ if __name__ == '__main__':
     # # subject 1 averages
     # h.plot_avg_data(rotation="n", subjects="sub1", show_plot=False, save_plot=True)
     # plt.clf()
-    # h.plot_avg_data(rotation="m15", subjects="sub1", show_plot=False, save_plot=True)
-    # plt.clf()
-    # h.plot_avg_data(rotation="p15", subjects="sub1", show_plot=False, save_plot=True)
-    # plt.clf()
     #
     # # subject 2 averages
     # h.plot_avg_data(rotation="n", subjects="sub2", show_plot=False, save_plot=True)
     # plt.clf()
-    # h.plot_avg_data(rotation="m15", subjects="sub2", show_plot=False, save_plot=True)
-    # plt.clf()
-    # h.plot_avg_data(rotation="p15", subjects="sub2", show_plot=False, save_plot=True)
-    # plt.clf()
     #
     # # all subjects
-    # h.plot_avg_data(rotation="p15", subjects=None, show_plot=False, save_plot=True)
-    # plt.clf()
-    # h.plot_avg_data(rotation="m15", subjects=None,  show_plot=False, save_plot=True)
-    # plt.clf()
     h.plot_ast_avg(subjects=None, show_plot=True, save_plot=False)
 
 

@@ -1,56 +1,271 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from ast_hand_translation import AstHandTranslation
+from ast_averaging import AveragedRotation
+import data_manager as datamanager
+import ast_trial as atrial
+import ast_trial_rotation as arot
 
 
 class AstHandRotation(AstHandTranslation):
-    def __init__(self):
-        pass
+    def __init__(self, subjects, hand_name):
+        super().__init__(subjects, hand_name, rotation=None)
+        # TODO: is it ok to just leave set_rotation var hanging around?
 
     # TODO: this takes in trial rotations for cw and ccw each
 
-    # TODO: go through AstHandTranslation (the soon to be renamed AstHandTrials class)
+    # TODO: go through AstHandTranslation
 
     # TODO: need to redo averaging function?
 
     # TODO: replace all target lines function to better serve rotation plot?
+
+    def _gather_hand_data(self, subjects, blocklist=None):
+        """
+        Returns a dictionary with the data for the hand, sorted by task.
+        Each key,value pair of dictionary is:
+        key: name of task, string. Ex: "a_n"
+        value: list of AsteriskTrial objects for the corresponding task, with all subjects specified
+        :param subjects: list of subjects to get
+        """
+        data_dictionary = dict()
+
+        for r in datamanager.generate_options("rotations_n_trans"):
+            key = f"n_{r}"
+            data = self._make_asterisk_trials_from_filenames(subjects, r,
+                                                             datamanager.generate_options("numbers"),
+                                                             blocklist=blocklist)
+            if data:
+                data_dictionary[key] = data
+                # pdb.set_trace()
+            else:
+                print(f"{key} not included, no valid data")
+                # pdb.set_trace()
+
+        return data_dictionary
+
+    def _make_asterisk_trials_from_filenames(self, subjects, rotation_label, trials, blocklist=None):
+        """
+        Goes through data and compiles data with set attributes into an AsteriskTrial objects
+        :param subjects: name of subject
+        :param translation_label: name of translation trials
+        :param rotation_label: name of rotation trials
+        :param trial_num: trial numbers to include, default parameter
+        """
+        # Maybe make it return None? then we can return all dictionary keys that don't return none in the other func
+
+        gathered_data = list()
+        for s in subjects:  # TODO: subjects is a list, make a type recommendation?
+            for n in trials:
+                asterisk_trial = f"{s}_{self.hand.get_name()}_n_{rotation_label}_{n}"
+
+                if blocklist is not None and asterisk_trial in blocklist:
+                    print(f"{asterisk_trial} is blocklisted and will not be used.")
+                    continue
+
+                try:
+                    trial_data = arot.AstTrialRotation(f"{asterisk_trial}.csv")
+                    print(f"{trial_data.generate_name()}, labels: {trial_data.path_labels}")
+
+                    gathered_data.append(trial_data)
+
+                except Exception as e:
+                    print(f"AstTrial generation failed for {asterisk_trial}")
+                    print(e)
+                    #print(" ")
+                    continue
+
+        return gathered_data
+
+    def _get_directions_in_data(self):
+        """
+        Returns a list of trial directions that exist in the data
+        :return:
+        """
+        list_of_dirs = list()
+        for k in list(self.data.keys()):
+            if k[0] != "n":
+                continue
+                # TODO: should we throw an error here?
+            list_of_dirs.append(k[0])
+
+        return list_of_dirs
+
+    def _get_ast_set(self, subjects, trial_number=None, exclude_path_labels=None):
+        """
+        Picks out an asterisk of data (all translational directions) with specific parameters
+        :param subjects: specify the subject or subjects you want
+        :param trial_number: specify the number trial you want, if None then it will
+            return all trials for a specific subject
+        :param rotation_type: rotation type of batch. Defaults to "n"
+        """
+        dfs = []
+        rotations = datamanager.generate_options("rotations_n_trans")  # ["cw", "ccw"]
+
+        for direction in rotations:
+            dict_key = f"n_{direction}"
+            # TODO: maybe we set the rotation type per hand trial... might be easier to handle
+            trials = self.data[dict_key]
+            # print(f"For {subject_to_run} and {trial_number}: {direction}")
+
+            for t in trials:
+                # print(t.generate_name())
+                if trial_number:  # if we want a specific trial, look for it
+                    if (t.subject == subjects) and (t.trial_num == trial_number):
+                        for l in t.path_labels:
+                            if exclude_path_labels is not None and l in exclude_path_labels:
+                                continue  # skip trial if it has that path_label
+
+                        dfs.append(t)
+                    elif (t.subject in subjects) and (t.trial_num == trial_number):
+                        for l in t.path_labels:
+                            if exclude_path_labels is not None and l in exclude_path_labels:
+                                continue  # skip trial if it has that path_label
+
+                        dfs.append(t)
+
+                else:  # otherwise, grab trial as long as it has the right subject
+                    if t.subject == subjects or t.subject in subjects:
+                        for l in t.path_labels:
+                            if exclude_path_labels is not None and l in exclude_path_labels:
+                                continue  # skip trial if it has that path_label
+
+                        dfs.append(t)
+
+        return dfs
+
+    def _get_ast_dir(self, direction_label, subjects, exclude_path_labels=None):
+        """
+        Get all of the trials for a specific direction. You can specify subject too
+        :param direction_label: translation direction
+        :param subjects: subject or list of subjects to include
+        :param rotation_label: rotation label, defaults to "n"
+        """
+        dict_key = f"n_{direction_label}"
+        direction_trials = self.data[dict_key]
+        gotten_trials = []
+
+        for t in direction_trials:
+            if t.subject == subjects or t.subject in subjects:
+                # check if trial has a path_label that we don't want to include
+                for l in t.path_labels:
+                    if exclude_path_labels is not None and l in exclude_path_labels:
+                        continue  # skip trial if it has that path_label
+
+                # if it passes path_label check, add it to the
+                gotten_trials.append(t)
+
+        return gotten_trials
+
+    def _average_dir(self, direction, subject=None, exclude_path_labels=None):
+        """
+        Averages a set of asterisk_trial paths. We run this on groups of paths of the same direction.
+        :param direction: trial direction to average
+        :param rotation: trial rotation to average
+        :param subject: subject or list of subjects to average, optional. If not provided, defaults to all subjects
+        :return returns averaged path
+        """
+
+        # TODO: average the max rotation number for each trial in group, also provide std (continue) -v
+        #  then also average largest magnitude of translation for each trial
+
+        if subject is None:  # get batches of data by trial type, if no subjects given, defaults to all subjects
+            trials = self._get_ast_dir(direction_label=direction, subjects=self.subjects_containing,
+                                       exclude_path_labels=exclude_path_labels)
+
+        else:
+            trials = self._get_ast_dir(direction_label=direction, subjects=subject,
+                                       exclude_path_labels=exclude_path_labels)
+
+        if trials:
+            average = AveragedRotation(direction=direction, trials=trials)
+            return average
+
+        else:
+            print(f"No trials for n_{direction}, skipping averaging.")
+            return None
+
+    def calc_averages(self, subjects=None, exclude_path_labels=None):
+        """
+        calculate and store all averages
+        :param subjects: subject(s) to include in the average. Defaults to all subjects in object
+        :param rotation: refers to the rotation type ("n", "m15", "p15"). Defaults to all options
+        """
+        averages = []
+        if subjects is None:  # if no subjects given, defaults to all subjects
+            subjects = self.subjects_containing
+
+        dirs = self._get_directions_in_data()
+        print(f"Directions included: {dirs}")
+
+        for r in datamanager.generate_options("rotations_n_trans"):
+            # make sure that we only include translations that are in the data
+            if r in dirs:
+                print(f"Averaging {r}")
+                avg, std, avg_t = self._average_dir(direction=r, subject=subjects,
+                                        exclude_path_labels=exclude_path_labels)
+                if avg is not None:
+                    averages.append(avg)
+
+        self.averages = averages
+        return averages
 
     def plot_ast_avg(self, subjects=None, show_plot=True, save_plot=False, include_notes=True,
                      linestyle="solid", plot_contributions=False, exclude_path_labels=None):
         # TODO: this is the test code that I got working for this, but now we need to get it working for this object
         fig, ax = plt.subplots(figsize=(6, 3), subplot_kw=dict(aspect="equal"))
 
-        # data = [float(x.split()[0]) for x in recipe]
+        cw_rot = None
+        ccw_rot = None
 
-        rotation = 78
-        rotation2 = 57
-        data = [rotation, rotation2, 360 - rotation - rotation2]
+        if self.averages:
+            for a in self.averages:
+                if a.direction == "cw":
+                    cw_rot = a.max_rot[0]
+                elif a.direction == "ccw":
+                    ccw_rot = a.max_rot[0]
+                else:
+                    # TODO: throw an error here?
+                    print("We have an average that doesn't belong!")
 
-        ingredients = [f"{str(rotation)}{chr(176)}", f"{str(rotation2)}{chr(176)}", ""]  # "not rotated"]
+            if cw_rot is None or ccw_rot is None:
+                print(f"Error with existing averages. cw:{cw_rot}, ccw:{ccw_rot}")
+
+        else:
+            cw_a = self._average_dir("cw", subject=subjects)
+            cw_rot = cw_a.max_rot[0]
+
+            ccw_a = self._average_dir("ccw", subject=subjects)
+            ccw_rot = ccw_a.max_rot[0]
+
+        data = [cw_rot, ccw_rot, 360 - cw_rot - ccw_rot]  # TODO: is there some way to add standard deviations?
+
+        labels = [f"{str(int(cw_rot))}{chr(176)}", f"{str(int(ccw_rot))}{chr(176)}", ""]  # "not rotated"]
 
         colors = ["crimson", "royalblue", "whitesmoke"]
 
-        wedges, texts = ax.pie(data, colors=colors, labels=ingredients, labeldistance=0.75,
-                               startangle=90 - rotation, counterclock=True,
-                               textprops=dict(color="whitesmoke", size=12, weight="bold",
-                                              # rotation_mode = 'anchor', va='center', ha='center'
-                                              ))
+        ax.pie(data, colors=colors, labels=labels, labeldistance=0.75,
+               startangle=90 - cw_rot, counterclock=True,
+               textprops=dict(color="whitesmoke", size=12, weight="bold",
+              # rotation_mode = 'anchor', va='center', ha='center'
+              ))
 
         # draw circle by drawing a white circle on top of center
         centre_circle = plt.Circle((0, 0), 0.70, fc='white')
         fig = plt.gcf()
         fig.gca().add_artist(centre_circle)
 
-        ax.set_title("Trial Max Rotation")
+        if include_notes:
+            self._plot_notes()
 
-        # translation of the trial
-        line_x = [0, 0.1, 0.2, 0.3]
-        line_y = [0, 0.05, 0.1, 0.08]
-        plt.plot(line_x, line_y, color="crimson")
-
-        line2_x = [0, 0.05, 0.1, 0.08]
-        line2_y = [0, 0.1, 0.2, 0.3]
-        plt.plot(line2_x, line2_y, color="royalblue")
+        # TODO: translation of the trial
+        # line_x = [0, 0.1, 0.2, 0.3]
+        # line_y = [0, 0.05, 0.1, 0.08]
+        # plt.plot(line_x, line_y, color="crimson")
+        #
+        # line2_x = [0, 0.05, 0.1, 0.08]
+        # line2_y = [0, 0.1, 0.2, 0.3]
+        # plt.plot(line2_x, line2_y, color="royalblue")
 
         # plot target lines
         target_line_dist = 0.5
@@ -76,4 +291,21 @@ class AstHandRotation(AstHandTranslation):
         # Equal aspect ratio ensures that pie is drawn as a circle
         ax.axis('equal')
         # plt.tight_layout()
-        plt.show()
+
+        plt.title(f"Avg {self.hand.get_name()}, {subjects}, standing rotations, Cube (0.25 span), 0.75 depth init pos")
+
+        if save_plot:
+            plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_standing_rotations.jpg", format='jpg')
+
+            # name -> tuple: subj, hand  names
+            print("Figure saved.")
+            print(" ")
+
+        if show_plot:
+            # plt.legend()  # TODO: showing up weird, need to fix
+            plt.show()
+
+if __name__ == '__main__':
+    h = AstHandRotation(["sub1", "sub2", "sub3"], "2v2")
+    h.filter_data()
+    h.plot_ast_avg(subjects=None, show_plot=True, save_plot=False)

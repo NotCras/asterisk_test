@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from trial_labelling import AsteriskLabelling as al
+from metric_calculation import AstMetrics as am
 from ast_trial import AstBasicData, AstTrial
 
 
@@ -155,7 +156,7 @@ class AstTrialRotation(AstTrial):
         line_x, line_y, _ = self.get_poses(use_filtered=use_filtered)
         plt.plot(line_x, line_y)
 
-        # plot target lines
+        # plot target lines  # TODO: clean up below, move into function in data_plotting?
         target_line_dist = 0.5
 
         line_a_x = [0, 0]
@@ -173,7 +174,7 @@ class AstTrialRotation(AstTrial):
         lines_x = [line_a_x, line_c_x, line_e_x, line_g_x]
         lines_y = [line_a_y, line_c_y, line_e_y, line_g_y]
 
-        # plot the translation that occured during the trial inside the donut hole
+        # plot the translation that occurred during the trial inside the donut hole
         for x, y in zip(lines_x, lines_y):
             plt.plot(x, y, color='lightsteelblue', linestyle="--")
 
@@ -232,7 +233,37 @@ class AstTrialRotation(AstTrial):
         return self.path_labels
 
     def update_all_metrics(self, use_filtered=True, redo_target_line=False):
-        pass
+        """
+        Updates all metric values on the object.
+        """
+        if redo_target_line:
+            self.target_line, self.total_distance = self.generate_target_rot()
+
+        # TODO: figure out naming here... we only get one frechet distance value for rot trials
+        translation_fd, rotation_fd = am.calc_frechet_distance(self)
+        # TODO: translation_fd becomes max translation magnitude error from zero, rotation_fd will be full line?
+        # fd = am.calc_frechet_distance_all(self)
+
+        #  TODO: might have a problem here, rotation might heavily outweigh translation
+        mvt_efficiency, arc_len = am.calc_mvt_efficiency(self, with_rot=True)
+
+        max_error = am.calc_rot_max_error(self, arc_len)
+
+        # TODO: need to revisit the following two function calls because they are a little janky with rotation only
+        area_btwn = am.calc_area_btwn_curves(self)
+
+        # this one is particularly troublesome
+        max_area_region, max_area_loc = am.calc_max_area_region(self)
+
+        # TODO: Make getters for each metric - can also return none if its not calculated
+        metric_dict = {"trial": self.generate_name(), "dist": self.total_distance,
+                       "t_fd": translation_fd, "r_fd": rotation_fd,  # "fd": fd
+                       "max_err": max_error, "mvt_eff": mvt_efficiency, "arc_len": arc_len,
+                       "area_btwn": area_btwn, "max_a_reg": max_area_region, "max_a_loc": max_area_loc}
+
+        self.metrics = pd.Series(metric_dict)
+        return self.metrics
+
 
 if __name__ == '__main__':
     test = AstTrialRotation(file_name="sub1_2v2_n_ccw_2.csv", do_metrics=False, norm_data=True)
