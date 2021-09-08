@@ -327,7 +327,6 @@ class AveragedTrial(AstBasicData):
         if not self.averaged_trialset or self.poses is None:
             self.calculate_avg_line(use_filtered_data=use_filtered_data)
 
-
         avg_ads = pd.DataFrame()
         avg_ads_up = pd.DataFrame()
         avg_ads_down = pd.DataFrame()
@@ -561,7 +560,7 @@ class AveragedTrial(AstBasicData):
                        "arc_len": values["arc_len"][1], "area_btwn": values["btwn"][1],
                        "max_a_reg": values["max_a_reg"][1], "max_a_loc": values["max_a_loc"][1]}
 
-        self.avg_metric_sds = pd.Series(metric_sd_dict)  # TODO: add into one pd dataframe -> value, sd?
+        self.metrics_avgd_sds = pd.Series(metric_sd_dict)  # TODO: add into one pd dataframe -> value, sd?
 
         return self.metrics_avgd
 

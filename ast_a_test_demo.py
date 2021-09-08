@@ -27,7 +27,7 @@ def run_ast_study():
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
     subjects = datamanager.generate_options("subjects")  # TODO: debug different hands
-    hand_names = ["2v2", "2v3", "3v3", "barrett",  "m2active", "m2stiff", "basic", "modelvf"]
+    hand_names = ["basic", "modelvf"] #["2v2", "2v3", "3v3", "barrett",  "m2active", "m2stiff", "basic", "modelvf"]
     # ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"] # "m2stiff",
 
     # failed_files = []  # TODO: make a log of everything that happens when data is run
@@ -60,13 +60,13 @@ def run_ast_study():
             for a in data.averages:
                 a.avg_debug_plot(show_plot=False, save_plot=True, use_filtered=True)
 
-            # print("Consolidating metrics together...")
-            # results = AstHandAnalyzer(data)
-            #
-            # print("Saving metric data...")
-            # results.save_data(file_name_overwrite=f"{h}_{rot}")
-            #
-            # print(f"{h} data generation is complete!")
+            print("Consolidating metrics together...")
+            results = AstHandAnalyzer(data)
+
+            print("Saving metric data...")
+            results.save_data(file_name_overwrite=f"{h}_{rot}")
+
+            print(f"{h} data generation is complete!")
 
         for rot2 in datamanager.generate_options("rotations_n_trans"):
             if rot in ["m15", "p15"]:
@@ -88,7 +88,7 @@ def run_ast_study():
             data.calc_averages()
 
             print("Saving plots...")
-            data.plot_ast_avg(show_plot=False, save_plot=True)
+            data.plot_ast_avg(show_plot=False, save_plot=True, exclude_path_labels=None)
             data.save_all_data_plots()
 
     # print("Getting subplot figures, using Asterisk Study obj")

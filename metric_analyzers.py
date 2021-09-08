@@ -80,6 +80,7 @@ class AstHandAnalyzer:
             avg_sd_df = avg_sd_df.append(a.metrics_avgd_sds, ignore_index=True)
             all_avg_metrics = all_avg_metrics.append(a.metrics, ignore_index=True)
 
+        pdb.set_trace()
         avg_df = avg_df.set_index("trial")
         avg_sd_df = avg_sd_df.set_index("trial")
         all_avg_metrics = all_avg_metrics.set_index("trial")
