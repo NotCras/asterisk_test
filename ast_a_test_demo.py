@@ -27,7 +27,7 @@ def run_ast_study():
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
     subjects = datamanager.generate_options("subjects")  # TODO: debug different hands
-    hand_names = ["2v2", "2v3", "3v3", "barrett", "m2active", "basic", "modelvf", "m2stiff"]
+    hand_names = ["2v2", "2v3", "3v3", "barrett",  "m2active", "m2stiff", "basic", "modelvf"]
     # ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"] # "m2stiff",
 
     # failed_files = []  # TODO: make a log of everything that happens when data is run
@@ -40,7 +40,7 @@ def run_ast_study():
         # for s in subjects:
         #     batch_aruco_analysis(s, h, no_rotations=False, home=home_directory, indices=False, crop=False)
 
-        for rot in ['n']: #['m15', 'p15']:  #['n']:  # , "m15", "p15"]:
+        for rot in ["n", "m15", "p15"]:  # ['n']: #['m15', 'p15']:  #['n']:  # , "m15", "p15"]:
             print(f"Getting {h} ({rot}) data...")
             data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
             # data = study.return_hand(h)
@@ -69,6 +69,12 @@ def run_ast_study():
             # print(f"{h} data generation is complete!")
 
         for rot2 in datamanager.generate_options("rotations_n_trans"):
+            if rot in ["m15", "p15"]:
+                continue
+
+            if h in ["basic", "m2stiff", "m2active", "modelvf"]:
+                continue
+
             print(f"Getting {h} ({rot2}) data...")
             data = AstHandRotation(subjects, h)
 

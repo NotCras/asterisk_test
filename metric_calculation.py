@@ -22,6 +22,7 @@ class AstMetrics:
 
         try:
             t_fd = sm.frechet_dist(o_path_t, ast_trial.target_line)
+            # pdb.set_trace()
             r_fd = sm.frechet_dist(o_path_ang, ast_trial.target_rotation)  # just max error right now
 
         except Exception as e:

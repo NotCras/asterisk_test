@@ -218,7 +218,7 @@ class AstBasicData:  # TODO: move into its own file
         #     target_rot = np.array([-last_rot])
 
         elif self.trial_rotation in ["p15", "m15"]:
-            target_val = self.target_rotation[1:]
+            target_val = float(self.trial_rotation[1:])
             target_rot = np.array([target_val])
 
         # elif self.trial_rotation == "m15":
@@ -679,7 +679,7 @@ class AstTrial(AstBasicData):
             plt.show()
 
 if __name__ == '__main__':
-    test = AstTrial(file_name="sub2_2v2_d_p15_2.csv", do_metrics=True, norm_data=True)
+    test = AstTrial(file_name="sub1_2v2_d_p15_2.csv", do_metrics=True, norm_data=True)
     print(f"name: {test.generate_name()}")
     print(f"tot dist: {test.total_distance}")
     print(f"path labels: {test.path_labels}")
