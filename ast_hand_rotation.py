@@ -1,7 +1,9 @@
+import pdb
+
 import matplotlib.pyplot as plt
 import numpy as np
 from ast_hand_translation import AstHandTranslation
-from ast_averaging import AveragedRotation
+from ast_avg_rotation import AveragedRotation
 import data_manager as datamanager
 import ast_trial as atrial
 import ast_trial_rotation as arot
@@ -207,6 +209,9 @@ class AstHandRotation(AstHandTranslation):
         # TODO: this is the test code that I got working for this, but now we need to get it working for this object
         fig, ax = plt.subplots(figsize=(6, 3), subplot_kw=dict(aspect="equal"))
 
+        if subjects is None:
+            subjects = self.subjects_containing
+
         cw_rot = None
         ccw_rot = None
 
@@ -279,6 +284,22 @@ class AstHandRotation(AstHandTranslation):
 
         for x, y in zip(lines_x, lines_y):
             plt.plot(x, y, color='lightsteelblue', linestyle="--")
+
+        # print translations of the trial
+        if self.averages:
+            avg_translations = self.averages
+        else:
+            avg_translations = [cw_a, ccw_a]
+
+        for a in avg_translations:
+            if a.direction == "cw":
+                line_color = "crimson"
+            elif a.direction == "ccw":
+                line_color = "royalblue"
+            else:
+                line_color = "black"
+            #pdb.set_trace()
+            plt.plot([0, a.max_trans_coords[0]], [0, a.max_trans_coords[1]], color=line_color)
 
         # Equal aspect ratio ensures that pie is drawn as a circle
         ax.axis('equal')

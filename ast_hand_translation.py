@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import data_manager as datamanager
 import ast_trial as atrial
 from ast_hand_info import HandInfo
-from ast_averaging import AveragedTrial
+from ast_avg_translation import AveragedTrial
 from data_plotting import AsteriskPlotting as aplt
 
 

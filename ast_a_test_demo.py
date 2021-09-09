@@ -9,6 +9,7 @@ from ast_hand_rotation import AstHandRotation
 from ast_study import AstStudyTrials
 from ast_aruco import batch_aruco_analysis
 from metric_analyzers import AstHandAnalyzer
+from alive_progress import alive_bar
 import data_manager as datamanager
 import ast_trial as t
 
@@ -27,69 +28,81 @@ def run_ast_study():
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
     subjects = datamanager.generate_options("subjects")  # TODO: debug different hands
-    hand_names = ["basic", "modelvf"] #["2v2", "2v3", "3v3", "barrett",  "m2active", "m2stiff", "basic", "modelvf"]
+    hand_names = ["2v2", "2v3"] #["2v2", "2v3", "3v3", "barrett",  "m2active", "m2stiff", "basic", "modelvf"]
     # ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"] # "m2stiff",
+    rotation_conditions = ["n", "m15", "p15"]
 
     # failed_files = []  # TODO: make a log of everything that happens when data is run
 
-    for h in hand_names:
-        print(f"Running: {h}, {subjects}")
-        # input("Please press <ENTER> to continue")  # added this for debugging by hand
+    # [item for item in x if item not in y]
+    # z = len(list(set(x) - set(y)))
+    len_hands_doing_rotations = len(list(set(hand_names) - set(datamanager.generate_options("hands_only_n"))))
+    num_calculation_sets = len(datamanager.generate_options("rotations_n_trans")) * len_hands_doing_rotations + 2 * len(hand_names) + 2 * len(["m15", "p15"]) * len_hands_doing_rotations
 
-        # print("Analyzing aruco codes on viz data...")
-        # for s in subjects:
-        #     batch_aruco_analysis(s, h, no_rotations=False, home=home_directory, indices=False, crop=False)
+    with alive_bar(num_calculation_sets) as bar:
+        for h in hand_names:
+            print(f"Running: {h}, {subjects}")
+            # input("Please press <ENTER> to continue")  # added this for debugging by hand
 
-        for rot in ["n", "m15", "p15"]:  # ['n']: #['m15', 'p15']:  #['n']:  # , "m15", "p15"]:
-            print(f"Getting {h} ({rot}) data...")
-            data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
-            # data = study.return_hand(h)
+            # print("Analyzing aruco codes on viz data...")
+            # for s in subjects:
+            #     batch_aruco_analysis(s, h, no_rotations=False, home=home_directory, indices=False, crop=False)
 
-            print(f"Filtering data...")
-            data.filter_data(10)  # don't use if you're using an asterisk_study obj
+            for rot in rotation_conditions:
+                print(f"Getting {h} ({rot}) data...")
+                data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
+                # data = study.return_hand(h)
+                bar()
 
-            print("Generating CSVs of paths...")
-            data.save_all_data()
+                print(f"Filtering data...")
+                data.filter_data(10)  # don't use if you're using an asterisk_study obj
 
-            print("Calculating averages...")
-            data.calc_averages()
+                print("Generating CSVs of paths...")
+                data.save_all_data()
 
-            print("Saving plots...")
+                print("Calculating averages...")
+                data.calc_averages()
 
-            data.plot_ast_avg(show_plot=False, save_plot=True)
-            for a in data.averages:
-                a.avg_debug_plot(show_plot=False, save_plot=True, use_filtered=True)
+                print("Saving plots...")
 
-            print("Consolidating metrics together...")
-            results = AstHandAnalyzer(data)
+                data.plot_ast_avg(show_plot=False, save_plot=True)
+                for a in data.averages:
+                    a.avg_debug_plot(show_plot=False, save_plot=True, use_filtered=True)
 
-            print("Saving metric data...")
-            results.save_data(file_name_overwrite=f"{h}_{rot}")
+                print("Consolidating metrics together...")
+                results = AstHandAnalyzer(data)
 
-            print(f"{h} data generation is complete!")
+                print("Saving metric data...")
+                results.save_data(file_name_overwrite=f"{h}_{rot}")
 
-        for rot2 in datamanager.generate_options("rotations_n_trans"):
-            if rot in ["m15", "p15"]:
-                continue
+                print(f"{h} data generation is complete!")
+                bar()
+                print("   ")
 
-            if h in ["basic", "m2stiff", "m2active", "modelvf"]:
-                continue
+                print(f"Considering cw/ccw for {h}...")
+                for rot2 in datamanager.generate_options("rotations_n_trans"):
+                    if rot in ["m15", "p15"]:
+                        continue
 
-            print(f"Getting {h} ({rot2}) data...")
-            data = AstHandRotation(subjects, h)
+                    if h in datamanager.generate_options("hands_only_n"):
+                        continue
 
-            print(f"Filtering data...")
-            data.filter_data(10)
+                    print(f"Getting {h} ({rot2}) data...")
+                    data = AstHandRotation(subjects, h)
 
-            print("Generating CSVs of paths...")
-            data.save_all_data()
+                    print(f"Filtering data...")
+                    data.filter_data(10)
 
-            print("Calculating averages...")
-            data.calc_averages()
+                    print("Generating CSVs of paths...")
+                    data.save_all_data()
 
-            print("Saving plots...")
-            data.plot_ast_avg(show_plot=False, save_plot=True, exclude_path_labels=None)
-            data.save_all_data_plots()
+                    print("Calculating averages...")
+                    data.calc_averages()
+
+                    print("Saving plots...")
+                    data.plot_ast_avg(show_plot=False, save_plot=True, exclude_path_labels=None)
+                    data.save_all_data_plots()
+                    bar()
 
     # print("Getting subplot figures, using Asterisk Study obj")
     # # I know this is stupidly redundant, but for my purposes I can wait
