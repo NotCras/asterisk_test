@@ -16,24 +16,47 @@ class AveragedRotation:
     """
     Class functions as storage for averaged rotation trial values
     """  # TODO: move to its own file
-    def __init__(self, direction, trials):
+    def __init__(self, direction, trials, do_translations=True):
         self.direction = direction
 
         max_rots = []
         max_translations = []
+        max_translations_xs = []
+        max_translations_ys = []
 
         for t in trials:
             max_rots.append(t.total_distance)
-            #pdb.set_trace()
-            #max_translations(t.metrics["t_fd"])
+
+            if do_translations:
+                tmag, tmag_coords = self._get_largest_tmag(t)
+                max_translations.append(tmag)
+                max_translations_xs.append(tmag_coords[0])
+                max_translations_ys.append(tmag_coords[1])
 
         avg_max_rot = np.mean(max_rots)
         std_max_rot = np.std(max_rots)
-        # avg_max_translation = np.mean(max_translations)
-        # std_max_translation = np.std(max_translations)
-
         self.max_rot = (avg_max_rot, std_max_rot)
-        # self.max_trans = (avg_max_translation, std_max_translation)
+
+        if do_translations:
+            avg_max_translation = np.mean(max_translations)
+            std_max_translation = np.std(max_translations)
+            self.max_trans = (avg_max_translation, std_max_translation)
+            self.max_trans_coords = (mean(max_translations_xs), mean(max_translations_ys))
+
+    def _get_largest_tmag(self, trial, use_filtered=True):
+
+        path_x, path_y, _ = trial.get_poses(use_filtered=use_filtered)
+
+        max_tmag = -1
+        max_tmag_coords = (-1, -1)
+        for x, y in zip(path_x, path_y):
+            tmag = np.sqrt(x**2 + y**2)
+
+            if tmag > max_tmag:
+                max_tmag = tmag
+                max_tmag_coords = (x, y)
+
+        return max_tmag, max_tmag_coords
 
 
 class AveragedTrial(AstBasicData):
