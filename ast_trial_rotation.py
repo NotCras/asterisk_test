@@ -147,29 +147,27 @@ class AstTrialRotation(AstTrial):
         # rounds value to integer value for cleaner labelling on plot
         plot_labels = [f"{str(int(rotation_val))}{chr(176)}", ""]  # chr(176) gives us the degrees sign
 
+        # we are going to choose between two colors for cw and ccw
         if self.trial_rotation == "cw":
             rot_color = "crimson"
             counter_clock = False
             angle_plotted = 90
+
         elif self.trial_rotation == "ccw":
             rot_color = "royalblue"
             counter_clock = True
             angle_plotted = 90
+
         else:
             raise AttributeError("Using an AstTrialRotation object incorrectly. Not a cw/ccw trial.")
 
         colors = [rot_color, "whitesmoke"]
 
-        ax_pie.pie(data, colors=colors, labels=plot_labels, labeldistance=0.8,
+        ax_pie.pie(data, colors=colors, labels=plot_labels, labeldistance=1.05, wedgeprops=dict(width=0.3),  # donut
                startangle=angle_plotted, counterclock=counter_clock,  # depends on cw or ccw
-               textprops=dict(color="whitesmoke", size=11, weight="bold",
-                              rotation_mode='anchor', va='center', ha='center'
+               textprops=dict(color="black", size=11, weight="bold",
+                              #rotation_mode='anchor', va='center', ha='center'
                               ))
-
-        # draw circle by drawing a white circle on top of center
-        centre_circle = plt.Circle((0, 0), 0.70, fc='white')
-        fig = plt.gcf()
-        fig.gca().add_artist(centre_circle)
 
         plt.title(f"Standing Rotation: {self.generate_name()}")
 
@@ -240,16 +238,22 @@ class AstTrialRotation(AstTrial):
         data_len = len(rot_path)
         time_list = [x * 0.1 for x in range(data_len)]
 
-        colormap = cm.get_cmap("Blues", data_len)
-        colored_time = [colormap(x/(data_len*0.1)) for x in time_list]
+        if self.trial_rotation == "cw":
+            ax.set_theta_direction(-1)
+            colormap = cm.get_cmap("Reds", data_len)
+        else:
+            ax.set_theta_direction(1)
+            colormap = cm.get_cmap("Blues", data_len)
 
-        #fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+        colored_time = [colormap(x/(data_len*0.1)) for x in time_list]
 
         ax.scatter(rot_path_rad, time_list, color=colored_time)  # , cmap=colormap)
         # ax.set_rmax(2)
         ax.set_rticks([])  # no radial ticks
         #ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
         #ax.grid(True)
+        ax.set_theta_zero_location('N')
+
         ax.set_title("Change in rotation during trial")
 
     def assess_path_labels(self, no_mvt_threshold=10, init_threshold=0.05, init_num_pts=10, dev_perc_threshold=0.10):
@@ -318,7 +322,7 @@ class AstTrialRotation(AstTrial):
 
 
 if __name__ == '__main__':
-    test = AstTrialRotation(file_name="sub1_2v2_n_ccw_2.csv", do_metrics=False, norm_data=True)
+    test = AstTrialRotation(file_name="sub1_2v2_n_cw_2.csv", do_metrics=False, norm_data=True)
     print(f"name: {test.generate_name()}")
     print(f"tot dist: {test.total_distance}")
     print(f"path labels: {test.path_labels}")

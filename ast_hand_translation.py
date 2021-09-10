@@ -389,7 +389,7 @@ class AstHandTranslation:
 
         # TODO: add orientation markers to each line so we have some idea of orientation along the path
         # TODO: add attributes for object shape, size, and initial position!
-        plt.title(f"Avg {self.hand.get_name()}, {subjects}, {self.set_rotation}, Cube (0.25 span), 0.75 depth init pos")
+        plt.title(f"Avg {self.hand.get_name()}, {subjects}, {self.set_rotation} \n Cube (0.25 span), 0.75 depth init pos")
 
         if save_plot:
             plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{self.set_rotation}.jpg", format='jpg')

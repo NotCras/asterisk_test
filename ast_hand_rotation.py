@@ -206,8 +206,9 @@ class AstHandRotation(AstHandTranslation):
 
     def plot_ast_avg(self, subjects=None, show_plot=True, save_plot=False, include_notes=True,
                      linestyle="solid", plot_contributions=False, exclude_path_labels=None):
-        # TODO: this is the test code that I got working for this, but now we need to get it working for this object
-        fig, ax = plt.subplots(figsize=(6, 3), subplot_kw=dict(aspect="equal"))
+
+        fig_size = 7
+        fig, ax = plt.subplots(figsize=(fig_size, fig_size), subplot_kw=dict(aspect="equal"))
 
         if subjects is None:
             subjects = self.subjects_containing
@@ -231,31 +232,53 @@ class AstHandRotation(AstHandTranslation):
         else:
             cw_a = self._average_dir("cw", subject=subjects)
             cw_rot = cw_a.max_rot[0]
+            cw_rot_std = cw_a.max_rot[1]
 
             ccw_a = self._average_dir("ccw", subject=subjects)
             ccw_rot = ccw_a.max_rot[0]
+            ccw_rot_std = ccw_a.max_rot[1]
 
         data = [cw_rot, ccw_rot, 360 - cw_rot - ccw_rot]  # TODO: is there some way to add standard deviations?
 
-        labels = [f"{str(int(cw_rot))}{chr(176)}", f"{str(int(ccw_rot))}{chr(176)}", ""]  # "not rotated"]
+        labels = [f"{str(int(cw_rot))}{chr(176)}{chr(177)}{str(int(cw_rot_std))}",
+                  f"{str(int(ccw_rot))}{chr(176)}{chr(177)}{str(int(ccw_rot_std))}", ""]  # "not rotated"]
 
         colors = ["crimson", "royalblue", "whitesmoke"]
 
-        ax.pie(data, colors=colors, labels=labels, labeldistance=0.75,
+        ax.pie(data, colors=colors, labels=labels, labeldistance=1.05, wedgeprops=dict(width=0.3),
                startangle=90 - cw_rot, counterclock=True,
-               textprops=dict(color="whitesmoke", size=12, weight="bold",
+               textprops=dict(color="darkslategrey", size=12, weight="bold",
               # rotation_mode = 'anchor', va='center', ha='center'
               ))
 
-        # draw circle by drawing a white circle on top of center
-        centre_circle = plt.Circle((0, 0), 0.70, fc='white')
-        fig = plt.gcf()
-        fig.gca().add_artist(centre_circle)
+        # # draw circle by drawing a white circle on top of center
+        # centre_circle = plt.Circle((0, 0), 0.70, fc='white')
+        # fig = plt.gcf()
+        # fig.gca().add_artist(centre_circle)
 
         if include_notes:
             self._plot_notes()
 
-        # TODO: translation of the trial
+        self._plot_translations(cw_a, ccw_a)
+
+        # Equal aspect ratio ensures that pie is drawn as a circle
+        ax.axis('equal')
+        # plt.tight_layout()
+
+        plt.title(f"Avg {self.hand.get_name()}, {subjects}, standing rotations \n Cube (0.25 span), 0.75 depth init pos", fontweight='bold')
+
+        if save_plot:
+            plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_standing_rotations.jpg", format='jpg')
+
+            # name -> tuple: subj, hand  names
+            print("Figure saved.")
+            print(" ")
+
+        if show_plot:
+            # plt.legend()  # TODO: showing up weird, need to fix
+            plt.show()
+
+    def _plot_translations(self, cw_a, ccw_a):
         # line_x = [0, 0.1, 0.2, 0.3]
         # line_y = [0, 0.05, 0.1, 0.08]
         # plt.plot(line_x, line_y, color="crimson")
@@ -300,23 +323,6 @@ class AstHandRotation(AstHandTranslation):
                 line_color = "black"
             #pdb.set_trace()
             plt.plot([0, a.max_trans_coords[0]], [0, a.max_trans_coords[1]], color=line_color)
-
-        # Equal aspect ratio ensures that pie is drawn as a circle
-        ax.axis('equal')
-        # plt.tight_layout()
-
-        plt.title(f"Avg {self.hand.get_name()}, {subjects}, standing rotations, Cube (0.25 span), 0.75 depth init pos")
-
-        if save_plot:
-            plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_standing_rotations.jpg", format='jpg')
-
-            # name -> tuple: subj, hand  names
-            print("Figure saved.")
-            print(" ")
-
-        if show_plot:
-            # plt.legend()  # TODO: showing up weird, need to fix
-            plt.show()
 
 if __name__ == '__main__':
     h = AstHandRotation(["sub1", "sub2", "sub3"], "2v2")
