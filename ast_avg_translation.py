@@ -473,69 +473,75 @@ class AveragedTrial(AstBasicData):
         """  # TODO: implement ability to switch between filtered and unfiltered metrics
         # go through each trial, grab relevant values and add them to sum
         # first index is the value, second is the standard deviation of the value
-        values = {"dist": (0, 0), "t_fd": (0, 0), "r_fd": (0, 0), "mvt_eff": (0, 0), "btwn": (0, 0), # "fd": self.fd
-                  "max_err": (0, 0), "max_a_reg": (0, 0), "max_a_loc": (0, 0), "arc_len": (0, 0)}
+        values = {"dist": (0, 0), "t_fd": (0, 0), "fd": (0, 0), "mvt_eff": (0, 0), "btwn": (0, 0),  # "r_fd": (0, 0)
+                  "max_err": (0, 0), "max_rot_err": (0, 0), "max_a_reg": (0, 0), "max_a_loc": (0, 0), "arc_len": (0, 0)}
 
-        metric_names = ["dist", "t_fd", "r_fd", "mvt_eff", "btwn", "max_err", "max_a_reg", "max_a_loc", "arc_len"]
+        metric_names = ["dist", "t_fd", "fd", "mvt_eff", "btwn", "max_err", "max_rot_err",
+                        "max_a_reg", "max_a_loc", "arc_len"]
 
         dist_vals = []  # TODO: I'm pretty sure I can make this more elegant. Keeping this way for now
         t_fd_vals = []
-        r_fd_vals = []
-        # fd_vals = []
+        # r_fd_vals = []
+        fd_vals = []
         mvt_eff_vals = []
         btwn_vals = []
         err_vals = []
+        rot_err_vals = []
         reg_vals = []
         loc_vals = []
         arc_lens = []
 
-        for t in self.averaged_trialset:
-            metrics = t.metrics
+        for trial in self.averaged_trialset:
+            metrics = trial.metrics
 
             if metrics is None:
-                print(t.generate_name())
+                print(f"{trial.generate_name()} has no metrics.")
                 continue
 
             dist_vals.append(metrics["dist"])
             t_fd_vals.append(metrics["t_fd"])
-            r_fd_vals.append(metrics["r_fd"])
+            # r_fd_vals.append(metrics["r_fd"])
+            fd_vals.append(metrics["fd"])
             mvt_eff_vals.append(metrics["mvt_eff"])
             btwn_vals.append(metrics["area_btwn"])
-            # fd_vals.append(metrics["fd"])
             err_vals.append(metrics["max_err"])
+            rot_err_vals.append(metrics["max_err_rot"])
             reg_vals.append(metrics["max_a_reg"])
             loc_vals.append(metrics["max_a_loc"])
             arc_lens.append(metrics["arc_len"])
 
         try:
-            for key, value_list in zip(metric_names, [dist_vals, t_fd_vals, r_fd_vals, mvt_eff_vals, btwn_vals, #fd_vals
-                                                      err_vals, reg_vals, loc_vals, arc_lens]):
+            # for reference, need to get order right
+            # ["dist", "t_fd", "fd", "mvt_eff", "btwn", "max_err", "max_rot_err", "max_a_reg", "max_a_loc", "arc_len"]
+            for key, value_list in zip(metric_names, [dist_vals, t_fd_vals, fd_vals, mvt_eff_vals, btwn_vals, #r_fd_vals
+                                                      err_vals, rot_err_vals, reg_vals, loc_vals, arc_lens]):
                 values[key] = (mean(value_list), std(value_list))
 
         except Exception as e:
             print("Averaging Metrics Failed")
             print(f"Metric that failed: {key}")
             print(e)
-            # TODO: make the rest of the metrics that failed a null value and keep the successes
+            failed_idx = metric_names.index(key)
+            failed_names = metric_names[failed_idx:]
             null_val = (0., 0.)
 
             # set all the keys to a null value
-            for key in metric_names:
+            for key in failed_names:
                 values[key] = null_val
 
         metric_dict = {"trial": self.generate_name(), "dist": values["dist"][0],
-                       "t_fd": values["t_fd"][0], "r_fd": values["r_fd"][0],  # "fd": values["fd"][0]
-                       "max_err": values["max_err"][0], "mvt_eff": values["mvt_eff"][0],
-                       "arc_len": values["arc_len"][0], "area_btwn": values["btwn"][0],
+                       "t_fd": values["t_fd"][0], "fd": values["fd"][0],  # "r_fd": values["r_fd"][0]
+                       "max_err": values["max_err"][0], "max_err_rot": values["max_err_rot"][0],
+                       "mvt_eff": values["mvt_eff"][0], "arc_len": values["arc_len"][0], "area_btwn": values["btwn"][0],
                        "max_a_reg": values["max_a_reg"][0], "max_a_loc": values["max_a_loc"][0]}
 
         self.metrics_avgd = pd.Series(metric_dict)
 
         metric_sd_dict = {"trial": self.generate_name(), "dist": values["dist"][1],
-                       "t_fd": values["t_fd"][1], "r_fd": values["r_fd"][1],  # "fd": values["fd"][1]
-                       "max_err": values["max_err"][1], "mvt_eff": values["mvt_eff"][1],
-                       "arc_len": values["arc_len"][1], "area_btwn": values["btwn"][1],
-                       "max_a_reg": values["max_a_reg"][1], "max_a_loc": values["max_a_loc"][1]}
+                          "t_fd": values["t_fd"][1], "fd": values["fd"][1],  # "r_fd": values["r_fd"][1]
+                          "max_err": values["max_err"][1], "max_err_rot": values["max_err_rot"][1],
+                          "mvt_eff": values["mvt_eff"][1], "arc_len": values["arc_len"][1], "area_btwn": values["btwn"][1],
+                          "max_a_reg": values["max_a_reg"][1], "max_a_loc": values["max_a_loc"][1]}
 
         self.metrics_avgd_sds = pd.Series(metric_sd_dict)  # TODO: add into one pd dataframe -> value, sd?
 

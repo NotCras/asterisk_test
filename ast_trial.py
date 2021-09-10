@@ -397,12 +397,13 @@ class AstBasicData:  # TODO: move into its own file
             self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
             self.target_rotation = self.generate_target_rot()
 
-        translation_fd, rotation_fd = am.calc_frechet_distance(self)
+        translation_fd, fd = am.calc_frechet_distance(self)
         # fd = am.calc_frechet_distance_all(self)
 
         mvt_efficiency, arc_len = am.calc_mvt_efficiency(self)
 
         max_error = am.calc_max_error(self, arc_len)
+        max_error_rot = am.calc_rot_max_error(self, arc_len)
 
         area_btwn = am.calc_area_btwn_curves(self)
 
@@ -411,9 +412,11 @@ class AstBasicData:  # TODO: move into its own file
 
         # TODO: Make getters for each metric - can also return none if its not calculated
         metric_dict = {"trial": self.generate_name(), "dist": self.total_distance,
-                       "t_fd": translation_fd, "r_fd": rotation_fd,  # "fd": fd
-                       "max_err": max_error, "mvt_eff": mvt_efficiency, "arc_len": arc_len,
-                       "area_btwn": area_btwn, "max_a_reg": max_area_region, "max_a_loc": max_area_loc}
+                       "t_fd": translation_fd, "fd": fd, #"r_fd": rotation_fd,
+                       "max_err": max_error, "max_err_rot": max_error_rot, "mvt_eff": mvt_efficiency,
+                       "arc_len": arc_len, "area_btwn": area_btwn,
+                       "max_a_reg": max_area_region, "max_a_loc": max_area_loc
+                       }
 
         self.metrics = pd.Series(metric_dict)
         return self.metrics

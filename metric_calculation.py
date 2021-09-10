@@ -23,28 +23,30 @@ class AstMetrics:
         try:
             t_fd = sm.frechet_dist(o_path_t, ast_trial.target_line)
             # pdb.set_trace()
-            r_fd = sm.frechet_dist(o_path_ang, ast_trial.target_rotation)  # just max error right now
+            #r_fd = sm.frechet_dist(o_path_ang, ast_trial.target_rotation)  # just max error right now
+            fd = AstMetrics.calc_frechet_distance_all(ast_trial)
 
         except Exception as e:
             print(f"{ast_trial.generate_name()}, Frechet Distance failure.")
             print(e)
             t_fd = -1
-            r_fd = -1
+            fd = -1
 
-        return t_fd, r_fd
+        return t_fd, fd
 
     @staticmethod
     def calc_frechet_distance_all(ast_trial):
-        """ TODO: NOT TESTED YET
+        """ TODO: NOT DONE TESTING YET
         Calculate the frechet distance between self.poses and a target path, combining both translation and rotation
         Uses frechet distance calculation from asterisk_calculations object
         """
         o_x, o_y, o_path_ang = ast_trial.get_poses(use_filtered=False)
         o_path = np.column_stack((o_x, o_y, o_path_ang))
 
-        t_rots = [ast_trial.target_rotation * len(ast_trial.target_line)]
+        t_rots = [ast_trial.target_rotation for y in range(len(ast_trial.target_line))]
         combined_target = np.column_stack((ast_trial.target_line, t_rots))
 
+        # TODO: I worry that rotation error will greatly outweigh translation... should I balance it somehow?
         fd = sm.frechet_dist(o_path, combined_target)
 
         return fd
@@ -61,6 +63,7 @@ class AstMetrics:
                                                         AsteriskCalculations.rotations[ast_trial.trial_translation])
             points = points.abs()
             max_val = points['y'].max()
+            # yes, we rotate and just take the max value. Will revisit this later
 
             max_error = max_val / arc_length
 
@@ -80,13 +83,14 @@ class AstMetrics:
             path_x, path_y, path_t = ast_trial.get_poses()
 
             max_val = 0
-            for x, y in zip(path_x, path_y):
-                tmag = np.sqrt(x**2 + y **2)
+            for t in path_t:
+                tmag = abs(t - ast_trial.target_rotation)
 
                 if tmag > max_val:
                     max_val = tmag
 
             max_error = max_val / arc_length  # TODO: check - do we need to normalize by arc_length here?
+            # could also use r_fd here...
 
         except RuntimeWarning:
             max_error = -1
@@ -121,17 +125,22 @@ class AstMetrics:
         return mvt_efficiency, trial_arc_length
 
     @staticmethod
-    def calc_area_btwn_curves(ast_trial, use_filtered=True):
+    def calc_area_btwn_curves(ast_trial, use_filtered=True, with_rot=False):
         """
         Returns the area between the trial path and the target line, only with respect to translation.
         Currently returns None for non-translation trials
         """  # TODO only occurs with translation, fails for no translation trials
-        o_x, o_y, o_path_ang = ast_trial.get_poses(use_filtered)
-        o_path_t = np.column_stack((o_x, o_y))
-        # pdb.set_trace()
+        o_x, o_y, o_ang = ast_trial.get_poses(use_filtered)
+
+        if with_rot:
+            o_path = np.column_stack((o_x, o_y, o_ang))
+            target_path = ast_trial.target_line
+        else:
+            o_path = np.column_stack((o_x, o_y))
+            target_path = ast_trial.target_line
 
         try:
-            val = sm.area_between_two_curves(o_path_t, ast_trial.target_line)
+            val = sm.area_between_two_curves(o_path, target_path)
         except ValueError:  # TODO: is there a better way to handle this?
             print(f"{ast_trial.generate_name()}, Area Between Curves failed.")
             val = -1
