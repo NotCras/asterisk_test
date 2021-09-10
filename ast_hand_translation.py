@@ -84,8 +84,9 @@ class AstHandTranslation:
         """
         list_of_dirs = list()
         for k in list(self.data.keys()):
-            if k[0] != "n":
-                list_of_dirs.append(k[0])
+            t, r = k.split("_")
+            if t != "n":
+                list_of_dirs.append(t)
 
         return list_of_dirs
 

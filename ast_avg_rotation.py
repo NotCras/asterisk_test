@@ -15,13 +15,18 @@ class AveragedRotation:
     def __init__(self, direction, trials, do_translations=True):
         self.direction = direction
         self.averaged_trialset = trials
+        self.hand = None
 
         self.names, self.max_rot, self.max_trans, self.max_trans_coords, self.max_trans_coords_sd = \
             None, None, None, None, None
+        self.assess_trialset_labels()
         self.data_demographics(trials, do_translations=do_translations)
+        self.calc_avg_metrics()
 
     def data_demographics(self, trials, do_translations=True):
         names = []
+        hands = set()
+        subjects = set()
         max_rots = []
         max_translations = []
         max_translations_xs = []
@@ -30,6 +35,8 @@ class AveragedRotation:
         for t in trials:
             names.append(t.generate_name())
             max_rots.append(t.total_distance)
+            hands.add(t.hand.get_name())
+            subjects.add(t.subject)
 
             if do_translations:
                 tmag, tmag_coords = self._get_largest_tmag(t)
@@ -38,6 +45,17 @@ class AveragedRotation:
                 max_translations_ys.append(tmag_coords[1])
 
         self.names = names
+
+        if len(hands) > 1:
+            print("there is more than one hand here!")
+            single_hand = None
+        elif len(hands) == 1:  # TODO: what is the list is empty?
+            single_hand = list(hands)[0]
+        else:
+            single_hand = ""
+
+        self.hand = HandInfo(single_hand)
+        self.subject = subjects
 
         avg_max_rot = np.mean(max_rots)
         std_max_rot = np.std(max_rots)
@@ -50,13 +68,30 @@ class AveragedRotation:
             self.max_trans_coords = (np.mean(max_translations_xs), np.mean(max_translations_ys))
             self.max_trans_coords_sd = (np.std(max_translations_xs), np.std(max_translations_ys))
 
+    def assess_trialset_labels(self):
+        """
+        Collect all of the unique labels in the trialset
+        """
+        labels = []
+
+        for t in self.averaged_trialset:
+            for l in t.path_labels:
+                labels.append(l)
+
+        unique_labels = set(labels)
+        self.trialset_labels = unique_labels
+        return unique_labels
+
     def generate_name(self):
         """
         Generates the codified name of the averaged trial.
         If there are multiple translation labels or multiple rotation labels, puts down 'x' instead.
         If no handinfo object included, omits the hand name
         """  # TODO: add hand and subject attributes
-        return f"{self.hand.get_name()}__n__{self.direction}__{self.subject}"
+        if self.hand is None:
+            return f"Hand__n__{self.direction}__{self.subject}"
+        else:
+            return f"{self.hand.get_name()}__n__{self.direction}__{self.subject}"
 
     def _get_largest_tmag(self, trial, use_filtered=True):
 
@@ -72,6 +107,21 @@ class AveragedRotation:
                 max_tmag_coords = (x, y)
 
         return max_tmag, max_tmag_coords
+
+    # def average_metrics(self, mode=2, use_filtered=False):
+    #     """
+    #     Choose to average the collection of metrics contained in the data to average (mode 0) or to
+    #     calculate metrics on the averaged line (mode 1), or both (mode 2).
+    #     """
+    #     if mode == 0:
+    #         self.calc_avg_metrics(use_filtered=use_filtered) # TODO: use_filtered option doesn't work here
+    #     elif mode == 1:
+    #         self.update_all_metrics(use_filtered=use_filtered)
+    #     elif mode == 2:
+    #         self.calc_avg_metrics(use_filtered=use_filtered)  # TODO: use_filtered option doesn't work here
+    #         self.update_all_metrics(use_filtered=use_filtered)
+    #     else:
+    #         print("Wrong mode chosen.")
 
     def calc_avg_metrics(self, use_filtered=False):
         """
@@ -111,7 +161,7 @@ class AveragedRotation:
             mvt_eff_vals.append(metrics["mvt_eff"])
             btwn_vals.append(metrics["area_btwn"])
             err_vals.append(metrics["max_err"])
-            rot_err_vals.append(metrics["max_err_rot"])
+            rot_err_vals.append(metrics["max_rot_err"])
             reg_vals.append(metrics["max_a_reg"])
             loc_vals.append(metrics["max_a_loc"])
             arc_lens.append(metrics["arc_len"])
@@ -137,7 +187,7 @@ class AveragedRotation:
 
         metric_dict = {"trial": self.generate_name(), "dist": values["dist"][0],
                        "t_fd": values["t_fd"][0], "fd": values["fd"][0],  # "r_fd": values["r_fd"][0]
-                       "max_err": values["max_err"][0], "max_err_rot": values["max_err_rot"][0],
+                       "max_err": values["max_err"][0], "max_rot_err": values["max_rot_err"][0],
                        "mvt_eff": values["mvt_eff"][0], "arc_len": values["arc_len"][0], "area_btwn": values["btwn"][0],
                        "max_a_reg": values["max_a_reg"][0], "max_a_loc": values["max_a_loc"][0]}
 
@@ -145,7 +195,7 @@ class AveragedRotation:
 
         metric_sd_dict = {"trial": self.generate_name(), "dist": values["dist"][1],
                           "t_fd": values["t_fd"][1], "fd": values["fd"][1],  # "r_fd": values["r_fd"][1]
-                          "max_err": values["max_err"][1], "max_err_rot": values["max_err_rot"][1],
+                          "max_err": values["max_err"][1], "max_rot_err": values["max_rot_err"][1],
                           "mvt_eff": values["mvt_eff"][1], "arc_len": values["arc_len"][1], "area_btwn": values["btwn"][1],
                           "max_a_reg": values["max_a_reg"][1], "max_a_loc": values["max_a_loc"][1]}
 
@@ -179,11 +229,11 @@ if __name__ == '__main__':
             ]
 
     avgln = AveragedRotation(direction=r, trials=lines)
-    avgln.calculate_avg_line(show_debug=True, calc_ad=True, use_filtered_data=True)
+#    avgln.calculate_avg_line(show_debug=True, calc_ad=True, use_filtered_data=True)
     print(f"names: {avgln.names}")
     print(f"averaged line: {avgln.generate_name()}")
-    print(f"tot dist: {avgln.total_distance}")
-    print(f"path labels: {avgln.path_labels}")
-    print(f"trialset labels: {avgln.trialset_labels}")
-    print(f"metrics: {avgln.metrics}")
+    # print(f"tot dist: {avgln.total_distance}")
+    # print(f"path labels: {avgln.path_labels}")
+    # print(f"trialset labels: {avgln.trialset_labels}")
+    # print(f"metrics: {avgln.metrics}")
     print(f"avg metrics: {avgln.metrics_avgd}")

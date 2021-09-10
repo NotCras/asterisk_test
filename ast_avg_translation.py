@@ -474,9 +474,9 @@ class AveragedTrial(AstBasicData):
         # go through each trial, grab relevant values and add them to sum
         # first index is the value, second is the standard deviation of the value
         values = {"dist": (0, 0), "t_fd": (0, 0), "fd": (0, 0), "mvt_eff": (0, 0), "btwn": (0, 0),  # "r_fd": (0, 0)
-                  "max_err": (0, 0), "max_rot_err": (0, 0), "max_a_reg": (0, 0), "max_a_loc": (0, 0), "arc_len": (0, 0)}
+                  "max_err": (0, 0), "max_err_rot": (0, 0), "max_a_reg": (0, 0), "max_a_loc": (0, 0), "arc_len": (0, 0)}
 
-        metric_names = ["dist", "t_fd", "fd", "mvt_eff", "btwn", "max_err", "max_rot_err",
+        metric_names = ["dist", "t_fd", "fd", "mvt_eff", "btwn", "max_err", "max_err_rot",
                         "max_a_reg", "max_a_loc", "arc_len"]
 
         dist_vals = []  # TODO: I'm pretty sure I can make this more elegant. Keeping this way for now

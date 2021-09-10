@@ -20,8 +20,13 @@ class AstMetrics:
         o_x, o_y, o_path_ang = ast_trial.get_poses(use_filtered=False)
         o_path_t = np.column_stack((o_x, o_y))
 
+        if ast_trial.is_rot_trial():
+            target_line = ast_trial.target_line[:, :2]
+        else:
+            target_line = ast_trial.target_line
+
         try:
-            t_fd = sm.frechet_dist(o_path_t, ast_trial.target_line)
+            t_fd = sm.frechet_dist(o_path_t, target_line)  # only get translation from target line
             # pdb.set_trace()
             #r_fd = sm.frechet_dist(o_path_ang, ast_trial.target_rotation)  # just max error right now
             fd = AstMetrics.calc_frechet_distance_all(ast_trial)
@@ -43,10 +48,14 @@ class AstMetrics:
         o_x, o_y, o_path_ang = ast_trial.get_poses(use_filtered=False)
         o_path = np.column_stack((o_x, o_y, o_path_ang))
 
-        t_rots = [ast_trial.target_rotation for y in range(len(ast_trial.target_line))]
-        combined_target = np.column_stack((ast_trial.target_line, t_rots))
+        if ast_trial.is_rot_trial():
+            combined_target = ast_trial.target_line
+        else:
+            t_rots = [ast_trial.target_rotation for y in range(len(ast_trial.target_line))]
+            combined_target = np.column_stack((ast_trial.target_line, t_rots))
 
         # TODO: I worry that rotation error will greatly outweigh translation... should I balance it somehow?
+        # Maybe I can divide the rotations by 100 so they are in the same range... or maybe make them radians?
         fd = sm.frechet_dist(o_path, combined_target)
 
         return fd
@@ -93,6 +102,10 @@ class AstMetrics:
             # could also use r_fd here...
 
         except RuntimeWarning:
+            max_error = -1
+
+        except AttributeError:  # For rotation trials, doesn't have attribute target_rotation
+            # TODO: how would I even calculate this for rotation trials?
             max_error = -1
 
         return max_error  # ast_trial.metrics["arc_len"]   # divide it by arc length to normalize the value

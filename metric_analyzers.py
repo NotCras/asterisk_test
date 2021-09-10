@@ -9,6 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import data_manager as datamanager
 from ast_hand_translation import AstHandTranslation
+from ast_hand_rotation import AstHandRotation
 from data_plotting import AsteriskPlotting
 import pdb
 
@@ -28,6 +29,7 @@ class AstDirAnalyzer:
         metric_df = pd.DataFrame()
         for t in trials:
             metric_df = metric_df.append(t.metrics, ignore_index=True)
+
         metric_df = metric_df.set_index("trial")
         #print(metric_df)
         self.metrics = metric_df
@@ -53,13 +55,14 @@ class AstHandAnalyzer:
     """
     Takes a hand data object and gets all the metrics
     """
-    def __init__(self, hd):
+    def __init__(self, hd, do_avg_line_metrics=True):
         self.hand_name = hd.hand.get_name()
         self.hand_data = hd  # keeping it around just in case
 
         # make a dir analyzer for each direction
         dir_analyzers = []
         complete_df = pd.DataFrame()
+
         for key in hd.data.keys():
             trials = hd.data[key]
             # TODO: implement average later
@@ -78,24 +81,36 @@ class AstHandAnalyzer:
         for a in hd.averages:
             avg_df = avg_df.append(a.metrics_avgd, ignore_index=True)
             avg_sd_df = avg_sd_df.append(a.metrics_avgd_sds, ignore_index=True)
-            all_avg_metrics = all_avg_metrics.append(a.metrics, ignore_index=True)
 
-        pdb.set_trace()
+            if do_avg_line_metrics:  # TODO: its stupid, but its a workaround for rotation avgs right now...
+                all_avg_metrics = all_avg_metrics.append(a.metrics, ignore_index=True)
+
         avg_df = avg_df.set_index("trial")
         avg_sd_df = avg_sd_df.set_index("trial")
-        all_avg_metrics = all_avg_metrics.set_index("trial")
+
+        if do_avg_line_metrics:
+            all_avg_metrics = all_avg_metrics.set_index("trial")
 
         self.metrics_avgd = avg_df
         self.metrics_avgd_sds = avg_sd_df
-        self.all_avg_metrics = all_avg_metrics
+
+        if do_avg_line_metrics:
+            self.all_avg_metrics = all_avg_metrics
+        else:
+            self.all_avg_metrics = None
 
     def save_data(self, file_name_overwrite=None):
         """
         Saves the report as a csv file
         :return:
         """
-        names = ["trial_metrics", "avg_trial_metrics", "trial_metrics_avgd", "trial_metric_avgd_sds"]
-        data = [self.all_metrics, self.all_avg_metrics, self.metrics_avgd, self.metrics_avgd_sds]
+
+        if self.all_avg_metrics is not None:
+            names = ["trial_metrics", "avg_trial_metrics", "trial_metrics_avgd", "trial_metric_avgd_sds"]
+            data = [self.all_metrics, self.all_avg_metrics, self.metrics_avgd, self.metrics_avgd_sds]
+        else:
+            names = ["trial_metrics", "trial_metrics_avgd", "trial_metric_avgd_sds"]
+            data = [self.all_metrics, self.metrics_avgd, self.metrics_avgd_sds]
 
         for n, d in zip(names, data):
             if file_name_overwrite is None:
@@ -245,12 +260,19 @@ if __name__ == '__main__':
     h = "2v2"
     rot = "n"
     subjects = ["sub1", "sub2", "sub3"]
+    translation = False
 
     print(f"Getting {h} ({rot}) data...")
-    data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
-    data.filter_data(10)  # don't use if you're using an asterisk_study obj
-    data.calc_averages()
-    results = AstHandAnalyzer(data)
+    if translation:
+        data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
+        data.filter_data(10)
+        data.calc_averages()
+        results = AstHandAnalyzer(data)
+    else:
+        data = AstHandRotation(subjects, h)
+        data.filter_data(10)
+        data.calc_averages()
+        results = AstHandAnalyzer(data, do_avg_line_metrics=False)
 
     print(f"Average Metrics: {results.metrics_avgd}")
     print(f"Standard deviations of average metrics: {results.metrics_avgd_sds}")

@@ -11,6 +11,7 @@ from ast_aruco import batch_aruco_analysis
 from metric_analyzers import AstHandAnalyzer
 from alive_progress import alive_bar
 import data_manager as datamanager
+import matplotlib.pyplot as plt
 import ast_trial as t
 
 
@@ -28,70 +29,56 @@ def run_ast_study():
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
     subjects = datamanager.generate_options("subjects")  # TODO: debug different hands
-    hand_names = ["2v2", "2v3"] #["2v2", "2v3", "3v3", "barrett",  "m2active", "m2stiff", "basic", "modelvf"]
+    hand_names = ["2v2", "basic"] #["2v2", "2v3", "3v3", "barrett",  "m2active", "m2stiff", "basic", "modelvf"]
     # ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"] # "m2stiff",
     rotation_conditions = ["n", "m15", "p15"]
+    run_aruco = False
+    run_metric_analysis = True
+    run_translations = True  # TODO: need to edit num of entries calculation to consider this
+    run_standing_rotations = True
 
     # failed_files = []  # TODO: make a log of everything that happens when data is run
 
     # [item for item in x if item not in y]
     # z = len(list(set(x) - set(y)))
-    len_hands_doing_rotations = len(list(set(hand_names) - set(datamanager.generate_options("hands_only_n"))))
-    num_calculation_sets = len(datamanager.generate_options("rotations_n_trans")) * len_hands_doing_rotations + 2 * len(hand_names) + 2 * len(["m15", "p15"]) * len_hands_doing_rotations
 
-    with alive_bar(num_calculation_sets) as bar:
+    # calculations on how many calculation sets to run for alive bar
+    len_hands_doing_rotations = len(list(set(hand_names) - set(datamanager.generate_options("hands_only_n"))))
+    num_calculation_sets = len(datamanager.generate_options("rotations_n_trans")) * len_hands_doing_rotations + \
+                           2 * len(hand_names) + \
+                           2 * len(["m15", "p15"]) * len_hands_doing_rotations
+
+    # cw/ccw for all hands that can do rotations +
+    # all _n trials for all hands, 1 for generating the AstHandTranslation object and 1 for saving plots
+    # all _m15 and _p15 trials for hands that can do rotations
+    # if we are doing aruco analysis, then multiply everything by 2 because we have to aruco analyze all of those trials
+
+    if run_aruco:
+        entries = 2 * num_calculation_sets
+    else:
+        entries = num_calculation_sets
+
+    # the actual calculations
+    with alive_bar(entries) as bar:
         for h in hand_names:
             print(f"Running: {h}, {subjects}")
             # input("Please press <ENTER> to continue")  # added this for debugging by hand
 
-            # print("Analyzing aruco codes on viz data...")
-            # for s in subjects:
-            #     batch_aruco_analysis(s, h, no_rotations=False, home=home_directory, indices=False, crop=False)
-
-            for rot in rotation_conditions:
-                print(f"Getting {h} ({rot}) data...")
-                data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
-                # data = study.return_hand(h)
+            if run_aruco:
+                print(f"Analyzing aruco codes on {h} viz data...")
+                for s in subjects:
+                    batch_aruco_analysis(s, h, no_rotations=False, home=home_directory, indices=False, crop=False)
                 bar()
 
-                print(f"Filtering data...")
-                data.filter_data(10)  # don't use if you're using an asterisk_study obj
-
-                print("Generating CSVs of paths...")
-                data.save_all_data()
-
-                print("Calculating averages...")
-                data.calc_averages()
-
-                print("Saving plots...")
-
-                data.plot_ast_avg(show_plot=False, save_plot=True)
-                for a in data.averages:
-                    a.avg_debug_plot(show_plot=False, save_plot=True, use_filtered=True)
-
-                print("Consolidating metrics together...")
-                results = AstHandAnalyzer(data)
-
-                print("Saving metric data...")
-                results.save_data(file_name_overwrite=f"{h}_{rot}")
-
-                print(f"{h} data generation is complete!")
-                bar()
-                print("   ")
-
-                print(f"Considering cw/ccw for {h}...")
-                for rot2 in datamanager.generate_options("rotations_n_trans"):
-                    if rot in ["m15", "p15"]:
-                        continue
-
-                    if h in datamanager.generate_options("hands_only_n"):
-                        continue
-
-                    print(f"Getting {h} ({rot2}) data...")
-                    data = AstHandRotation(subjects, h)
+            if run_translations:
+                for rot in rotation_conditions:
+                    print(f"Getting {h} ({rot}) data...")
+                    data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
+                    # data = study.return_hand(h)
+                    bar()
 
                     print(f"Filtering data...")
-                    data.filter_data(10)
+                    data.filter_data(10)  # don't use if you're using an asterisk_study obj
 
                     print("Generating CSVs of paths...")
                     data.save_all_data()
@@ -100,15 +87,59 @@ def run_ast_study():
                     data.calc_averages()
 
                     print("Saving plots...")
-                    data.plot_ast_avg(show_plot=False, save_plot=True, exclude_path_labels=None)
-                    data.save_all_data_plots()
-                    bar()
+                    data.plot_ast_avg(show_plot=False, save_plot=True)
+                    for a in data.averages:
+                        a.avg_debug_plot(show_plot=False, save_plot=True, use_filtered=True)
 
-    # print("Getting subplot figures, using Asterisk Study obj")
-    # # I know this is stupidly redundant, but for my purposes I can wait
-    # study = AsteriskStudy(subjects_to_collect=subjects, hands_to_collect=hand_names, rotation="n")
-    # study.filter_data(window_size=25)
-    # study.plot_all_hands(rotation="n", show_plot=True, save_plot=True)
+                    # although we don't show the plots, a matplotlib warning suggests that it still keeps those plots open
+                    plt.close("all")
+
+                    if run_metric_analysis:
+                        print("Consolidating metrics together...")
+                        results = AstHandAnalyzer(data)
+
+                        print("Saving metric data...")
+                        results.save_data(file_name_overwrite=f"{h}_{rot}")
+
+                    print(f"{h} data generation is complete!")
+                    bar()
+                    print("   ")
+
+                    if run_standing_rotations:
+                        print(f"Considering cw/ccw for {h}...")
+                        for rot2 in datamanager.generate_options("rotations_n_trans"):
+                            if rot in ["m15", "p15"]:
+                                continue
+
+                            if h in datamanager.generate_options("hands_only_n"):
+                                continue
+
+                            print(f"Getting {h} ({rot2}) data...")
+                            data_r = AstHandRotation(subjects, h)
+
+                            print(f"Filtering data...")
+                            data_r.filter_data(10)
+
+                            print("Generating CSVs of paths...")
+                            data_r.save_all_data()
+
+                            print("Calculating averages...")
+                            data_r.calc_averages()
+
+                            print("Saving plots...")
+                            data_r.plot_ast_avg(show_plot=False, save_plot=True, exclude_path_labels=None)
+                            data_r.save_all_data_plots()
+                            plt.close("all")
+
+                            if run_metric_analysis:
+                                print("Consolidating metrics together...")
+                                results = AstHandAnalyzer(data_r, do_avg_line_metrics=False)
+                                # TODO: can we do AvgRotation with avg line metrics?
+
+                                print("Saving metric data...")
+                                results.save_data(file_name_overwrite=f"{h}_{rot}")
+
+                        bar()
 
 
 if __name__ == '__main__':

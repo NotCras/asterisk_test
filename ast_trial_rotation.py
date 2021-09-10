@@ -14,11 +14,11 @@ class AstTrialRotation(AstTrial):
     Class which handles cw/ccw trials, separating because we would appreciate the nuance
     """
 
-    def __init__(self, file_name, data=None, # subject_label=None, rotation_label=None, number_label=None,
+    def __init__(self, file_name, data=None,  # subject_label=None, rotation_label=None, number_label=None,
                  controller_label=None, do_metrics=True, norm_data=True, condition_data=True):
 
         self.total_distance = 0  # This will be the max rotation value of the trial
-        super().__init__(file_name=file_name, data=data, controller_label=controller_label, do_metrics=False,
+        super().__init__(file_name=file_name, data=data, controller_label=controller_label, do_metrics=do_metrics,
                          condition_data=condition_data, norm_data=norm_data)
 
         # TODO: will need to revisit how metrics are calculated
@@ -324,7 +324,7 @@ class AstTrialRotation(AstTrial):
 
 
 if __name__ == '__main__':
-    test = AstTrialRotation(file_name="sub1_2v2_n_cw_2.csv", do_metrics=False, norm_data=True)
+    test = AstTrialRotation(file_name="sub1_2v2_n_cw_2.csv", do_metrics=True, norm_data=True)
     print(f"name: {test.generate_name()}")
     print(f"tot dist: {test.total_distance}")
     print(f"path labels: {test.path_labels}")

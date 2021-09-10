@@ -78,10 +78,11 @@ class AstHandRotation(AstHandTranslation):
         """
         list_of_dirs = list()
         for k in list(self.data.keys()):
-            if k[0] != "n":
+            t, r = k.split("_")
+            if t != "n":
                 continue
                 # TODO: should we throw an error here?
-            list_of_dirs.append(k[0])
+            list_of_dirs.append(r)
 
         return list_of_dirs
 
@@ -196,8 +197,7 @@ class AstHandRotation(AstHandTranslation):
             # make sure that we only include translations that are in the data
             if r in dirs:
                 print(f"Averaging {r}")
-                avg, std, avg_t = self._average_dir(direction=r, subject=subjects,
-                                        exclude_path_labels=exclude_path_labels)
+                avg = self._average_dir(direction=r, subject=subjects, exclude_path_labels=exclude_path_labels)
                 if avg is not None:
                     averages.append(avg)
 
@@ -215,13 +215,21 @@ class AstHandRotation(AstHandTranslation):
 
         cw_rot = None
         ccw_rot = None
+        cw_rot_std = None
+        ccw_rot_std = None
+        cw_a = None
+        ccw_a = None
 
         if self.averages:
             for a in self.averages:
                 if a.direction == "cw":
+                    cw_a = a
                     cw_rot = a.max_rot[0]
+                    cw_rot_std = a.max_rot[1]
                 elif a.direction == "ccw":
+                    ccw_a = a
                     ccw_rot = a.max_rot[0]
+                    ccw_rot_std = a.max_rot[1]
                 else:
                     # TODO: throw an error here?
                     print("We have an average that doesn't belong!")
