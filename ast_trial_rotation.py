@@ -3,6 +3,7 @@ import pdb
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import cm
 from trial_labelling import AsteriskLabelling as al
 from metric_calculation import AstMetrics as am
 from ast_trial import AstBasicData, AstTrial
@@ -117,8 +118,28 @@ class AstTrialRotation(AstTrial):
 
         return final_target_ln, max_rot
 
-    def plot_trial(self, use_filtered=True, show_plot=True, save_plot=False, provide_notes=False, angle_interval=None):
-        fig, ax = plt.subplots(figsize=(6, 3), subplot_kw=dict(aspect="equal"))
+    def plot_trial(self, use_filtered=True, show_plot=True, save_plot=False, provide_notes=False,
+                   angle_interval=None, provide_path=True):
+        """
+        Plot data for the rotation ast trial, showing max rotation value and translation that occured during the trial.
+        Also provides option to show plot of how rotation changes over the time of the trial as an additional plot.
+        """
+        fig_size = 7
+        if provide_path:
+            fig = plt.figure(figsize=(fig_size*2, fig_size))
+            ax_pie = fig.add_subplot(121)
+        else:
+            fig = plt.figure(figsize=(fig_size, fig_size))
+            ax_pie = fig.add_subplot()
+
+        # if provide_path:
+        #     fig, ax = plt.subplots(figsize=(6, 3), subplot_kw=dict(aspect="equal"))
+        #
+        #     ax_pie = ax[0]
+        #     ax_path = ax[1]
+        # else:
+        #     fig, ax = plt.subplots(figsize=(6, 3), subplot_kw=dict(aspect="equal"))
+        #     ax_pie = ax
 
         rotation_val = self.total_distance
         data = [rotation_val, 360 - rotation_val]
@@ -139,7 +160,7 @@ class AstTrialRotation(AstTrial):
 
         colors = [rot_color, "whitesmoke"]
 
-        ax.pie(data, colors=colors, labels=plot_labels, labeldistance=0.8,
+        ax_pie.pie(data, colors=colors, labels=plot_labels, labeldistance=0.8,
                startangle=angle_plotted, counterclock=counter_clock,  # depends on cw or ccw
                textprops=dict(color="whitesmoke", size=11, weight="bold",
                               rotation_mode='anchor', va='center', ha='center'
@@ -150,8 +171,29 @@ class AstTrialRotation(AstTrial):
         fig = plt.gcf()
         fig.gca().add_artist(centre_circle)
 
-        plt.title(f"Plot: {self.generate_plot_title()}, Max Rotation")
+        plt.title(f"Standing Rotation: {self.generate_name()}")
 
+        self._plot_translations()
+
+        if provide_notes:
+            self._plot_notes()
+
+        # Equal aspect ratio ensures that pie is drawn as a circle
+        ax_pie.axis('equal')
+
+        if provide_path:
+            self._plot_rotation_path(fig=fig)
+
+        if save_plot:
+            plt.savefig(f"results/pics/plot_{self.generate_name()}.jpg", format='jpg')
+            # name -> tuple: subj, hand  names
+            print("Figure saved.")
+            print(" ")
+
+        if show_plot:
+            plt.show()
+
+    def _plot_translations(self, use_filtered=True):
         # translation of the trial
         line_x, line_y, _ = self.get_poses(use_filtered=use_filtered)
         plt.plot(line_x, line_y)
@@ -183,22 +225,32 @@ class AstTrialRotation(AstTrial):
         radius = 0.1
         x_lim = radius * np.cos(angle)
         y_lim = radius * np.sin(angle)
-        plt.plot(x_lim, y_lim, color='red', linestyle=(0, (1, 3)) )
+        plt.plot(x_lim, y_lim, color='red', linestyle=(0, (1, 3)))
 
-        # Equal aspect ratio ensures that pie is drawn as a circle
-        ax.axis('equal')
+    def _plot_rotation_path(self, fig):
+        """
+        Plots how the rotation changed during the trial in a polar plot
+        :return:
+        """
+        _, _, rot_path = self.get_poses()
 
-        if provide_notes:
-            self._plot_notes()
+        ax = fig.add_subplot(122, projection='polar')
 
-        if save_plot:
-            plt.savefig(f"results/pics/plot_{self.generate_name()}.jpg", format='jpg')
-            # name -> tuple: subj, hand  names
-            print("Figure saved.")
-            print(" ")
+        rot_path_rad = [np.radians(x) for x in rot_path]
+        data_len = len(rot_path)
+        time_list = [x * 0.1 for x in range(data_len)]
 
-        if show_plot:
-            plt.show()
+        colormap = cm.get_cmap("Blues", data_len)
+        colored_time = [colormap(x/(data_len*0.1)) for x in time_list]
+
+        #fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+
+        ax.scatter(rot_path_rad, time_list, color=colored_time)  # , cmap=colormap)
+        # ax.set_rmax(2)
+        ax.set_rticks([])  # no radial ticks
+        #ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
+        #ax.grid(True)
+        ax.set_title("Change in rotation during trial")
 
     def assess_path_labels(self, no_mvt_threshold=10, init_threshold=0.05, init_num_pts=10, dev_perc_threshold=0.10):
         # check whether total distance is an acceptable distance to consider it actually movement
@@ -273,4 +325,4 @@ if __name__ == '__main__':
     print(f"metrics: {test.metrics}")
 
     test.moving_average(window_size=10)
-    test.plot_trial(use_filtered=False, provide_notes=True)
+    test.plot_trial(use_filtered=False, provide_notes=True, provide_path=True)
