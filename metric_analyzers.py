@@ -27,13 +27,20 @@ class AstDirAnalyzer:
         self.hand_name = trials[0].hand.get_name()
 
         metric_df = pd.DataFrame()
-        for t in trials:
+        for t in trials:  # TODO: what about trials  with no_mvt labels, metrics aren't calculated on them
+            if "no_mvt" in t.path_labels:
+                continue
+
             metric_df = metric_df.append(t.metrics, ignore_index=True)
 
-        metric_df = metric_df.set_index("trial")
-        #print(metric_df)
-        self.metrics = metric_df
+        if len(metric_df) > 0:
+            metric_df = metric_df.set_index("trial")
+            #print(metric_df)
+            self.metrics = metric_df
+        else:
+            self.metrics = None
 
+        # print(f"{self.t_dir}_{self.r_dir}")
         # save trial objects in case we need it
         self.avg = avg
         self.trials = trials
@@ -48,7 +55,8 @@ class AstDirAnalyzer:
         else:
             new_file_name = file_name_overwrite + ".csv"
 
-        self.metrics.to_csv(new_file_name, index=True)
+        if self.metrics is not None:
+            self.metrics.to_csv(new_file_name, index=True)
 
 
 class AstHandAnalyzer:
@@ -66,9 +74,10 @@ class AstHandAnalyzer:
         for key in hd.data.keys():
             trials = hd.data[key]
             # TODO: implement average later
-            analyzer = AstDirAnalyzer(trials)
+            analyzer = AstDirAnalyzer(trials)  # TODO: can we check for no metrics? or for no_mvt?
             complete_df = complete_df.append(analyzer.metrics)
-            dir_analyzers.append(analyzer)
+            if analyzer.metrics is not None:
+                dir_analyzers.append(analyzer)
 
         self.analyzers = dir_analyzers
         # print(complete_df)
@@ -78,23 +87,24 @@ class AstHandAnalyzer:
         avg_df = pd.DataFrame()
         avg_sd_df = pd.DataFrame()
         all_avg_metrics = pd.DataFrame()
-        for a in hd.averages:
-            avg_df = avg_df.append(a.metrics_avgd, ignore_index=True)
-            avg_sd_df = avg_sd_df.append(a.metrics_avgd_sds, ignore_index=True)
+        for avg in hd.averages:
+            avg_df = avg_df.append(avg.metrics_avgd, ignore_index=True)  # should have values in these
+            avg_sd_df = avg_sd_df.append(avg.metrics_avgd_sds, ignore_index=True)
 
-            if do_avg_line_metrics:  # TODO: its stupid, but its a workaround for rotation avgs right now...
-                all_avg_metrics = all_avg_metrics.append(a.metrics, ignore_index=True)
+            # TODO: its stupid, but its a workaround for rotation avgs right now... see if we can make mor elegant
+            if do_avg_line_metrics or "no_mvt" in avg.path_labels:
+                all_avg_metrics = all_avg_metrics.append(avg.metrics, ignore_index=True)
 
         avg_df = avg_df.set_index("trial")
         avg_sd_df = avg_sd_df.set_index("trial")
 
-        if do_avg_line_metrics:
+        if do_avg_line_metrics or len(all_avg_metrics) > 0:
             all_avg_metrics = all_avg_metrics.set_index("trial")
 
         self.metrics_avgd = avg_df
         self.metrics_avgd_sds = avg_sd_df
 
-        if do_avg_line_metrics:
+        if do_avg_line_metrics or len(all_avg_metrics) > 0:
             self.all_avg_metrics = all_avg_metrics
         else:
             self.all_avg_metrics = None

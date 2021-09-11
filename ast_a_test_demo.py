@@ -28,8 +28,8 @@ def run_ast_study():
     home_directory = Path(__file__).parent.absolute()
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
-    subjects = datamanager.generate_options("subjects")  # TODO: debug different hands
-    hand_names = ["2v2", "basic"] #["2v2", "2v3", "3v3", "barrett",  "m2active", "m2stiff", "basic", "modelvf"]
+    subjects = datamanager.generate_options("subjects")
+    hand_names = ["2v2", "2v3", "3v3", "barrett",  "m2active", "m2stiff", "basic", "modelvf"]
     # ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"] # "m2stiff",
     rotation_conditions = ["n", "m15", "p15"]
     run_aruco = False
@@ -72,6 +72,9 @@ def run_ast_study():
 
             if run_translations:
                 for rot in rotation_conditions:
+                    if rot in ["m15", "p15"] and h in datamanager.generate_options("hands_only_n"):
+                        continue
+
                     print(f"Getting {h} ({rot}) data...")
                     data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
                     # data = study.return_hand(h)
@@ -101,7 +104,7 @@ def run_ast_study():
                         print("Saving metric data...")
                         results.save_data(file_name_overwrite=f"{h}_{rot}")
 
-                    print(f"{h} data generation is complete!")
+                    print(f"{h} data generation is complete!")  # TODO: mean of empty slice error throws here?
                     bar()
                     print("   ")
 
@@ -109,9 +112,11 @@ def run_ast_study():
                         print(f"Considering cw/ccw for {h}...")
                         for rot2 in datamanager.generate_options("rotations_n_trans"):
                             if rot in ["m15", "p15"]:
+                                print(f"Not for {rot} rotation.")
                                 continue
 
                             if h in datamanager.generate_options("hands_only_n"):
+                                print("... Nope!")
                                 continue
 
                             print(f"Getting {h} ({rot2}) data...")
@@ -139,7 +144,7 @@ def run_ast_study():
                                 print("Saving metric data...")
                                 results.save_data(file_name_overwrite=f"{h}_{rot}")
 
-                        bar()
+                            bar()
 
 
 if __name__ == '__main__':

@@ -184,7 +184,7 @@ class AstBasicData:  # TODO: move into its own file
 
         target_line_length = acalc.narrow_target(last_obj_pose, target_line)
 
-        if target_line_length <= n_samples - 2:  # want the plus 1 to round up
+        if target_line_length <= n_samples - 2 and target_line_length > 0:  # want the plus 1 to round up
             distance_travelled = acalc.t_distance([0, 0], target_line[target_line_length + 1])
             final_target_ln = target_line[:target_line_length]
 
@@ -682,7 +682,7 @@ class AstTrial(AstBasicData):
             plt.show()
 
 if __name__ == '__main__':
-    test = AstTrial(file_name="sub1_2v2_d_p15_2.csv", do_metrics=True, norm_data=True)
+    test = AstTrial(file_name="sub1_basic_a_n_2.csv", do_metrics=True, norm_data=True)
     print(f"name: {test.generate_name()}")
     print(f"tot dist: {test.total_distance}")
     print(f"path labels: {test.path_labels}")

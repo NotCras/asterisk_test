@@ -3,7 +3,7 @@
 """
 File for assessing labels to put on an asterisk trial object. [NOT DONE]
 """
-
+import pdb
 
 import numpy as np
 import pandas as pd
@@ -54,6 +54,10 @@ class AsteriskLabelling:  # TODO: add in rotational variants to metrics to work 
         # check the first 50 points for falling within the initial position
         path_x, path_y, _ = ast_trial.get_poses()
         observation = False
+        data_length = len(path_x)
+
+        if to_check > data_length:
+            to_check = data_length-1
 
         # if we don't have a point that falls within our threshold range
         # in the number of points to check, there is a problem
