@@ -257,8 +257,8 @@ class AstBasicData:  # TODO: move into its own file
         if "backtracking" in mvt_observations:
             self.path_labels.append("backtracking")
 
-        if "shuttling" in mvt_observations:
-            self.path_labels.append("shuttling")
+        # if "shuttling" in mvt_observations:
+        #     self.path_labels.append("shuttling")
 
         return self.path_labels
 

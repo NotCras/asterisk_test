@@ -22,6 +22,7 @@ class AveragedRotation:
         self.assess_trialset_labels()
         self.data_demographics(trials, do_translations=do_translations)
         self.calc_avg_metrics()
+        self.path_labels = []  # TODO: for now, keep it empty? Probably should inherit from AveragedTrial?
 
     def data_demographics(self, trials, do_translations=True):
         names = []
@@ -49,7 +50,7 @@ class AveragedRotation:
         if len(hands) > 1:
             print("there is more than one hand here!")
             single_hand = None
-        elif len(hands) == 1:  # TODO: what is the list is empty?
+        elif len(hands) == 1: 
             single_hand = list(hands)[0]
         else:
             single_hand = ""

@@ -73,7 +73,7 @@ def run_ast_study():
             if run_translations:
                 for rot in rotation_conditions:
                     if rot in ["m15", "p15"] and h in datamanager.generate_options("hands_only_n"):
-                        continue
+                        continue  # skip hands that don't do rotations
 
                     print(f"Getting {h} ({rot}) data...")
                     data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
@@ -90,7 +90,7 @@ def run_ast_study():
                     data.calc_averages()
 
                     print("Saving plots...")
-                    data.plot_ast_avg(show_plot=False, save_plot=True)
+                    data.plot_ast_avg(show_plot=False, save_plot=True, exclude_path_labels=["major deviation"])
                     for a in data.averages:
                         a.avg_debug_plot(show_plot=False, save_plot=True, use_filtered=True)
 
@@ -104,7 +104,8 @@ def run_ast_study():
                         print("Saving metric data...")
                         results.save_data(file_name_overwrite=f"{h}_{rot}")
 
-                    print(f"{h} data generation is complete!")  # TODO: mean of empty slice error throws here?
+                    print(f"{h} data generation is complete!")
+                    # TODO: mean of empty slice error throws here? Probably bar()
                     bar()
                     print("   ")
 
