@@ -93,6 +93,7 @@ def run_ast_study():
                     data.plot_ast_avg(show_plot=False, save_plot=True, exclude_path_labels=['major deviation'])
                     for a in data.averages:
                         a.avg_debug_plot(show_plot=False, save_plot=True, use_filtered=True)
+                        #a.save_data(file_name_overwrite=)
 
                     # although we don't show the plots, a matplotlib warning suggests that it still keeps those plots open
                     plt.close("all")

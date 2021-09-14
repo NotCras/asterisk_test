@@ -20,7 +20,7 @@ class AveragedTrial(AstBasicData):
     rotations = {"a": 270, "b": 315, "c": 0, "d": 45, "e": 90,
                  "f": 135, "g": 180, "h": 225, "n": 0}
 
-    def __init__(self, trials=None, sample_points=25):
+    def __init__(self, trials=None, sample_points=25):  # TODO make it work with non-normalized AstTrial objects?
         # super(AveragedTrial, self).__init__()  # for making an empty AsteriskTrialData object
 
         self.subject = set()
@@ -246,7 +246,7 @@ class AveragedTrial(AstBasicData):
         # get all the data
         data_points = pd.DataFrame()  # makes an empty dataframe
         for t in trials:
-            if not t.filtered and use_filtered_data:
+            if not t.filtered and use_filtered_data:  # TODO: check for correct number of sample points
                 t.moving_average()
 
             data_points = data_points.append(t.poses)  # put all poses in one dataframe for easy access

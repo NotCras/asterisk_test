@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from ast_hand_translation import AstHandTranslation
 from ast_avg_rotation import AveragedRotation
+from matplotlib.patches import Wedge
 import data_manager as datamanager
 import ast_trial as atrial
 import ast_trial_rotation as arot
@@ -258,16 +259,33 @@ class AstHandRotation(AstHandTranslation):
 
         colors = ["crimson", "royalblue", "whitesmoke"]
 
-        ax.pie(data, colors=colors, labels=labels, labeldistance=1.05, wedgeprops=dict(width=0.3),
+        ax.pie(data, colors=colors, labels=labels, labeldistance=1.05, wedgeprops=dict(width=0.3, alpha=0.5),
                startangle=90 - cw_rot, counterclock=True,
                textprops=dict(color="darkslategrey", size=12, weight="bold",
-              # rotation_mode = 'anchor', va='center', ha='center'
-              ))
+               # rotation_mode = 'anchor', va='center', ha='center'
+               ))
 
         # # draw circle by drawing a white circle on top of center
         # centre_circle = plt.Circle((0, 0), 0.70, fc='white')
         # fig = plt.gcf()
         # fig.gca().add_artist(centre_circle)
+
+        # draw standard deviations
+        def pie_std(ang, std, color):
+            test_line = Wedge((0, 0), 1, ang - 0.05, ang + 0.05, width=0.3, color="black", alpha=1)
+            test1 = Wedge((0, 0), 1, ang - std, ang, width=0.3, color=color, alpha=1)
+            test2 = Wedge((0, 0), 1, ang, ang + std, width=0.3, color=color, alpha=1)
+
+            # draw circle by drawing a white circle on top of center
+            centre_circle = plt.Circle((0, 0), 0.70, fc='white')
+            fig = plt.gcf()
+            fig.gca().add_artist(centre_circle)
+            fig.gca().add_artist(test1)
+            fig.gca().add_artist(test2)
+            fig.gca().add_artist(test_line)
+
+        pie_std(90-cw_rot, cw_rot_std, "crimson")
+        pie_std(90+ccw_rot, ccw_rot_std, "royalblue")
 
         if include_notes:
             self._plot_notes([cw_a, ccw_a])

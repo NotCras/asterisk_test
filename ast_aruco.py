@@ -570,6 +570,7 @@ class ArucoAutoCrop:
 
         print("Running autocropper!")
         self.start_i, self.end_i, self.cropped_path_dist, _ = self.auto_crop(only_rotation=only_rotation)
+        # TODO: make separate object for ArucoAutoCropRotation?
 
         self.cropped_poses = self.trial_data.loc[self.start_i:self.end_i]
 
