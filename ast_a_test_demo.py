@@ -87,10 +87,10 @@ def run_ast_study():
                     data.save_all_data()
 
                     print("Calculating averages...")
-                    data.calc_averages()
+                    #data.calc_averages(exclude_path_labels=['major deviation'])
 
                     print("Saving plots...")
-                    data.plot_ast_avg(show_plot=False, save_plot=True, exclude_path_labels=["major deviation"])
+                    data.plot_ast_avg(show_plot=False, save_plot=True, exclude_path_labels=['major deviation'])
                     for a in data.averages:
                         a.avg_debug_plot(show_plot=False, save_plot=True, use_filtered=True)
 
@@ -130,10 +130,10 @@ def run_ast_study():
                             data_r.save_all_data()
 
                             print("Calculating averages...")
-                            data_r.calc_averages()
+                            data_r.calc_averages(exclude_path_labels=['major deviation'])
 
                             print("Saving plots...")
-                            data_r.plot_ast_avg(show_plot=False, save_plot=True, exclude_path_labels=None)
+                            data_r.plot_ast_avg(show_plot=False, save_plot=True, exclude_path_labels=['major deviation'])
                             data_r.save_all_data_plots()
                             plt.close("all")
 

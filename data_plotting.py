@@ -60,7 +60,7 @@ class AsteriskPlotting:
         return x_coords, y_coords
 
     @staticmethod
-    def get_b(num_points=25, max=0.5):
+    def get_b(num_points=25, max=0.3536):
         x_coords, y_coords = AsteriskPlotting.diagonal(num_points=num_points, max=max)
         return x_coords, y_coords
 

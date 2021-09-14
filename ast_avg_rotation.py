@@ -50,7 +50,7 @@ class AveragedRotation:
         if len(hands) > 1:
             print("there is more than one hand here!")
             single_hand = None
-        elif len(hands) == 1: 
+        elif len(hands) == 1:
             single_hand = list(hands)[0]
         else:
             single_hand = ""

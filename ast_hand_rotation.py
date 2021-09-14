@@ -139,16 +139,21 @@ class AstHandRotation(AstHandTranslation):
         dict_key = f"n_{direction_label}"
         direction_trials = self.data[dict_key]
         gotten_trials = []
+        dont_include = False
 
         for t in direction_trials:
             if t.subject == subjects or t.subject in subjects:
                 # check if trial has a path_label that we don't want to include
                 for l in t.path_labels:
                     if exclude_path_labels is not None and l in exclude_path_labels:
-                        continue  # skip trial if it has that path_label
+                        dont_include = True
+                        # continue  # skip trial if it has that path_label
 
                 # if it passes path_label check, add it to the
-                gotten_trials.append(t)
+                if dont_include:
+                    dont_include = False
+                else:
+                    gotten_trials.append(t)
 
         return gotten_trials
 
@@ -265,7 +270,7 @@ class AstHandRotation(AstHandTranslation):
         # fig.gca().add_artist(centre_circle)
 
         if include_notes:
-            self._plot_notes()
+            self._plot_notes([cw_a, ccw_a])
 
         self._plot_translations(cw_a, ccw_a)
 

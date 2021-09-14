@@ -187,16 +187,21 @@ class AstHandTranslation:
         dict_key = f"{direction_label}_{self.set_rotation}"
         direction_trials = self.data[dict_key]
         gotten_trials = []
+        dont_include = False
 
         for t in direction_trials:
             if t.subject == subjects or t.subject in subjects:
                 # check if trial has a path_label that we don't want to include
                 for l in t.path_labels:
                     if exclude_path_labels is not None and l in exclude_path_labels:
-                        continue  # skip trial if it has that path_label
+                        dont_include = True
+                        # continue  # skip trial if it has that path_label
 
                 # if it passes path_label check, add it to the
-                gotten_trials.append(t)
+                if dont_include:
+                    dont_include = False
+                else:
+                    gotten_trials.append(t)
 
         return gotten_trials
 
@@ -365,12 +370,12 @@ class AstHandTranslation:
         """
 
         # TODO: should we do the same for filtered vs unfiltered?
-        if self.averages and subjects is None:
-            # if we have averages and the user does not specify subjects just use the averages we have
-            subjects = self.subjects_containing
-            avgs = self.averages
+        # if self.averages and subjects is None:
+        #     # if we have averages and the user does not specify subjects just use the averages we have
+        #     subjects = self.subjects_containing
+        #     avgs = self.averages
 
-        elif self.averages and subjects is not None:
+        if self.averages and subjects is not None:
             # if we have averages but the user specifies specific subjects, rerun averaage
             avgs = self.calc_averages(subjects=subjects, exclude_path_labels=exclude_path_labels)
 
@@ -382,7 +387,7 @@ class AstHandTranslation:
         plt = self._make_plot(avgs, use_filtered=False, stds=True, linestyle=linestyle)
 
         if include_notes:
-            self._plot_notes()
+            self._plot_notes(avgs)
 
         if plot_contributions:
             for a in avgs:
@@ -403,14 +408,14 @@ class AstHandTranslation:
             # plt.legend()  # TODO: showing up weird, need to fix
             plt.show()
 
-    def _plot_notes(self):  # TODO: move to aplt, make it take in a list of labels so HandTranslation can also use it
+    def _plot_notes(self, trials):  # TODO: move to aplt, make it take in a list of labels so HandTranslation can also use it
         """
         Plots the labels and trial ID in the upper left corner of the plot
         """
-        note = "Labels:"
+        note = "Labels in plotted data:"
 
         labels = set()
-        for a in self.averages:
+        for a in trials:  # self.averages:
             for l in a.trialset_labels:
                 labels.add(l)
 
@@ -487,7 +492,7 @@ class AstHandTranslation:
                 ideal_xs.append(x_h)
                 ideal_ys.append(y_h)
 
-            for i, dir in specific_lines:
+            for i, dir in enumerate(specific_lines):
                 plt.plot(ideal_xs[i], ideal_ys[i], color=aplt.get_dir_color(dir), label='ideal', linestyle='--')
 
 if __name__ == '__main__':
