@@ -126,7 +126,7 @@ class AstHandAnalyzer:
             if file_name_overwrite is None:
                 new_file_name = f"results/{self.hand_name}_{n}.csv"
             else:
-                new_file_name = f"{file_name_overwrite}_{n}.csv"
+                new_file_name = f"results/{file_name_overwrite}_{n}.csv"
 
             d.to_csv(new_file_name, index=True)
 
