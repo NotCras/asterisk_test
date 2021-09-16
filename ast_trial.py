@@ -79,13 +79,13 @@ class AstBasicData:  # TODO: move into its own file
                f"{self.trial_rotation}_{self.subject}_{self.trial_num}"
 
     def is_ast_trial(self):
-        pass
+        return False
 
     def is_avg_trial(self):
-        pass
+        return False
 
-    def is_rot_trial(self):
-        pass
+    def is_standing_rot_trial(self):
+        return False
 
     def get_last_pose(self):
         """
@@ -596,7 +596,7 @@ class AstTrial(AstBasicData):
     def is_avg_trial(self):
         return False
 
-    def is_rot_trial(self):
+    def is_standing_rot_trial(self):
         return False
 
     def is_trial(self, subject_name, hand_name, translation_name, rotation_name, trial_num=None):

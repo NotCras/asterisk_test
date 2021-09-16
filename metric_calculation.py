@@ -20,7 +20,7 @@ class AstMetrics:
         o_x, o_y, o_path_ang = ast_trial.get_poses(use_filtered=False)
         o_path_t = np.column_stack((o_x, o_y))
 
-        if ast_trial.is_rot_trial():
+        if ast_trial.is_standing_rot_trial():
             target_line = ast_trial.target_line[:, :2]
         else:
             target_line = ast_trial.target_line
@@ -48,7 +48,7 @@ class AstMetrics:
         o_x, o_y, o_path_ang = ast_trial.get_poses(use_filtered=False)
         o_path = np.column_stack((o_x, o_y, o_path_ang))
 
-        if ast_trial.is_rot_trial():
+        if ast_trial.is_standing_rot_trial():
             combined_target = ast_trial.target_line
         else:
             t_rots = [ast_trial.target_rotation for y in range(len(ast_trial.target_line))]

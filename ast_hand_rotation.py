@@ -276,16 +276,13 @@ class AstHandRotation(AstHandTranslation):
             test1 = Wedge((0, 0), 1, ang - std, ang, width=0.3, color=color, alpha=1)
             test2 = Wedge((0, 0), 1, ang, ang + std, width=0.3, color=color, alpha=1)
 
-            # draw circle by drawing a white circle on top of center
-            centre_circle = plt.Circle((0, 0), 0.70, fc='white')
             fig = plt.gcf()
-            fig.gca().add_artist(centre_circle)
             fig.gca().add_artist(test1)
             fig.gca().add_artist(test2)
-            fig.gca().add_artist(test_line)
+            fig.gca().add_artist(test_line) # has to go last, otherwise won't show up
 
-        pie_std(90-cw_rot, cw_rot_std, "crimson")
-        pie_std(90+ccw_rot, ccw_rot_std, "royalblue")
+        pie_std(90-cw_rot, cw_rot_std, "crimson")  # 90 - cw_rot is there because of 90 deg rotation of pie from origin
+        pie_std(90+ccw_rot, ccw_rot_std, "royalblue") # 90 + ccw_rot same reason as line above
 
         if include_notes:
             self._plot_notes([cw_a, ccw_a])

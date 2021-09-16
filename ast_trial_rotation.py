@@ -95,7 +95,7 @@ class AstTrialRotation(AstTrial):
     def is_avg_trial(self):
         return False
 
-    def is_rot_trial(self):
+    def is_standing_rot_trial(self):
         return True
 
     def generate_target_line(self, n_samples=100, no_norm=0):

@@ -293,7 +293,9 @@ class AstHandTranslation:
                 t.plot_trial(use_filtered=use_filtered, provide_notes=provide_notes, show_plot=False, save_plot=True)
                 # print(f"Saved: {t.generate_name()}")
 
-    def _make_plot(self, trials, use_filtered=True, stds=False, linestyle="solid"):
+    def _make_plot(self, trials, use_filtered=True, stds=False, linestyle="solid", picky_tlines=False,
+                   td_labels=True, incl_obj_img=True, include_notes=True, plot_contributions=False):
+        # TODO: add new parameters to plot_avg_ast function
         """
         Function to make our plots.
         :param trials: either a list of AsteriskTrialData or AsteriskAverage objs
@@ -303,36 +305,99 @@ class AstHandTranslation:
         # TODO: plot orientation error?
         colors = ["tab:blue", "tab:purple", "tab:red", "tab:olive", "tab:cyan", "tab:green", "tab:pink", "tab:orange"]
 
-        plt.figure(figsize=(7, 7))
+        #plt.figure(figsize=(7, 7))
+        fig = plt.figure(figsize=(7, 7))
+        ax = fig.add_subplot()
+        fig.subplots_adjust(top=0.85)
 
         # get all the averages that we have
-        avg_labels = list()
-        for a in self.averages:  # TODO: what if we have no averages?
-            avg_labels.append(a.trial_translation)
+        dir_labels = set()
+        for a in trials:  # TODO: what if we have no averages?
+            dir_labels.add(a.trial_translation)
 
-        if len(avg_labels) == 8:
+        if picky_tlines and len(dir_labels) < 8:
             # plot target lines as dotted lines
-            self.plot_all_target_lines()
+            self.plot_all_target_lines(specific_lines=list(dir_labels))
         else:
-            self.plot_all_target_lines(specific_lines=avg_labels)
+            self.plot_all_target_lines()
 
         # plot data
         for i, t in enumerate(trials):
             data_x, data_y, theta = t.get_poses(use_filtered)
 
-            plt.plot(data_x, data_y, color=colors[i], label='trajectory', linestyle=linestyle)
+            # ax.plot(data_x, data_y, color=colors[i], label='trajectory', linestyle=linestyle)
+            ax.plot(data_x, data_y, color=aplt.get_dir_color(t.trial_translation),
+                    label='trajectory', linestyle=linestyle)
 
             # plot orientation error
             t._plot_orientations(marker_scale=15, line_length=0.025, scale=1)
 
+            # plot total_distance value in each direction
+            if td_labels:
+                self._add_dist_label(t, ax=ax)
+
             if stds:  # only for AsteriskAverage objs
                 t.plot_sd(colors[i])
 
-        plt.title(f"{self.hand.get_name()} avg asterisk")  # , rot: {trials[0].trial_rotation}")
-        plt.xticks(np.linspace(-0.6, 0.6, 13), rotation=30)
-        plt.yticks(np.linspace(-0.6, 0.6, 13))
+        if include_notes:
+            self._plot_notes(trials, ax=ax)
+
+        if incl_obj_img:
+            self._add_obj_img(self.set_rotation, fig)
+
+        if plot_contributions:
+            for a in trials:
+                a._plot_line_contributions()
+
+        fig.suptitle(f"{self.hand.get_name()}, {self.set_rotation} Avg Asterisk", fontweight="bold", fontsize=14)
+        ax.set_title("Cube size: ~0.25 span, init pos: 0.75 depth")  #, pad=10)
+        #plt.title(f"{self.hand.get_name()} avg asterisk")  # , rot: {trials[0].trial_rotation}")
+        ax.axis([-0.7, 0.7, -0.7, 0.7])
+        ax.tick_params(axis="x", rotation=30)
+        # plt.xticks(np.linspace(-0.7, 0.7, 15), rotation=30)
+        # plt.yticks(np.linspace(-0.7, 0.7, 15))
         plt.gca().set_aspect('equal', adjustable='box')
         return plt
+
+    def _add_dist_label(self, atrial, ax=None):
+        """  # TODO: move to data_plotting
+        Makes a text object appear at the head of the target line
+        """
+        modifiers = dict(a=(0, 1), b=(1, 1), c=(1, 0), d=(1, -1), e=(0, -1), f=(-1, -1), g=(-1, 0), h=(-1, 1))
+
+        #for t in trial:
+        xt, yt = aplt.get_direction(atrial.trial_translation, n_samples=2)
+        print(f"{atrial.trial_translation} => [{xt[1]}, {yt[1]}]")
+
+        # get the spacing just right for the labels
+        if atrial.trial_translation in ["b", "d", "f", "h"]:
+            x_plt = xt[1] + np.abs(xt[1]) * 0.1 * modifiers[atrial.trial_translation][0] + 0.05 * modifiers[atrial.trial_translation][0]
+            y_plt = yt[1] + np.abs(yt[1]) * 0.1 * modifiers[atrial.trial_translation][1]
+        elif atrial.trial_translation in ["a", "c", "e", "g"]:
+            x_plt = xt[1] + np.abs(xt[1]) * 0.1 * modifiers[atrial.trial_translation][0] + 0.03 * modifiers[atrial.trial_translation][0]
+            y_plt = yt[1] + np.abs(yt[1]) * 0.1 * modifiers[atrial.trial_translation][1] + 0.03 * modifiers[atrial.trial_translation][1]
+        else:
+            print("Else triggered incorrectly.")
+            x_plt = xt[1] + np.abs(xt[1]) * 0.1 * modifiers[atrial.trial_translation][0]
+            y_plt = yt[1] + np.abs(yt[1]) * 0.1 * modifiers[atrial.trial_translation][1]
+
+        print(f"{atrial.trial_translation} => [{x_plt}, {y_plt}]")
+
+        ax.text(x_plt, y_plt, f"{atrial.trial_translation}: {np.round(atrial.total_distance, 2)}",
+                style='italic', ha='center', va='center',
+                bbox={'facecolor': 'white', 'alpha': 0.75, 'pad': 2}
+                )
+
+    def _add_obj_img(self, rotation, fig):
+        """  # TODO: move to AsteriskPlotting
+        Plots a small image which illustrates the AstHandTranslation.set_rotation value
+        """
+        img_locs = dict(n="resources/cube_n.jpg", m15="resources/cube_m15.jpg", p15="resources/cube_p15.jpg")
+
+        im = plt.imread(img_locs[rotation])
+        newax = fig.add_axes([0.85, 0.85, 0.15, 0.15], anchor='NE', zorder=0)
+        newax.imshow(im)
+        newax.axis('off')
 
     def plot_ast_subset(self, subjects, trial_number="1", show_plot=True, save_plot=False):
         """
@@ -360,7 +425,8 @@ class AstHandTranslation:
             # TODO: have an ability to plot a single average trial
 
     def plot_ast_avg(self, subjects=None, show_plot=True, save_plot=False, include_notes=True,
-                     linestyle="solid", plot_contributions=False, exclude_path_labels=None):
+                     linestyle="solid", plot_contributions=False, exclude_path_labels=None,
+                     picky_tlines=False, td_labels=True, incl_obj_img=True):
         """
         Plots the data from one subject, averaging all of the data in each direction
         :param subjects: list of subjects. If none is provided, uses all of them
@@ -384,18 +450,13 @@ class AstHandTranslation:
             subjects = self.subjects_containing
             avgs = self.calc_averages(subjects=subjects, exclude_path_labels=exclude_path_labels)
 
-        plt = self._make_plot(avgs, use_filtered=False, stds=True, linestyle=linestyle)
-
-        if include_notes:
-            self._plot_notes(avgs)
-
-        if plot_contributions:
-            for a in avgs:
-                a._plot_line_contributions()
+        plt = self._make_plot(avgs, use_filtered=False, stds=True, linestyle=linestyle, include_notes=include_notes,
+                              picky_tlines=picky_tlines, td_labels=td_labels,
+                              incl_obj_img=incl_obj_img, plot_contributions=plot_contributions)
 
         # TODO: add orientation markers to each line so we have some idea of orientation along the path
         # TODO: add attributes for object shape, size, and initial position!
-        plt.title(f"Avg {self.hand.get_name()}, {subjects}, {self.set_rotation} \n Cube (0.25 span), 0.75 depth init pos")
+        #plt.title(f"Avg {self.hand.get_name()}, {subjects}, {self.set_rotation} \n Cube (0.25 span), 0.75 depth init pos")
 
         if save_plot:
             plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{self.set_rotation}.jpg", format='jpg')
@@ -408,9 +469,9 @@ class AstHandTranslation:
             # plt.legend()  # TODO: showing up weird, need to fix
             plt.show()
 
-    def _plot_notes(self, trials):  # TODO: move to aplt, make it take in a list of labels so HandTranslation can also use it
+    def _plot_notes(self, trials, ax):  # TODO: move to aplt, make it take in a list of labels so HandTranslation can also use it
         """
-        Plots the labels and trial ID in the upper left corner of the plot
+        Plots the labels and trial ID in the bottom left corner of the plot
         """
         note = "Labels in plotted data:"
 
@@ -422,9 +483,9 @@ class AstHandTranslation:
         for l in list(labels):
             note = f"{note} {l} |"
 
-        ax = plt.gca()
+        #ax = plt.gca()
         # plt.text(0.1, 0.2, self.generate_name()) #, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
-        plt.text(-0.1, 1.1, note, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
+        ax.text(-0.1, -0.12, note, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
 
     def plot_all_target_lines(self, specific_lines=None):
         """

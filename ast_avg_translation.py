@@ -143,7 +143,7 @@ class AveragedTrial(AstBasicData):
     def is_avg_trial(self):
         return True
 
-    def is_rot_trial(self):
+    def is_standing_rot_trial(self):
         return False
 
     def add_trial(self, trial, rerun_avg=True):
