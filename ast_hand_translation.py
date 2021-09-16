@@ -336,8 +336,8 @@ class AstHandTranslation:
             if td_labels:
                 self._add_dist_label(t, ax=ax)
 
-            if stds:  # only for AsteriskAverage objs
-                t.plot_sd(colors[i])
+            if stds and t.is_avg_trial():  # only for AsteriskAverage objs
+                t.plot_sd(aplt.get_dir_color(t.trial_translation))
 
         if include_notes:
             self._plot_notes(trials, ax=ax)

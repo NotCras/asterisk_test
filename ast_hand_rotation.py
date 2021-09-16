@@ -285,7 +285,7 @@ class AstHandRotation(AstHandTranslation):
         pie_std(90+ccw_rot, ccw_rot_std, "royalblue") # 90 + ccw_rot same reason as line above
 
         if include_notes:
-            self._plot_notes([cw_a, ccw_a])
+            self._plot_notes([cw_a, ccw_a], ax=ax)
 
         self._plot_translations(cw_a, ccw_a)
 
@@ -293,7 +293,8 @@ class AstHandRotation(AstHandTranslation):
         ax.axis('equal')
         # plt.tight_layout()
 
-        plt.title(f"Avg {self.hand.get_name()}, {subjects}, standing rotations \n Cube (0.25 span), 0.75 depth init pos", fontweight='bold')
+        fig.suptitle(f"Avg {self.hand.get_name()}, Standing Rotations", fontweight='bold')
+        ax.set_title("Cube size: ~0.25 span, init pos: 0.75 depth")  #, pad=10)
 
         if save_plot:
             plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_standing_rotations.jpg", format='jpg')
