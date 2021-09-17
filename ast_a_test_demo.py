@@ -7,7 +7,7 @@ from pathlib import Path
 from ast_hand_translation import AstHandTranslation
 from ast_hand_rotation import AstHandRotation
 from ast_study import AstStudyTrials
-from ast_aruco import batch_aruco_analysis
+from ast_aruco import AstAruco
 from metric_analyzers import AstHandAnalyzer
 from alive_progress import alive_bar
 import data_manager as datamanager
@@ -32,12 +32,12 @@ def run_ast_study():
     hand_names = ["2v2", "2v3", "3v3", "barrett",  "m2active", "m2stiff", "basic", "modelvf"]
     # ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"] # "m2stiff",
     rotation_conditions = ["n", "m15", "p15"]
-    run_aruco = True
+    run_aruco = False
     run_metric_analysis = True
     run_translations = True  # TODO: need to edit num of entries calculation to consider this
     run_standing_rotations = True
 
-    # failed_files = []  # TODO: make a log of everything that happens when data is run
+    # failed_files = []  # TODO: make a log of everything that happens when data is run using logging library
 
     # [item for item in x if item not in y]
     # z = len(list(set(x) - set(y)))
@@ -54,7 +54,7 @@ def run_ast_study():
     # if we are doing aruco analysis, then multiply everything by 2 because we have to aruco analyze all of those trials
 
     if run_aruco:
-        entries = 2 * num_calculation_sets
+        entries = num_calculation_sets + len(hand_names) # for aruco running
     else:
         entries = num_calculation_sets
 
@@ -67,7 +67,7 @@ def run_ast_study():
             if run_aruco:
                 print(f"Analyzing aruco codes on {h} viz data...")
                 for s in subjects:
-                    batch_aruco_analysis(s, h, no_rotations=False, home=home_directory, indices=False, crop=False)
+                    AstAruco.batch_aruco_analysis(s, h, no_rotations=False, home=home_directory, indices=False, crop=False)
                 bar()
 
             if run_translations:

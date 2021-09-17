@@ -258,8 +258,9 @@ class AstHandRotation(AstHandTranslation):
                   f"{str(int(ccw_rot))}{chr(176)}{chr(177)}{str(int(ccw_rot_std))}", ""]  # "not rotated"]
 
         colors = ["crimson", "royalblue", "whitesmoke"]
+        # colors = [(244./255., 178./255., 191./255.), (193./255., 205./255., 245./255.), "whitesmoke"]
 
-        ax.pie(data, colors=colors, labels=labels, labeldistance=1.05, wedgeprops=dict(width=0.3, alpha=0.5),
+        ax.pie(data, colors=colors, labels=labels, labeldistance=1.05, wedgeprops=dict(width=0.2, alpha=1.0),
                startangle=90 - cw_rot, counterclock=True,
                textprops=dict(color="darkslategrey", size=12, weight="bold",
                # rotation_mode = 'anchor', va='center', ha='center'
@@ -272,17 +273,19 @@ class AstHandRotation(AstHandTranslation):
 
         # draw standard deviations
         def pie_std(ang, std, color):
-            test_line = Wedge((0, 0), 1, ang - 0.05, ang + 0.05, width=0.3, color="black", alpha=1)
-            test1 = Wedge((0, 0), 1, ang - std, ang, width=0.3, color=color, alpha=1)
-            test2 = Wedge((0, 0), 1, ang, ang + std, width=0.3, color=color, alpha=1)
+            test_line = Wedge((0, 0), 1, ang - 0.05, ang + 0.05, width=0.2, color="black", alpha=1)
+            test1 = Wedge((0, 0), 1, ang - std, ang, width=0.2, color=color, alpha=1)
+            test2 = Wedge((0, 0), 1, ang, ang + std, width=0.2, color=color, alpha=1)
 
             fig = plt.gcf()
             fig.gca().add_artist(test1)
             fig.gca().add_artist(test2)
             fig.gca().add_artist(test_line) # has to go last, otherwise won't show up
 
-        pie_std(90-cw_rot, cw_rot_std, "crimson")  # 90 - cw_rot is there because of 90 deg rotation of pie from origin
-        pie_std(90+ccw_rot, ccw_rot_std, "royalblue") # 90 + ccw_rot same reason as line above
+        # light crimson -> Cupid #F4B2BF, RGB = 244	178	191
+        pie_std(90-cw_rot, cw_rot_std, (244./255., 178./255., 191./255.))  # 90 - cw_rot is there because of 90 deg rotation of pie from origin
+        # light royal blue -> Periwinkle #C1CDF5, RGB = 193	205	245
+        pie_std(90+ccw_rot, ccw_rot_std, (193./255., 205./255., 245./255.)) # 90 + ccw_rot same reason as line above
 
         if include_notes:
             self._plot_notes([cw_a, ccw_a], ax=ax)
@@ -317,7 +320,7 @@ class AstHandRotation(AstHandTranslation):
         # plt.plot(line2_x, line2_y, color="royalblue")
 
         # plot target lines
-        target_line_dist = 0.5
+        target_line_dist = 0.7
 
         line_a_x = [0, 0]
         line_a_y = [0, target_line_dist]

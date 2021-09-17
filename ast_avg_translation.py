@@ -324,7 +324,7 @@ class AveragedTrial(AstBasicData):
             tmags.append(avg_tmag)
 
         # go through all the averages, at each point calculate the average deviation
-        for i in range(0, len(avg_pts)):
+        for i in range(len(avg_pts)):
             avg_pt = avg_pts.iloc[i]
             # get the points
             prev_avg, next_avg = self._get_prev_avgs(i, avg_pts, avg_pt)

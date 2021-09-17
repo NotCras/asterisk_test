@@ -367,7 +367,7 @@ class AstHandTranslation:
 
         #for t in trial:
         xt, yt = aplt.get_direction(atrial.trial_translation, n_samples=2)
-        print(f"{atrial.trial_translation} => [{xt[1]}, {yt[1]}]")
+        # print(f"{atrial.trial_translation} => [{xt[1]}, {yt[1]}]")
 
         # get the spacing just right for the labels
         if atrial.trial_translation in ["b", "d", "f", "h"]:
@@ -381,11 +381,11 @@ class AstHandTranslation:
             x_plt = xt[1] + np.abs(xt[1]) * 0.1 * modifiers[atrial.trial_translation][0]
             y_plt = yt[1] + np.abs(yt[1]) * 0.1 * modifiers[atrial.trial_translation][1]
 
-        print(f"{atrial.trial_translation} => [{x_plt}, {y_plt}]")
+        # print(f"{atrial.trial_translation} => [{x_plt}, {y_plt}]")
 
         ax.text(x_plt, y_plt, f"{atrial.trial_translation}: {np.round(atrial.total_distance, 2)}",
-                style='italic', ha='center', va='center',
-                bbox={'facecolor': 'white', 'alpha': 0.75, 'pad': 2}
+                style='italic', ha='center', va='center'
+                #bbox={'facecolor': 'white', 'alpha': 0.75, 'pad': 2}
                 )
 
     def _add_obj_img(self, rotation, fig):
@@ -395,7 +395,7 @@ class AstHandTranslation:
         img_locs = dict(n="resources/cube_n.jpg", m15="resources/cube_m15.jpg", p15="resources/cube_p15.jpg")
 
         im = plt.imread(img_locs[rotation])
-        newax = fig.add_axes([0.85, 0.85, 0.15, 0.15], anchor='NE', zorder=0)
+        newax = fig.add_axes([0.07, 0.86, 0.12, 0.12], anchor='NW', zorder=0)
         newax.imshow(im)
         newax.axis('off')
 

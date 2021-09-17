@@ -438,6 +438,7 @@ class AstTrial(AstBasicData):
 
         self.controller_label = controller_label  # TODO: integrate controller label into the plot title
 
+        self.normalized = norm_data
         self.filtered = False
         self.window_size = 0
 
