@@ -144,7 +144,7 @@ def run_ast_study():
                                 # TODO: can we do AvgRotation with avg line metrics?
 
                                 print("Saving metric data...")
-                                results.save_data(file_name_overwrite=f"{h}_{rot}")
+                                results.save_data(file_name_overwrite=f"{h}_{rot}_rots")
 
                             bar()
 
