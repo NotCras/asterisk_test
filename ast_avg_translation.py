@@ -6,7 +6,8 @@ import numpy as np
 from numpy import sqrt, mean, std
 import pandas as pd
 import matplotlib.pyplot as plt
-from ast_trial import AstBasicData, AstTrial
+from ast_trial import AstTrial
+from ast_basic import AstBasicData
 from ast_hand_info import HandInfo
 from data_plotting import AsteriskPlotting
 from data_calculations import AsteriskCalculations
@@ -67,6 +68,7 @@ class AveragedTrial(AstBasicData):
         rotations = set()
         numbers = set()
         controllers = set()
+        normalized = set()
 
         # if we have trials to average, then go through them and pull out the relevant info
         if self.averaged_trialset:
@@ -78,6 +80,7 @@ class AveragedTrial(AstBasicData):
                 rotations.add(a.trial_rotation)
                 numbers.add(a.trial_num)
                 controllers.add(a.controller_label)  # TODO: need to add removal of Nones in each set
+                normalized.add(a.normalized)
 
         if not self._set_check(subject, subjects) or not self._set_check(translation, translations) or \
                 not self._set_check(rotation, rotations) or not self._set_check(controller, controllers):
@@ -110,10 +113,17 @@ class AveragedTrial(AstBasicData):
         if len(controllers) > 1:
             print("there is more than one translation here!")
             single_c = "x"
-        elif len(controllers) == 0:
+        elif len(controllers) == 1:
             single_c = list(controllers)[0]
         else:
             single_c = ""
+
+        if len(normalized) > 1:
+            print("there's a mix of normalized and un-normalized data here!")
+            # TODO: throw error?
+            single_n = "x"
+        else:
+            single_n = list(normalized)[0]
 
         self.subject = subjects
         self.names = names
@@ -122,6 +132,7 @@ class AveragedTrial(AstBasicData):
         self.trial_rotation = single_r
         self.trial_num = numbers  # no real need for this?
         self.controller_label = single_c
+        self.normalized = single_n
 
     def generate_name(self):
         """
@@ -252,7 +263,14 @@ class AveragedTrial(AstBasicData):
             data_points = data_points.append(t.poses)  # put all poses in one dataframe for easy access
 
         # rotate the line so we can do everything based on the x axis. Yes, I know this is hacky
+
+
         r_target_x, r_target_y = AsteriskPlotting.get_c(sample_points)
+
+        if not self.normalized:
+            r_target_x = r_target_x*100  # units are in millimeters, so we end up with the potential for 10 cm of movement
+            r_target_y = r_target_y*100  # may need to keep an eye on this one fyi TODO
+
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
 
         if self.trial_translation == "x":
@@ -276,7 +294,7 @@ class AveragedTrial(AstBasicData):
         correct_avg = AsteriskCalculations.rotate_points(avg_line, -1 * self.rotations[self.trial_translation])
         self.poses = correct_avg
 
-        self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
+        self.target_line, self.total_distance = self.generate_target_line(100, self.normalized)  # 100 samples
         self.target_rotation = self.generate_target_rot()  # TODO: doesn't work for true cw and ccw yet
 
         if show_debug and not calc_ad:
@@ -300,7 +318,7 @@ class AveragedTrial(AstBasicData):
                           show_pt_debug=False, use_filtered_data=False, use_filtered=False):
         """
         Goes through our set of averages and calculates the average deviation of the trials for each avg point
-        """
+        """  # TODO: still doesn't work right when calculating avg dev on lines that are not normalized
         if not self.averaged_trialset or self.poses is None:
             self.calculate_avg_line(use_filtered_data=use_filtered_data)
 
@@ -312,6 +330,11 @@ class AveragedTrial(AstBasicData):
                                                          use_filtered=use_filtered)
 
         r_target_x, r_target_y = AsteriskPlotting.get_c(sample_points)
+
+        if not self.normalized:
+            r_target_x = r_target_x*100  # units are in millimeters, so we end up with the potential for 10 cm of movement
+            r_target_y = r_target_y*100  # may need to keep an eye on this one fyi TODO
+
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
 
         # calculate the average magnitude that each point is away from the average line
@@ -672,40 +695,42 @@ class AveragedTrial(AstBasicData):
 if __name__ == '__main__':
     # demo and test
     h = "2v2"
-    t = "d"
-    r = "p15"
+    t = "c"
+    r = "n"
     w = 10
-    test1 = AstTrial(f'sub1_{h}_{t}_{r}_1.csv')
+    normed = False
+
+    test1 = AstTrial(f'sub1_{h}_{t}_{r}_1.csv', norm_data=normed)
     test1.moving_average(window_size=w)
-    test2 = AstTrial(f'sub1_{h}_{t}_{r}_2.csv')
+    test2 = AstTrial(f'sub1_{h}_{t}_{r}_2.csv', norm_data=normed)
     test2.moving_average(window_size=w)
-    test3 = AstTrial(f'sub1_{h}_{t}_{r}_3.csv')
+    test3 = AstTrial(f'sub1_{h}_{t}_{r}_3.csv', norm_data=normed)
     test3.moving_average(window_size=w)
-    test4 = AstTrial(f'sub1_{h}_{t}_{r}_4.csv')
+    test4 = AstTrial(f'sub1_{h}_{t}_{r}_4.csv', norm_data=normed)
     test4.moving_average(window_size=w)
-    test5 = AstTrial(f'sub1_{h}_{t}_{r}_5.csv')
+    test5 = AstTrial(f'sub1_{h}_{t}_{r}_5.csv', norm_data=normed)
     test5.moving_average(window_size=w)
 
-    test6 = AstTrial(f'sub2_{h}_{t}_{r}_1.csv')
+    test6 = AstTrial(f'sub2_{h}_{t}_{r}_1.csv', norm_data=normed)
     test6.moving_average(window_size=w)
-    test7 = AstTrial(f'sub2_{h}_{t}_{r}_2.csv')
+    test7 = AstTrial(f'sub2_{h}_{t}_{r}_2.csv', norm_data=normed)
     test7.moving_average(window_size=w)
-    test8 = AstTrial(f'sub2_{h}_{t}_{r}_3.csv')
+    test8 = AstTrial(f'sub2_{h}_{t}_{r}_3.csv', norm_data=normed)
     test8.moving_average(window_size=w)
-    test9 = AstTrial(f'sub2_{h}_{t}_{r}_4.csv')
+    test9 = AstTrial(f'sub2_{h}_{t}_{r}_4.csv', norm_data=normed)
     test9.moving_average(window_size=w)
-    test10 = AstTrial(f'sub2_{h}_{t}_{r}_5.csv')
+    test10 = AstTrial(f'sub2_{h}_{t}_{r}_5.csv', norm_data=normed)
     test10.moving_average(window_size=w)
 
-    test11 = AstTrial(f'sub3_{h}_{t}_{r}_1.csv')
+    test11 = AstTrial(f'sub3_{h}_{t}_{r}_1.csv', norm_data=normed)
     test11.moving_average(window_size=w)
-    test12 = AstTrial(f'sub3_{h}_{t}_{r}_2.csv')
+    test12 = AstTrial(f'sub3_{h}_{t}_{r}_2.csv', norm_data=normed)
     test12.moving_average(window_size=w)
-    test13 = AstTrial(f'sub3_{h}_{t}_{r}_3.csv')
+    test13 = AstTrial(f'sub3_{h}_{t}_{r}_3.csv', norm_data=normed)
     test13.moving_average(window_size=w)
-    test14 = AstTrial(f'sub3_{h}_{t}_{r}_4.csv')
+    test14 = AstTrial(f'sub3_{h}_{t}_{r}_4.csv', norm_data=normed)
     test14.moving_average(window_size=w)
-    test15 = AstTrial(f'sub3_{h}_{t}_{r}_5.csv')
+    test15 = AstTrial(f'sub3_{h}_{t}_{r}_5.csv', norm_data=normed)
     test15.moving_average(window_size=w)
 
     #test16 = AstTrial(f'sub1_2v2_c_n_1.csv')
