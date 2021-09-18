@@ -197,7 +197,7 @@ if __name__ == "__main__":
         i = index == 'y'
         c = crop == 'y'  # TODO: work on reducing number of prompts?
 
-        single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=home_directory, indices=i, crop=c)
+        AstAruco.single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=home_directory, indices=i, crop=c)
 
     elif ans == "3":
         r = datamanager.smart_input("Should we include trials with rotations? ", "consent")
@@ -208,7 +208,7 @@ if __name__ == "__main__":
         i = index == 'y'
         c = crop == 'y'
 
-        batch_aruco_analysis(subject, hand, no_rotations=rots, home=home_directory, indices=i, crop=c)
+        AstAruco.batch_aruco_analysis(subject, hand, no_rotations=rots, home=home_directory, indices=i, crop=c)
 
     elif ans == "4":
         pass

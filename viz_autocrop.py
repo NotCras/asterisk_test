@@ -113,3 +113,6 @@ class ArucoAutoCrop:
         print(f"cropped indices => start:{c_max_is[0]} | end:{c_max_is[1]}")
 
         return c_max_is[0], c_max_is[1], c_max_dist, c_min_di
+
+if __name__ == "__main__":
+    home_directory = Path(__file__).parent.absolute()

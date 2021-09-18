@@ -176,3 +176,6 @@ class ArucoPoseDetect:
         """
         # pdb.set_trace()
         self.est_poses.plot(x="x", y="y")
+
+if __name__ == "__main__":
+    home_directory = Path(__file__).parent.absolute()

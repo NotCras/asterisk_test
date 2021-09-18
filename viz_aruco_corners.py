@@ -2,6 +2,7 @@
 from pathlib import Path
 from cv2 import aruco
 from viz_index_helper import ArucoIndices
+from viz_autocrop import ArucoAutoCrop
 import cv2
 import numpy as np
 import pandas as pd
@@ -265,7 +266,22 @@ if __name__ == "__main__":
     file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
     folder_path = f"{file_name}/"
 
-    b_idx, e_idx = ArucoIndices.get_indices(file_name)
+    index = datamanager.smart_input("Should we search for stored index values (start & end)", "consent")
+
+    i = index == 'y'
+
+    if i:
+        try:
+            b_idx, e_idx = ArucoIndices.get_indices(file_name)
+        except:
+            e_idx = None
+            b_idx = 0
+            c = True
+
+    else:  # TODO: make more straightforward later
+        e_idx = None
+        b_idx = 0
+
     trial = ArucoVision(folder_path, begin_idx=b_idx, end_idx=e_idx)
 
     trial.filter_corners(window_size=4)  # window size 4 might be better? Very small lag
