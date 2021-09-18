@@ -10,30 +10,25 @@ Four classes for asterisk test aruco analysis:
 ----- one for single trial analysis, and another for batches of trials
 @author: kartik (original), john (major edits, cleaning/refactoring, indices/autocropper)
 """
-import numpy as np
 import sys, os, time, pdb
-import cv2
 import pandas as pd
 import matplotlib.pyplot as plt
 import data_manager as datamanager
-from cv2 import aruco
 from pathlib import Path
-from math import isclose
-from matplotlib.widgets import Slider, Button
 from viz_index_helper import ArucoIndices
 from viz_aruco_corners import ArucoVision
 from viz_aruco_pose import ArucoPoseDetect
 from viz_autocrop import ArucoAutoCrop
 
-# TODO: what should I do with these functions? Make an AstAruco class?
 class AstAruco:
-    @staticmethod
-    def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=None, indices=True, crop=True):
-        # TODO: add considerations of home folder
-        file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
-        folder_path = f"{file_name}/"
 
-        if indices:
+    @staticmethod
+    def assess_indices(file_name, do_indices=True, do_cropping=True):
+        """
+        The logic for determining whether we can get the indices from a file (then we don't have to use the autocropper).
+        If it fails, it handles the default index values.
+        """
+        if do_indices:
             try:
                 b_idx, e_idx = ArucoIndices.get_indices(file_name)
                 needs_cropping = False
@@ -48,26 +43,51 @@ class AstAruco:
             b_idx = 0
             needs_cropping = True
 
-        if not crop:
+        if not do_cropping:
             needs_cropping = False
 
+        return b_idx, e_idx, needs_cropping
+
+    @staticmethod
+    def aruco_analysis(file_name, begin_idx, end_idx):
         try:
             # print(f"Needs cropping: {needs_cropping}")
-            trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
+            trial = ArucoVision(file_name, begin_idx=begin_idx, end_idx=end_idx)
             trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
             print(f"Completed Aruco Analysis for: {file_name}")
+            return trial_pose
 
         except Exception as e:
             print(e)
             print(f"Failed Aruco Analysis for: {file_name}")  # TODO: be more descriptive about where the error happened
-            return
+            return None
+
+    @staticmethod
+    def run_autocrop(trial_pose, r):
+        if r in ['cw', 'ccw']:
+            trial_cropped = ArucoAutoCrop(trial_pose, standing_rotation=True)
+        else:
+            trial_cropped = ArucoAutoCrop(trial_pose)
+
+        return trial_cropped
+
+    @staticmethod
+    def single_aruco_analysis(subject, hand, translation, rotation, trial_num, home=None, indices=True, crop=True):
+        # TODO: add considerations of home folder
+        file_name = f"{subject}_{hand}_{translation}_{rotation}_{trial_num}"
+        folder_path = f"{file_name}/"
+
+        b_idx, e_idx, needs_cropping = AstAruco.assess_indices(file_name, do_indices=indices, do_cropping=crop)
+
+        # the aruco pipeline to get poses
+        trial_pose = AstAruco.aruco_analysis(file_name, b_idx, e_idx)
+
+        if trial_pose is None:
+            return  # aruco failed, exit here
 
         try:
             if needs_cropping:
-                if r in ['cw', 'ccw']:
-                    trial_cropped = ArucoAutoCrop(trial_pose, only_rotation=True)
-                else:
-                    trial_cropped = ArucoAutoCrop(trial_pose)
+                trial_cropped = AstAruco.run_autocrop(trial_pose, rotation)
 
                 trial_cropped.save_poses()
             else:
@@ -91,29 +111,12 @@ class AstAruco:
             # data_path = inner_path
             print(folder_path)
 
-            if indices:
-                try:
-                    b_idx, e_idx = ArucoIndices.get_indices(file_name)
-                    needs_cropping = False
-                except:
-                    e_idx = None
-                    b_idx = 0
-                    needs_cropping = True
+            b_idx, e_idx, needs_cropping = AstAruco.assess_indices(file_name, do_indices=indices, do_cropping=crop)
 
-            else:  # TODO: make more straightforward later
-                e_idx = None
-                b_idx = 0
-                needs_cropping = True
+            # the aruco pipeline to get poses
+            trial_pose = AstAruco.aruco_analysis(file_name, b_idx, e_idx)
 
-            if not crop:
-                needs_cropping = False
-
-            try:
-                trial = ArucoVision(file_name, begin_idx=b_idx, end_idx=e_idx)
-                trial_pose = ArucoPoseDetect(trial, filter_corners=True, filter_window=4)
-
-            except Exception as e:
-                print(e)
+            if trial_pose is None:
                 files_covered.append(f"FAILED: {file_name}")
                 files_df = files_df.append({"name": file_name, "start_i": -1, "end_i": -1}, ignore_index=True)
                 continue
@@ -122,10 +125,7 @@ class AstAruco:
                 if needs_cropping:
                     print("Running Autocropper!")
 
-                    if r in ['cw', 'ccw']:
-                        trial_cropped = ArucoAutoCrop(trial_pose, only_rotation=True)
-                    else:
-                        trial_cropped = ArucoAutoCrop(trial_pose)
+                    trial_cropped = AstAruco.run_autocrop(file_name, r)
 
                     trial_cropped.save_poses()
                     s, e = trial_cropped.get_autocrop_indices()
@@ -165,7 +165,7 @@ if __name__ == "__main__":
             6 - use a helper to find index values for a certain trial
         """)
 
-    ans = datamanager.smart_input("Enter a function", "mode", ["1", "2", "3", "4", "5", "6"])
+    ans = datamanager.smart_input("Enter a function", "mode", ["1", "2", "3"])
     subject = datamanager.smart_input("Enter subject name: ", "subjects")
     hand = datamanager.smart_input("Enter name of hand: ", "hands")
 
@@ -209,14 +209,3 @@ if __name__ == "__main__":
         c = crop == 'y'
 
         AstAruco.batch_aruco_analysis(subject, hand, no_rotations=rots, home=home_directory, indices=i, crop=c)
-
-    elif ans == "4":
-        pass
-
-    elif ans == "5":
-        pass
-    elif ans == "6":
-        pass
-
-
-

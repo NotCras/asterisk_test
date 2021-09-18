@@ -1,12 +1,14 @@
+from pathlib import Path
 import numpy as np
 
+
 class ArucoAutoCrop:
-    def __init__(self, apose_obj, only_rotation=False):
+    def __init__(self, apose_obj, standing_rotation=False):
         self.pose_obj = apose_obj
         self.trial_data = apose_obj.est_poses
 
         print("Running autocropper!")
-        self.start_i, self.end_i, self.cropped_path_dist, _ = self.auto_crop(only_rotation=only_rotation)
+        self.start_i, self.end_i, self.cropped_path_dist, _ = self.autocrop_movement(standing_rotation=standing_rotation)
         # TODO: make separate object for ArucoAutoCropRotation?
 
         self.cropped_poses = self.trial_data.loc[self.start_i:self.end_i]
@@ -60,7 +62,13 @@ class ArucoAutoCrop:
             for i2 in range(i1 + 1, data_size):
                 yield i1, i2
 
-    def auto_crop(self, only_rotation=False):
+    def autocrop_initial_rotation(self, desired_rotation, theshold=6):
+        """
+        Finds the point where the desired rotation is reached (within the threshold)
+        """
+        pass  # TODO: work on this function later
+
+    def autocrop_movement(self, standing_rotation=False):
         """
         Crops an image trial automatically, but finding the largest distance travelled in the smallest range of index
         :param df_data
@@ -78,7 +86,7 @@ class ArucoAutoCrop:
             d2 = self.trial_data.iloc[i2]
 
             # the distance between the sampled points
-            if only_rotation:
+            if standing_rotation:
                 i_dist = np.sqrt((d2['rmag']-d1['rmag'])**2)
             else:
                 i_dist = np.sqrt((d2['x']-d1['x'])**2 + (d2['y']-d1['y'])**2)  # + (d2['rmag'] - d1['rmag'])**2)
@@ -113,6 +121,7 @@ class ArucoAutoCrop:
         print(f"cropped indices => start:{c_max_is[0]} | end:{c_max_is[1]}")
 
         return c_max_is[0], c_max_is[1], c_max_dist, c_min_di
+
 
 if __name__ == "__main__":
     home_directory = Path(__file__).parent.absolute()
