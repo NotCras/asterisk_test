@@ -230,11 +230,11 @@ class AstHandRotation(AstHandTranslation):
             for a in self.averages:
                 if a.direction == "cw":
                     cw_a = a
-                    cw_rot = a.max_rot[0]
+                    cw_rot = np.abs(a.max_rot[0])
                     cw_rot_std = a.max_rot[1]
                 elif a.direction == "ccw":
                     ccw_a = a
-                    ccw_rot = a.max_rot[0]
+                    ccw_rot = np.abs(a.max_rot[0])
                     ccw_rot_std = a.max_rot[1]
                 else:
                     # TODO: throw an error here?
@@ -245,13 +245,14 @@ class AstHandRotation(AstHandTranslation):
 
         else:
             cw_a = self._average_dir("cw", subject=subjects)
-            cw_rot = cw_a.max_rot[0]
+            cw_rot = np.abs(cw_a.max_rot[0])
             cw_rot_std = cw_a.max_rot[1]
 
             ccw_a = self._average_dir("ccw", subject=subjects)
-            ccw_rot = ccw_a.max_rot[0]
+            ccw_rot = np.abs(ccw_a.max_rot[0])
             ccw_rot_std = ccw_a.max_rot[1]
 
+        print(f"Values!!! cw: {cw_rot}, ccw: {ccw_rot}")
         data = [cw_rot, ccw_rot, 360 - cw_rot - ccw_rot]  # TODO: is there some way to add standard deviations?
 
         labels = [f"{str(int(cw_rot))}{chr(176)}{chr(177)}{str(int(cw_rot_std))}",

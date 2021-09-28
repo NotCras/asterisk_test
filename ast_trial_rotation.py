@@ -18,6 +18,7 @@ class AstTrialRotation(AstTrial):
                  controller_label=None, do_metrics=True, norm_data=True, condition_data=True):
 
         self.total_distance = 0  # This will be the max rotation value of the trial
+        self.dir = 1  # this will be another way to check cw and ccw
         super().__init__(file_name=file_name, data=data, controller_label=controller_label, do_metrics=do_metrics,
                          condition_data=condition_data, norm_data=norm_data)
 
@@ -104,7 +105,9 @@ class AstTrialRotation(AstTrial):
     def generate_target_rot(self, n_samples=50):
         # make 3d line with rot val from each row in the rmag position, and with 0,0 for each translation
         rotations = self.poses["rmag"]
-        max_rot = max(rotations)
+
+        # if
+        max_rot = max(np.abs(rotations))
 
         target_df = pd.DataFrame(columns=["x", "y", "rmag"])  # in other object its a list
         len_trial = len(rotations)
@@ -141,7 +144,7 @@ class AstTrialRotation(AstTrial):
         #     fig, ax = plt.subplots(figsize=(6, 3), subplot_kw=dict(aspect="equal"))
         #     ax_pie = ax
 
-        rotation_val = self.total_distance
+        rotation_val = np.abs(self.total_distance)
         data = [rotation_val, 360 - rotation_val]
 
         # rounds value to integer value for cleaner labelling on plot

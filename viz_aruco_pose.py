@@ -62,10 +62,29 @@ class ArucoPoseDetect:
                 example 3) angle_between((1, 0, 0), (-1, 0, 0))
                 3.141592653589793
                 *ahem* https://stackoverflow.com/questions/2827393/angles-between-two-n-dimensional-vectors-in-python
+                (look at highest voted answer, then scroll down to sgt_pepper and crizCraig's answer
         """
         v1_u = self.unit_vector(v1)
         v2_u = self.unit_vector(v2)
-        return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
+        minor = np.linalg.det(
+            np.stack((v1_u[-2:], v2_u[-2:]))
+        )
+
+        if minor == 0:
+            sign = 1
+        else:
+            sign = -np.sign(minor)
+        dot_p = np.dot(v1_u, v2_u)
+        dot_p = min(max(dot_p, -1.0), 1.0)
+        return sign * np.arccos(dot_p)
+
+        # # sgt_pepper
+        # if minor == 0:
+        #     raise NotImplementedError('Too odd vectors =(')
+        # return np.sign(minor) * np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+        # # original
+        #return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
     def inverse_perspective(self, rvec, tvec):
         """

@@ -32,7 +32,7 @@ def run_ast_study():
     hand_names = ["2v2", "2v3", "3v3", "barrett",  "m2active", "m2stiff", "basic", "modelvf"]
     # ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"] # "m2stiff",
     rotation_conditions = ["n", "m15", "p15"]
-    run_aruco = False
+    run_aruco = True
     run_metric_analysis = True
     run_translations = True  # TODO: need to edit num of entries calculation to consider this
     run_standing_rotations = True
