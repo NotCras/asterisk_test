@@ -75,6 +75,7 @@ class ArucoPoseDetect:
             sign = 1
         else:
             sign = -np.sign(minor)
+
         dot_p = np.dot(v1_u, v2_u)
         dot_p = min(max(dot_p, -1.0), 1.0)
         return sign * np.arccos(dot_p)

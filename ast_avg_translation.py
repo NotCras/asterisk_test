@@ -268,8 +268,8 @@ class AveragedTrial(AstBasicData):
         r_target_x, r_target_y = AsteriskPlotting.get_c(sample_points)
 
         if not self.normalized:
-            r_target_x = r_target_x*100  # units are in millimeters, so we end up with the potential for 10 cm of movement
-            r_target_y = r_target_y*100  # may need to keep an eye on this one fyi TODO
+            r_target_x = r_target_x*120  # units are in millimeters, so we end up with the potential for 10 cm of movement
+            r_target_y = r_target_y*120  # may need to keep an eye on this one fyi TODO
 
         rotated_target_line = np.column_stack((r_target_x, r_target_y))
 
@@ -286,7 +286,11 @@ class AveragedTrial(AstBasicData):
 
         for i, t in enumerate(rotated_target_line):
             t_x = t[0]
-            points = self._get_points(rotated_data, t_x, 0.5 / sample_points, use_filtered=use_filtered_data)
+            if self.normalized:
+                points = self._get_points(rotated_data, t_x, 0.6 / sample_points, use_filtered=use_filtered_data)
+            else:  # TODO: maybe make window size a parameter or make more elegant?
+                points = self._get_points(rotated_data, t_x, 60 / sample_points, use_filtered=use_filtered_data)
+
             averaged_point = points.mean(axis=0)  # averages each column in DataFrame
 
             avg_line = avg_line.append(averaged_point, ignore_index=True)
@@ -695,7 +699,7 @@ class AveragedTrial(AstBasicData):
 if __name__ == '__main__':
     # demo and test
     h = "2v2"
-    t = "c"
+    t = "a"
     r = "n"
     w = 10
     normed = False
