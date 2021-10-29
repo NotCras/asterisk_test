@@ -238,7 +238,7 @@ def smart_input(prompt, option, valid_options=None):
     """
     Asks for input and continues asking until there is a valid response
     :param prompt: the prompt that you want printed
-    :param option: the option you want the input to choose from,
+:param option: the option you want the input to choose from,
         if not in the options will look at valid_options for option
     :param valid_options: provides the ability to specify your own custom options
     """
@@ -317,8 +317,13 @@ if __name__ == "__main__":
     hand = smart_input("Enter name of hand: ", "hands")
 
     if ans == "1":
-        translation = smart_input("Enter type of translation: ", "translations")
-        rotation = smart_input("Enter type of rotation: ", "rotation_combos")
+        translation = smart_input("Enter type of translation: ", "translations_w_n")
+
+        if translation == "n":
+            rotation = smart_input("Enter type of rotation: ", "rotations_n_trans")
+        else:
+            rotation = smart_input("Enter type of rotation: ", "rotation_combos")
+
         trial_num = smart_input("Enter trial number: ", "numbers")
 
         data_manager.view_images(subject, hand, translation, rotation, trial_num)

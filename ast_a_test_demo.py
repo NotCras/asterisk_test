@@ -32,7 +32,7 @@ def run_ast_study():
     hand_names = ["2v2", "2v3", "3v3", "barrett",  "m2active", "m2stiff", "basic", "modelvf"]
     # ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"] # "m2stiff",
     rotation_conditions = ["n", "m15", "p15"]
-    run_aruco = True
+    run_aruco = False
     run_metric_analysis = True
     run_translations = True  # TODO: need to edit num of entries calculation to consider this
     run_standing_rotations = True
@@ -114,11 +114,11 @@ def run_ast_study():
                         print(f"Considering cw/ccw for {h}...")
                         for rot2 in datamanager.generate_options("rotations_n_trans"):
                             if rot in ["m15", "p15"]:
-                                print(f"Not for {rot} rotation.")
+                                print(f"{rot2} is not for {rot} rotation.")
                                 continue
 
                             if h in datamanager.generate_options("hands_only_n"):
-                                print("... Nope!")
+                                print(f"{rot2}? ... Nope!")
                                 continue
 
                             print(f"Getting {h} ({rot2}) data...")
