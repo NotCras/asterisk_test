@@ -18,7 +18,7 @@ from data_plotting import AsteriskPlotting as aplt
 
 
 class AstHandTranslation:
-    def __init__(self, subjects, hand_name, rotation='n', blocklist_file=None):
+    def __init__(self, subjects, hand_name, rotation='n', blocklist_file=None, normalized_data=True):
         """
         Class to hold all the data pertaining to a specific hand.
         Combines data from all subjects
@@ -34,7 +34,7 @@ class AstHandTranslation:
             blocklist = None
 
         self.set_rotation = rotation
-        self.data = self._gather_hand_data(subjects, blocklist=blocklist)
+        self.data = self._gather_hand_data(subjects, blocklist=blocklist, normalized_data=normalized_data)
         self.filtered = False
         self.window_size = None
         self.averages = []
@@ -53,7 +53,7 @@ class AstHandTranslation:
 
         return blocked_files
 
-    def _gather_hand_data(self, subjects, blocklist=None):
+    def _gather_hand_data(self, subjects, blocklist=None, normalized_data=True):
         """
         Returns a dictionary with the data for the hand, sorted by task.
         Each key,value pair of dictionary is:
@@ -67,7 +67,7 @@ class AstHandTranslation:
             key = f"{t}_{self.set_rotation}"
             data = self._make_asterisk_trials_from_filenames(subjects, t, self.set_rotation,
                                                              datamanager.generate_options("numbers"),
-                                                             blocklist=blocklist)
+                                                             blocklist=blocklist, norm_data=normalized_data)
             if data:
                 data_dictionary[key] = data
                 # pdb.set_trace()
@@ -90,7 +90,8 @@ class AstHandTranslation:
 
         return list_of_dirs
 
-    def _make_asterisk_trials_from_filenames(self, subjects, translation_label, rotation_label, trials, blocklist=None):
+    def _make_asterisk_trials_from_filenames(self, subjects, translation_label, rotation_label, trials,
+                                             blocklist=None, norm_data=True):
         """
         Goes through data and compiles data with set attributes into an AsteriskTrial objects
         :param subjects: name of subject
@@ -110,7 +111,7 @@ class AstHandTranslation:
                     continue
 
                 try:
-                    trial_data = atrial.AstTrial(f"{asterisk_trial}.csv")
+                    trial_data = atrial.AstTrial(f"{asterisk_trial}.csv", norm_data=norm_data)
                     print(f"{trial_data.generate_name()}, labels: {trial_data.path_labels}")
 
                     gathered_data.append(trial_data)

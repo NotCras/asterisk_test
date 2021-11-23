@@ -32,6 +32,7 @@ def run_ast_study():
     hand_names = ["2v2", "2v3", "3v3", "barrett",  "m2active", "m2stiff", "basic", "modelvf"]
     # ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"] # "m2stiff",
     rotation_conditions = ["n", "m15", "p15"]
+    normalize_data = True
     run_aruco = False
     run_metric_analysis = True
     run_translations = True  # TODO: need to edit num of entries calculation to consider this
@@ -76,7 +77,8 @@ def run_ast_study():
                         continue  # skip hands that don't do rotations
 
                     print(f"Getting {h} ({rot}) data...")
-                    data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
+                    data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv",
+                                              normalized_data=normalize_data)
                     # data = study.return_hand(h)
                     bar()
 
