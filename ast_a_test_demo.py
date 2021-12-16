@@ -36,7 +36,10 @@ def run_ast_study():
     run_aruco = False
     run_metric_analysis = True
     run_translations = True  # TODO: need to edit num of entries calculation to consider this
+
     run_standing_rotations = True
+    if normalize_data is False:
+        run_standing_rotations = False
 
     # failed_files = []  # TODO: make a log of everything that happens when data is run using logging library
 

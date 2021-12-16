@@ -15,7 +15,7 @@ class AstHandRotation(AstHandTranslation):
         super().__init__(subjects, hand_name, rotation=None)
         # TODO: is it ok to just leave set_rotation var hanging around?
 
-    def _gather_hand_data(self, subjects, blocklist=None):
+    def _gather_hand_data(self, subjects, blocklist=None, normalized_data=True):
         """
         Returns a dictionary with the data for the hand, sorted by task.
         Each key,value pair of dictionary is:
@@ -29,7 +29,7 @@ class AstHandRotation(AstHandTranslation):
             key = f"n_{r}"
             data = self._make_asterisk_trials_from_filenames(subjects, r,
                                                              datamanager.generate_options("numbers"),
-                                                             blocklist=blocklist)
+                                                             blocklist=blocklist, normalized_data=normalized_data)
             if data:
                 data_dictionary[key] = data
                 # pdb.set_trace()
@@ -39,7 +39,8 @@ class AstHandRotation(AstHandTranslation):
 
         return data_dictionary
 
-    def _make_asterisk_trials_from_filenames(self, subjects, rotation_label, trials, blocklist=None):
+    def _make_asterisk_trials_from_filenames(self, subjects, rotation_label, trials,
+                                             blocklist=None, normalized_data=True):
         """
         Goes through data and compiles data with set attributes into an AsteriskTrial objects
         :param subjects: name of subject
@@ -59,7 +60,7 @@ class AstHandRotation(AstHandTranslation):
                     continue
 
                 try:
-                    trial_data = arot.AstTrialRotation(f"{asterisk_trial}.csv")
+                    trial_data = arot.AstTrialRotation(f"{asterisk_trial}.csv", norm_data=normalized_data)
                     print(f"{trial_data.generate_name()}, labels: {trial_data.path_labels}")
 
                     gathered_data.append(trial_data)
