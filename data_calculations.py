@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pdb
 import matplotlib.pyplot as plt
-from asterisk_plotting import AsteriskPlotting
+from data_plotting import AsteriskPlotting
 
 
 class AsteriskCalculations:
@@ -14,7 +14,7 @@ class AsteriskCalculations:
         pass
 
     @staticmethod
-    def get_points_df(points, x_val, bounds):
+    def points_within_bounds_df(points, x_val, bounds):
         """
         Function which gets all the points that fall in a specific value range in a dataframe
         :param points: list of all points to sort
@@ -31,7 +31,7 @@ class AsteriskCalculations:
         return points_in_bounds
 
     @staticmethod
-    def get_points_list(points, x_val, bounds):
+    def points_within_bounds_list(points, x_val, bounds):
         """
         Get points in a list that fall within the bounds
         """
@@ -46,23 +46,41 @@ class AsteriskCalculations:
             if lo_val <= p_x <= hi_val:
                 points_in_bounds.append([p_x, p_y])
 
+        #pdb.set_trace()
+
         #print(np.asarray(points_in_bounds))
         return np.asarray(points_in_bounds)
 
     @staticmethod
     def t_distance(pose1, pose2):
-        """ euclidean distance between two poses
-        :param pose1
-        :param pose2
+        """
+        Euclidean distance between two poses
         """
         return np.sqrt((pose1[0] - pose2[0]) ** 2 + (pose1[1] - pose2[1]) ** 2)
 
     @staticmethod
     def r_distance(pose1, pose2):
         """
-
+        Rotational distance between two poses
         """
-        pass
+        # TODO: do I even need this? Its just two subtracting the two rotations right?
+        return pose1[2] - pose2[2]
+
+    @staticmethod
+    def angle_between(pose1, pose2):
+        """
+        Calculates angle between two poses as if they were lines from the origin. Uses the determinant.
+        :param pose1:
+        :param pose2:
+        :return:
+        """
+        M_dot = np.dot(pose1, pose2)
+        mag_t = np.sqrt(pose1[0]**2 + pose1[1]**2)
+        mag_pt = np.sqrt(pose2[0]**2 + pose2[1]**2)
+        mags = mag_t * mag_pt
+        rad = np.arccos(M_dot / mags)
+        angle = np.rad2deg(rad)
+        return angle
 
     @staticmethod
     def narrow_target(obj_pose, target_poses, scl_ratio=(0.5, 0.5)) -> int:
@@ -94,18 +112,24 @@ class AsteriskCalculations:
         return [new_x, new_y]
 
     @staticmethod
-    def rotate_points(points, ang):
+    def rotate_points(points, ang, use_filtered=False):
         """
         Rotate points so they are horizontal, used in averaging
         :param points: points is a dataframe with 'x', 'y', 'rmag' columns
         :param ang: angle to rotate data
         """
+        # TODO: make more efficient with apply function or something?
         rad = np.radians(ang)
         rotated_line = pd.DataFrame(columns=['x', 'y', 'rmag'])
 
         for p in points.iterrows():
-            x = p[1]['x']
-            y = p[1]['y']
+            if use_filtered:
+                x = p[1]['f_x']
+                y = p[1]['f_y']
+            else:
+                x = p[1]['x']
+                y = p[1]['y']
+
             new_x = x*np.cos(rad) - y*np.sin(rad)
             new_y = y*np.cos(rad) + x*np.sin(rad)
             rotated_line = rotated_line.append({"x": new_x, "y": new_y, "rmag": p[1]['rmag']}, ignore_index=True)
@@ -140,77 +164,6 @@ class AsteriskCalculations:
         plt.show()
 
     @staticmethod
-    def calc_frechet_distance(ast_trial):
-        """
-        Calculate the frechet distance between self.poses and a target path
-        Uses frechet distance calculation from asterisk_calculations object
-        """
-        o_x, o_y, o_path_ang = ast_trial.get_poses(use_filtered=False)
-        o_path_t = np.column_stack((o_x, o_y))
-
-        t_fd = sm.frechet_dist(o_path_t, ast_trial.target_line)
-        r_fd = sm.frechet_dist(o_path_ang, ast_trial.target_rotation)  # just max error right now
-
-        return t_fd, r_fd
-
-    @staticmethod
-    def calc_frechet_distance_all(ast_trial):
-        """ TODO: NOT TESTED YET
-        Calculate the frechet distance between self.poses and a target path, combining both translation and rotation
-        Uses frechet distance calculation from asterisk_calculations object
-        """
-        o_x, o_y, o_path_ang = ast_trial.get_poses(use_filtered=False)
-        o_path = np.column_stack((o_x, o_y, o_path_ang))
-
-        t_rots = [ast_trial.target_rotation * len(ast_trial.target_line)]
-        combined_target = np.column_stack((ast_trial.target_line, t_rots))
-
-        fd = sm.frechet_dist(o_path, combined_target)
-
-        return fd
-
-    @staticmethod
-    def calc_max_error(ast_trial):
-        """
-        calculates the max error between the ast_trial path and its target line
-        If everything is rotated to C direction, then error becomes the max y value
-        """
-        points = AsteriskCalculations.rotate_points(ast_trial.poses, AsteriskCalculations.rotations[ast_trial.trial_translation])
-        return points['y'].max()
-
-    @staticmethod
-    def calc_mvt_efficiency(ast_trial, use_filtered=True):
-        """
-        Calculates the efficiency of movement of the trial
-        amount of translation in trial direction / arc length of path
-        returns mvt_eff, arc_length
-        """  # TODO only occurs with translation, add in rotation?
-        total_dist_in_direction = ast_trial.total_distance
-        o_x, o_y, o_path_ang = ast_trial.get_poses(use_filtered)
-        o_path_t = np.column_stack((o_x, o_y))
-
-        trial_arc_length, _ = sm.get_arc_length(o_path_t)
-
-        return total_dist_in_direction / trial_arc_length, trial_arc_length
-
-    @staticmethod
-    def calc_area_btwn_curves(ast_trial, use_filtered=True):
-        """
-        Returns the area between the trial path and the target line, only with respect to translation.
-        Currently returns None for non-translation trials
-        """  # TODO only occurs with translation, fails for no translation trials
-        o_x, o_y, o_path_ang = ast_trial.get_poses(use_filtered)
-        o_path_t = np.column_stack((o_x, o_y))
-        # pdb.set_trace()
-
-        try:
-            val = sm.area_between_two_curves(o_path_t, ast_trial.target_line)
-        except ValueError:  # TODO: is there a better way to handle this?
-            val = None
-
-        return val
-
-    @staticmethod
     def interpolate_point(point_1, point_2, bound_val):
         """
         Linearly interpolate what the y value is at bound between the two points
@@ -238,6 +191,8 @@ class AsteriskCalculations:
         indices = points.index.to_list()
         current_index = bounded_points.index[0]
         loc_in_indices = indices.index(current_index)
+
+        #spdb.set_trace()
 
         try:
             # get lower bound val
@@ -278,65 +233,3 @@ class AsteriskCalculations:
         # plt.axvline(x=x_center, color='r')
         # AsteriskMetrics.debug_rotation(points)
         return area_calculated
-
-    @staticmethod
-    def calc_max_area_region(ast_trial, percent_window_size=0.2):
-        """
-        Calculates the area of max error by sliding a window of 20% normalized length along the target line
-        Seems that 10% is too small in regions of fast movement
-        """
-        # TODO: cheating again by rotating points... what about negative values?
-        points = AsteriskCalculations.rotate_points(ast_trial.poses, AsteriskCalculations.rotations[ast_trial.trial_translation])
-        t_x, t_y = AsteriskPlotting.get_c(100)  # TODO: maybe make target_line a pandas dataframe
-        targets = np.column_stack((t_x, t_y))
-
-        #AsteriskMetrics.debug_rotation(points)
-
-        # prepare bound size
-        bound_size = 0.5 * (percent_window_size * ast_trial.total_distance)
-        x_center = bound_size + 0  # just being explicit here -> x_min is 0
-        x_max = 2 * bound_size
-        max_area_calculated = 0
-        x_center_at_max = x_center
-
-        while x_max <= ast_trial.total_distance:
-            # print(f"Now at {x_center} || {x_max}/{ast_trial.total_distance}")
-            bounded_points = AsteriskCalculations.get_points_df(points, x_center, bound_size)
-            b_x = pd.Series.to_list(bounded_points["x"].dropna())
-            b_y = pd.Series.to_list(bounded_points["y"].dropna())
-            bounded_points_not_df = np.column_stack((b_x, b_y))
-
-            target_points = AsteriskCalculations.get_points_list(targets, x_center, bound_size)
-
-            # if x_max > 0.13:
-            #     pdb.set_trace()
-            try:
-                area_calculated = sm.area_between_two_curves(bounded_points_not_df, target_points)
-            except ValueError:
-                # usually this triggers if there aren't enough points (more than one) in the window
-                # if there aren't enough points, make enough points!
-                try:
-                    area_calculated = AsteriskCalculations.interpolate_points(points, x_center,
-                                                                              bounded_points, bound_size,
-                                                                              target_points)
-                    print("Successful interpolation!")
-                except Exception as e:
-                    print("Interpolation Failed.")
-                    print(e)
-                    # if not points were found at all in this region, depending on bound size
-                    area_calculated = 0
-
-            x_center = x_center + 0.1 * bound_size  # want to step in 1% increments
-            x_max = x_center + bound_size
-
-            if np.abs(area_calculated) > max_area_calculated:
-                max_area_calculated = np.abs(area_calculated)
-                x_center_at_max = x_center
-
-        # percentage along the target_line line that the center of max error was located
-        x_center_perc = x_center_at_max / ast_trial.total_distance
-        # x_center_at_max_r = AsteriskMetrics.rotate_point([x_center_at_max, 0],
-        #                                                  -1 * AsteriskMetrics.rotations[ast_trial.trial_translation])
-
-        # print(f"{max_area_calculated}, {x_center_at_max_r}")
-        return max_area_calculated, x_center_perc

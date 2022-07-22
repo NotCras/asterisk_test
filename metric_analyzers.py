@@ -1,116 +1,20 @@
-#!/usr/bin/env python3
+"""
+Several analyzer classes which combine metric data for different sets of data and exports them. [NOT DONE]
+"""
+
 
 import csv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import asterisk_data_manager as datamanager
-from asterisk_hand_data import AsteriskHandData
-from asterisk_plotting import AsteriskPlotting
+import data_manager as datamanager
+from ast_hand_translation import AstHandTranslation
+from ast_hand_rotation import AstHandRotation
+from data_plotting import AsteriskPlotting
 import pdb
 
 from scipy import stats
 from pathlib import Path
-
-
-class AsteriskStudy:
-    def __init__(self, subjects_to_collect, hands_to_collect, rotation=None):
-        """
-        Class used to store all asterisk data. Contains functions to run high level analysis. 
-        data - list of asterisk hand data objects
-        hands - list of hands included in data
-        """
-        self.subjects = subjects_to_collect
-        self.data = self._gather_data(subjects_to_collect, hands_to_collect, rotation)
-
-    def _gather_data(self, subjects, hands, rotation=None):
-        """
-        Returns dictionary of hand asterisk data
-        """
-        data_dictionary = dict()
-        for h in hands:
-            key = h
-            data_dictionary[h] = AsteriskHandData(subjects, h, rotation)
-
-        return data_dictionary
-
-    def filter_data(self, window_size=15):
-        """
-        Filter all data stored together
-        """
-        for h in self.data.keys():
-            self.data[h].filter_data(window_size=window_size)
-
-    def replace_hand_data(self, hand_obj):
-        """
-        Delete hand data from stored data and replace with new hand data obj.
-        Gets attributes of obj to delete from the obj passed in
-        """
-        # TODO: implement this
-        pass
-
-    def save_data(self):
-        """
-        Save all data. This will save data at the AsteriskTrialData level
-        """
-        for h in self.data.keys():
-            # TODO: make a nice folder structure to help organize the data by hand
-            self.data[h].save_all_data()
-
-    def generate_comparisons(self):
-        """
-        Makes Ast Analyzer objects to compare each hand to each other in sets of 2
-        :return:
-        """
-        pass
-
-    def return_hand(self, hand_name):
-        """
-        Returns specified AsteriskHandData object
-        """
-        return self.data[hand_name]
-
-    def plot_hand(self, hand_name):
-        """
-        Plot data for a specific hand, with averages
-        """
-        hand_data = self.return_hand(hand_name)
-        hand_data.plot_avg_data()
-
-    def plot_all_hands(self, rotation="n", show_plot=True, save_plot=False):
-        """
-        Make averaged distance plots for each hand (NOT frechet distance) and plot them in a big subplot array
-        * * * * For now, plots all 8 hands together in subplot array -> make it generalize later
-        * * * *
-        """
-
-        plt.figure(figsize=(20, 15))
-
-        for i, h in enumerate(self.data.keys()):
-            plt.subplot(2, 4, i+1)
-            # get hand obj
-            hd = self.data[h]
-            hd.plot_avg_data(self.subjects, rotation, show_plot=False, save_plot=False)
-
-            # TODO: figure out sharing x and y axis labels
-
-        if save_plot:
-            # added the zero to guarantee that it comes first
-            plt.savefig(f"pics/0all_{rotation}.jpg", format='jpg')
-            # name -> tuple: subj, hand  names
-            print("Figure saved.")
-            print(" ")
-
-        if show_plot:
-            # plt.legend()
-            plt.show()
-
-
-    def plot_all_fd(self):
-        """
-        Make averaged frechet distance plots for each hand and plot them in a big subplot array
-        """
-        pass
 
 
 class AstDirAnalyzer:
@@ -123,12 +27,20 @@ class AstDirAnalyzer:
         self.hand_name = trials[0].hand.get_name()
 
         metric_df = pd.DataFrame()
-        for t in trials:
-            metric_df = metric_df.append(t.metrics, ignore_index=True)
-        metric_df = metric_df.set_index("trial")
-        #print(metric_df)
-        self.metrics = metric_df
+        for t in trials:  # TODO: what about trials  with no_mvt labels, metrics aren't calculated on them
+            if "no_mvt" in t.path_labels:
+                continue
 
+            metric_df = metric_df.append(t.metrics, ignore_index=True)
+
+        if len(metric_df) > 0:
+            metric_df = metric_df.set_index("trial")
+            #print(metric_df)
+            self.metrics = metric_df
+        else:
+            self.metrics = None
+
+        # print(f"{self.t_dir}_{self.r_dir}")
         # save trial objects in case we need it
         self.avg = avg
         self.trials = trials
@@ -143,57 +55,78 @@ class AstDirAnalyzer:
         else:
             new_file_name = file_name_overwrite + ".csv"
 
-        self.metrics.to_csv(new_file_name, index=True)
+        if self.metrics is not None:
+            self.metrics.to_csv(new_file_name, index=True)
 
 
 class AstHandAnalyzer:
     """
     Takes a hand data object and gets all the metrics
     """
-    def __init__(self, hd):
+    def __init__(self, hd, do_avg_line_metrics=True):
         self.hand_name = hd.hand.get_name()
         self.hand_data = hd  # keeping it around just in case
 
         # make a dir analyzer for each direction
         dir_analyzers = []
         complete_df = pd.DataFrame()
+
         for key in hd.data.keys():
             trials = hd.data[key]
             # TODO: implement average later
-            analyzer = AstDirAnalyzer(trials)
+            analyzer = AstDirAnalyzer(trials)  # TODO: can we check for no metrics? or for no_mvt?
             complete_df = complete_df.append(analyzer.metrics)
-            dir_analyzers.append(analyzer)
+            if analyzer.metrics is not None:
+                dir_analyzers.append(analyzer)
 
         self.analyzers = dir_analyzers
         # print(complete_df)
         # complete_df = complete_df.set_index("trial")
-        self.metrics = complete_df
+        self.all_metrics = complete_df
 
         avg_df = pd.DataFrame()
         avg_sd_df = pd.DataFrame()
-        for a in hd.averages:
-            avg_df = avg_df.append(a.metrics, ignore_index=True)
-            avg_sd_df = avg_sd_df.append(a.metric_sds, ignore_index=True)
+        all_avg_metrics = pd.DataFrame()
+        for avg in hd.averages:
+            avg_df = avg_df.append(avg.metrics_avgd, ignore_index=True)  # should have values in these
+            avg_sd_df = avg_sd_df.append(avg.metrics_avgd_sds, ignore_index=True)
+
+            # TODO: its stupid, but its a workaround for rotation avgs right now... see if we can make mor elegant
+            if do_avg_line_metrics or "no_mvt" in avg.path_labels:
+                all_avg_metrics = all_avg_metrics.append(avg.metrics, ignore_index=True)
 
         avg_df = avg_df.set_index("trial")
         avg_sd_df = avg_sd_df.set_index("trial")
 
-        self.avg_metrics = avg_df
-        self.avg_metric_sds = avg_sd_df
+        if do_avg_line_metrics or len(all_avg_metrics) > 0:
+            all_avg_metrics = all_avg_metrics.set_index("trial")
+
+        self.metrics_avgd = avg_df
+        self.metrics_avgd_sds = avg_sd_df
+
+        if do_avg_line_metrics or len(all_avg_metrics) > 0:
+            self.all_avg_metrics = all_avg_metrics
+        else:
+            self.all_avg_metrics = None
 
     def save_data(self, file_name_overwrite=None):
         """
         Saves the report as a csv file
         :return:
         """
-        names = ["metrics", "avg_metrics", "metric_sds"]
-        data = [self.metrics, self.avg_metrics, self.avg_metric_sds]
+
+        if self.all_avg_metrics is not None:
+            names = ["trial_metrics", "avg_trial_metrics", "trial_metrics_avgd", "trial_metric_avgd_sds"]
+            data = [self.all_metrics, self.all_avg_metrics, self.metrics_avgd, self.metrics_avgd_sds]
+        else:
+            names = ["trial_metrics", "trial_metrics_avgd", "trial_metric_avgd_sds"]
+            data = [self.all_metrics, self.metrics_avgd, self.metrics_avgd_sds]
 
         for n, d in zip(names, data):
             if file_name_overwrite is None:
                 new_file_name = f"results/{self.hand_name}_{n}.csv"
             else:
-                new_file_name = f"{file_name_overwrite}_{n}.csv"
+                new_file_name = f"results/{file_name_overwrite}_{n}.csv"
 
             d.to_csv(new_file_name, index=True)
 
@@ -213,7 +146,7 @@ class AstHandComparison:
         # everything stored as a pandas dataframe
         for h in self.hands:
             if not h.averages:  # force hand obj to calculate averages if it hasn't already
-                h.calc_avg_ast(rotation="n")  # TODO: for now, remove for later
+                h.calc_averages(rotation="n")  # TODO: for now, remove for later
 
         self.comparison_results = self.generate_results_df()
 
@@ -289,7 +222,7 @@ class AstHandComparison:
 
         if save_plot:
             # added the zero to guarantee that it comes first
-            plt.savefig(f"pics/0all_{rotation}.jpg", format='jpg')
+            plt.savefig(f"results/pics/0all_{rotation}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
@@ -315,13 +248,13 @@ class AstHandComparison:
 
         # TODO: function works, but might want to tweak the colors plotted. Make one darker, one lighter
         for i, h in enumerate(self.hands):  # subjects = None makes it default to using all subjects in the average
-            h.plot_avg_data(rotation, subjects=None, show_plot=False, save_plot=False, linestyle=linestyles[i])
+            h.plot_ast_avg(rotation, subjects=None, show_plot=False, save_plot=False, linestyle=linestyles[i])
 
         self.hands[0].plot_all_target_lines(colors)
 
         if save_plot:
             # added the zero to guarantee that it comes first
-            plt.savefig(f"pics/0all_{rotation}.jpg", format='jpg')
+            plt.savefig(f"results/pics/0all_{rotation}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
@@ -334,19 +267,23 @@ class AstHandComparison:
 
 
 if __name__ == '__main__':
-    h = AsteriskHandData(["sub1", "sub2"], "3v3", rotation="n")
-    h.filter_data()
-    h.calc_avg_ast(rotation="n")
+    h = "2v2"
+    rot = "n"
+    subjects = ["sub1", "sub2", "sub3"]
+    translation = False
 
-    results = AstHandAnalyzer(h)
-    results.save_data()
+    print(f"Getting {h} ({rot}) data...")
+    if translation:
+        data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
+        data.filter_data(10)
+        data.calc_averages()
+        results = AstHandAnalyzer(data)
+    else:
+        data = AstHandRotation(subjects, h)
+        data.filter_data(10)
+        data.calc_averages()
+        results = AstHandAnalyzer(data, do_avg_line_metrics=False)
 
-    # study = AsteriskStudy(["sub1", "sub2"], ["2v2", "2v3", "3v3", "barrett"])
-    # study.plot_all_hands(rotation="n", show_plot=True, save_plot=True)
-    #
-    # hand1 = study.return_hand("2v2")
-    # hand2 = study.return_hand("barrett")
-    # hands = [hand1, hand2]
-    #
-    # results = AstHandComparison(hands)
-    # results.plot_asterisk()
+    print(f"Average Metrics: {results.metrics_avgd}")
+    print(f"Standard deviations of average metrics: {results.metrics_avgd_sds}")
+    print(f"Metrics of the average lines: {results.all_avg_metrics}")

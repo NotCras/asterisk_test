@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 
+"""
+Handles various data management classes:
+1) AstData: handles extracting compressed trial data
+2) AstNaming: holds all of the relevant trial options
+3) generate options function - a function that uses the AstNaming class to return any sort of list of options
+4) generate_... - a set of four one-stop-shop generator functions for iterating over all of the trial options
+5) smart input function: function which is key to the prompts one will find if they run most of the files as scripts
+6) AstDir: handles directory locations for the rest of the classes (NOT DONE YET)
+"""
+
 import os
 import matplotlib.pyplot as plt
 
@@ -62,7 +72,7 @@ class AstData:
         :param rotation_name: name of rotation
         :param trial_number: trial number
         """
-        folders = f"asterisk_test_data/{subject_name}/{hand_name}/"
+        folders = f"compressed_data/{subject_name}/{hand_name}/"
         file_name = f"{subject_name}_{hand_name}_{translation_name}_{rotation_name}_{trial_number}"
 
         extract_from = folders+file_name+".zip"
@@ -83,27 +93,72 @@ class AstData:
             self.single_extract(s, h, t, r, n)
 
 
-# TODO: move following functions into a new asterisk_naming file?
+class AstNaming:
+    options = {  # TODO: to make it easier for user, should we have it read the options in from a txt file?
+        "subjects": ["sub1", "sub2", "sub3"],
+        "hands": ["2v2", "2v3", "3v3", "barrett", "basic", "m2active", "m2stiff", "modelvf"],  # "human"
+        "hands_only_n": ["basic", "m2stiff", "modelvf"],
+        "translations": ["a", "b", "c", "d", "e", "f", "g", "h"],
+        "translations_all": ["a", "b", "c", "d", "e", "f", "g", "h", "n"],
+        "rotations": ["n", "m15", "p15"],
+        "rotations_n_trans": ["cw", "ccw"],  # TODO: maybe change to n_trans_rotations? or n_rotations
+        "numbers": ["1", "2", "3", "4", "5"]
+    }
+    values = {  # TODO: make this use generate_options
+        "subjects": ["sub1", "sub2", "sub3"],
+        "hands": ["2v2", "2v3", "3v3", "barrett", "basic", "human", "m2active", "m2stiff", "modelvf"],
+        "translations": ["a", "b", "c", "d", "e", "f", "g", "h"],
+        "translations_w_n": ["a", "b", "c", "d", "e", "f", "g", "h", "n"],
+        "rotation_combos": ["n", "m15", "p15"],
+        "rotations_n_trans": ["cw", "ccw"],
+        "numbers": ["1", "2", "3", "4", "5"],
+        "consent": ["y", "n"]
+    }
+
+    def __init__(self):
+        pass
+
+    def get_option(self, key):
+        """
+        Return set of objects for a given key. If no key, returns
+        :param key:
+        :return:
+        """
+        try:
+            return self.options[key]
+        except:
+            return None
+
+    def add_option(self, key, options, overwrite=False):
+        """
+        Adds a set of options at given key.
+        Has the option to overwrite at an existing key, otherwise it won't overwrite.
+
+        Returns True if operation succeeded, otherwise returns False
+        """
+        if key in self.options.keys:
+            if overwrite:
+                self.options[key] = options
+                return True
+            else:
+                return False
+        else:
+            self.options[key] = options
+            return True
+
+
+# TODO: move following functions into a AstNaming object?
 def generate_options(key):
     """
     One function to return all sorts of parameter lists. Mainly to be used outside of data manager
     :param key: the key of the list that you want
     :return: list of parameters
     """
-    options = {
-            "subjects": ["sub1", "sub2", "sub3"],
-            "hands": ["2v2", "2v3", "3v3", "barrett", "basic", "m2active", "m2stiff", "modelvf"],  # "human"
-            "hands_only_n": ["basic", "m2stiff", "modelvf"],
-            "translations": ["a", "b", "c", "d", "e", "f", "g", "h"],
-            "translations_all": ["a", "b", "c", "d", "e", "f", "g", "h", "n"],
-            "rotations": ["n", "m15", "p15"],
-            "rotations_n_trans": ["cw", "ccw"],
-            "numbers": ["1", "2", "3", "4", "5"]
-            }
-    return options[key]
+    opt = AstNaming()
+    return opt.get_option(key)
 
 
-def generate_t_r_pairs(hand_name, no_rotations=False):
+def generate_t_r_pairs(hand_name, no_rotations=False, do_t_n=True):
     """
     Generator that feeds all trial combinations pertaining to a specific hand
     :param hand_name: name of hand specified
@@ -114,11 +169,14 @@ def generate_t_r_pairs(hand_name, no_rotations=False):
     rotations = generate_options("rotations")
 
     for t in translations:
-        if t == "n":  # necessary to divide rotations because cw and ccw only happen with no translation
+        if t == "n" and do_t_n:  # necessary to divide rotations because cw and ccw only happen with no translation
             if hand_name in generate_options("hands_only_n"):
                 continue
             else:
                 rot = n_trans_rot_opts
+        elif t == "n":
+            continue
+
         else:
             if hand_name in generate_options("hands_only_n") or no_rotations:
                 rot = "n"
@@ -129,7 +187,7 @@ def generate_t_r_pairs(hand_name, no_rotations=False):
             yield t, r
 
 
-def generate_names_with_s_h(subject_name, hand_name, no_rotations=False):
+def generate_names_with_s_h(subject_name, hand_name, no_rotations=False, do_t_n=True):
     """
     Generates all trial combinations with a specific hand name
     :param subject_name: name of subject
@@ -138,7 +196,7 @@ def generate_names_with_s_h(subject_name, hand_name, no_rotations=False):
     """
     num = generate_options("numbers")
 
-    for t, r in generate_t_r_pairs(hand_name, no_rotations=no_rotations):
+    for t, r in generate_t_r_pairs(hand_name, no_rotations=no_rotations, do_t_n=do_t_n):
         for n in num:
             yield subject_name, hand_name, t, r, n
 
@@ -162,11 +220,25 @@ def generate_all_names(subject=None, hand_name=None, no_rotations=False):
             yield generate_names_with_s_h(s, h, no_rotations=no_rotations)
 
 
+def generate_fname(subject_name, hand):
+    """Create the full pathname
+    # :param folder_path Directory where data is located -> currently not used
+    :param subject_name Name of subject
+    :param hand Name of hand"""
+
+    for s, h, t, r, n in generate_names_with_s_h(subject_name, hand):
+        file_name = f"{s}_{h}_{t}_{r}_{n}.csv"
+
+        # total_path = folder_path + file_name
+        # yield total_path
+        yield file_name
+
+
 def smart_input(prompt, option, valid_options=None):
     """
     Asks for input and continues asking until there is a valid response
     :param prompt: the prompt that you want printed
-    :param option: the option you want the input to choose from,
+:param option: the option you want the input to choose from,
         if not in the options will look at valid_options for option
     :param valid_options: provides the ability to specify your own custom options
     """
@@ -174,7 +246,8 @@ def smart_input(prompt, option, valid_options=None):
         "subjects": ["sub1", "sub2", "sub3"],
         "hands": ["2v2", "2v3", "3v3", "barrett", "basic", "human", "m2active", "m2stiff", "modelvf"],
         "translations": ["a", "b", "c", "d", "e", "f", "g", "h"],
-        "rotations": ["n", "m15", "p15"],
+        "translations_w_n": ["a", "b", "c", "d", "e", "f", "g", "h", "n"],
+        "rotation_combos": ["n", "m15", "p15"],
         "rotations_n_trans": ["cw", "ccw"],
         "numbers": ["1", "2", "3", "4", "5"],
         "consent": ["y", "n"]
@@ -196,6 +269,30 @@ def smart_input(prompt, option, valid_options=None):
             print("Invalid response.")
 
     return response
+
+
+def smart_answer(user_input, options):
+    """
+    Function that will enable users to enter in multiple options. This function analyzes a user's input and returns
+    a list of the options which were selected.
+    """
+    pass
+
+class AstDir:
+    """
+    Manages the folder paths where data is stored.
+    """
+    def __init__(self, home_dir=None, viz_folder_name="viz", aruco_folder_name="aruco_data",
+                 trial_folder_name="trial_data", results_folder_name="results"):
+        if home_dir is None:
+            self.home = Path(__file__).parent.absolute()
+        else:
+            self.home = home_dir
+
+        self.viz_folder = viz_folder_name  # where visual data is stored
+        self.aruco_folder = aruco_folder_name  # where aruco analysis data is stored
+        self.trial_folder = trial_folder_name  # where trial path data (with filtering) is stored
+        self.results_folder = results_folder_name  # where metric results and images are stored
 
 
 if __name__ == "__main__":
@@ -220,15 +317,20 @@ if __name__ == "__main__":
     hand = smart_input("Enter name of hand: ", "hands")
 
     if ans == "1":
-        translation = smart_input("Enter type of translation: ", "translations")
-        rotation = smart_input("Enter type of rotation: ", "rotations")
+        translation = smart_input("Enter type of translation: ", "translations_w_n")
+
+        if translation == "n":
+            rotation = smart_input("Enter type of rotation: ", "rotations_n_trans")
+        else:
+            rotation = smart_input("Enter type of rotation: ", "rotation_combos")
+
         trial_num = smart_input("Enter trial number: ", "numbers")
 
         data_manager.view_images(subject, hand, translation, rotation, trial_num)
 
     elif ans == "2":
         translation = smart_input("Enter type of translation: ", "translations")
-        rotation = smart_input("Enter type of rotation: ", "rotations")
+        rotation = smart_input("Enter type of rotation: ", "rotation_combos")
         trial_num = smart_input("Enter trial number: ", "numbers")
 
         data_manager.single_extract(subject, hand, translation, rotation, trial_num)

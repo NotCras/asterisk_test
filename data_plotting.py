@@ -6,9 +6,16 @@ class AsteriskPlotting:
     """
     Resources for asterisk plots
     """
+    colors = ["tab:blue", "tab:purple", "tab:red", "tab:olive", "tab:cyan", "tab:green", "tab:pink", "tab:orange"]
 
     def __init__(self):
         pass
+
+    @staticmethod
+    def get_dir_color(dir):  # TODO: finalize colors based on color wheel?
+        colors = {"a": "tab:blue", "b": "tab:purple", "c": "tab:red", "d": "tab:olive",
+                  "e": "tab:cyan", "f": "tab:green", "g": "tab:pink", "h": "tab:orange"}
+        return colors[dir]
 
     @staticmethod
     def round_half_up(n, decimals=0):
@@ -31,16 +38,16 @@ class AsteriskPlotting:
     # well, what I can do is do a linspace for both x and y...
     # its straightforward because these are perfect lines we are drawing
     @staticmethod
-    def straight(num_points=25, mod=1):
-        vals = np.linspace(0, 0.5, num_points)
+    def straight(num_points=25, mod=1, max=0.5):
+        vals = np.linspace(0, max, num_points)
         z = np.zeros(num_points)
 
         set1 = mod * vals
         return set1, z
 
     @staticmethod
-    def diagonal(num_points=25, mod1=1, mod2=1):
-        coords = np.linspace(0, 0.5, num_points)
+    def diagonal(num_points=25, mod1=1, mod2=1, max=0.3536):
+        coords = np.linspace(0, max, num_points)  # 0.3536 ~= 1 / (2* sqrt(2))
 
         set1 = mod1 * coords
         set2 = mod2 * coords
@@ -48,43 +55,43 @@ class AsteriskPlotting:
         return set1, set2
 
     @staticmethod
-    def get_a(num_points=25):
-        y_coords, x_coords = AsteriskPlotting.straight(num_points)
+    def get_a(num_points=25, max=0.5):
+        y_coords, x_coords = AsteriskPlotting.straight(num_points=num_points, max=max)
         return x_coords, y_coords
 
     @staticmethod
-    def get_b(num_points=25):
-        x_coords, y_coords = AsteriskPlotting.diagonal(num_points)
+    def get_b(num_points=25, max=0.3536):
+        x_coords, y_coords = AsteriskPlotting.diagonal(num_points=num_points, max=max)
         return x_coords, y_coords
 
     @staticmethod
-    def get_c(num_points=25):
-        x_coords, y_coords = AsteriskPlotting.straight(num_points)
+    def get_c(num_points=25, max=0.5):
+        x_coords, y_coords = AsteriskPlotting.straight(num_points=num_points, max=max)
         return x_coords, y_coords
 
     @staticmethod
-    def get_d(num_points=25):
-        x_coords, y_coords = AsteriskPlotting.diagonal(num_points=num_points, mod1=1, mod2=-1)
+    def get_d(num_points=25, max=0.3536):
+        x_coords, y_coords = AsteriskPlotting.diagonal(num_points=num_points, mod1=1, mod2=-1, max=max)
         return x_coords, y_coords
 
     @staticmethod
-    def get_e(num_points=25):
-        y_coords, x_coords = AsteriskPlotting.straight(num_points, mod=-1)
+    def get_e(num_points=25, max=0.5):
+        y_coords, x_coords = AsteriskPlotting.straight(num_points, mod=-1, max=max) #, max=0.75)
         return x_coords, y_coords
 
     @staticmethod
-    def get_f(num_points=25):
-        x_coords, y_coords = AsteriskPlotting.diagonal(num_points=num_points, mod1=-1, mod2=-1)
+    def get_f(num_points=25, max=0.3536):
+        x_coords, y_coords = AsteriskPlotting.diagonal(num_points=num_points, mod1=-1, mod2=-1, max=max)
         return x_coords, y_coords
 
     @staticmethod
-    def get_g(num_points=25):
-        x_coords, y_coords = AsteriskPlotting.straight(num_points, mod=-1)
+    def get_g(num_points=25, max=0.5):
+        x_coords, y_coords = AsteriskPlotting.straight(num_points, mod=-1, max=max)
         return x_coords, y_coords
 
     @staticmethod
-    def get_h(num_points=25):
-        x_coords, y_coords = AsteriskPlotting.diagonal(num_points, mod1=-1)
+    def get_h(num_points=25, max=0.3536):
+        x_coords, y_coords = AsteriskPlotting.diagonal(num_points, mod1=-1, max=max)
         return x_coords, y_coords
 
     @staticmethod
@@ -92,6 +99,7 @@ class AsteriskPlotting:
         """
         return the appropriate x and y coordinates for any direction
         """
+        # TODO: make it so we can customize the amount in each direction
         x_vals, y_vals = 0, 0
         if translation_label == "a":
             x_vals, y_vals = AsteriskPlotting.get_a(n_samples)
