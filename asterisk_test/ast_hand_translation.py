@@ -206,6 +206,12 @@ class AstHandTranslation:
 
         return gotten_trials
 
+    def plot_specific_trials(self, trial_list):
+        """
+        Give it a list of trials to plot and this will single out those trials and plot it on a full asterisk plot
+        """
+        pass
+
     def replace_trial_data(self, trial_obj):
         """
         Delete trial data obj from stored data and replace with new trial data obj

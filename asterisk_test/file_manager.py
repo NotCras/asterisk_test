@@ -5,7 +5,8 @@ Class which stores the locations of files.
 
 from pathlib import Path
 
-class AstDirectory():
+
+class AstDirectory:
 
     def __init__(self):
         self.compressed_data = None
