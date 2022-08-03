@@ -3,9 +3,14 @@ Handles the aruco analysis for a single trial using my custom aruco_tool package
 """
 
 from aruco_tool import ArucoFunc
+import data_manager as datamanager
+
+import logging as log
 
 
 class AstArucoAnalysis:
+    # dict which contains the mapping between aruco ids and hand
+    aruco_hand_to_id = {}
 
     def __init__(self, file_loc_obj, camera_calib, camera_dists, marker_side_dims):
         pass
@@ -14,21 +19,56 @@ class AstArucoAnalysis:
         self.aruco_pics_loc = file_loc_obj.aruco_pics
         self.aruco_data_loc = file_loc_obj.aruco_data
 
-    def aruco_analyze_trial(self, trial_name, aruco_id):
+    def aruco_analyze_trial(self, trial_name, aruco_id, save_trial=False):
         """
         Analyzes a folder of aruco images
         """
         trial_folder = self.aruco_pics_loc + trial_name #todo:double check that this is correct syntax
         aruco_loc = self.af.full_analysis_single_id(trial_folder, aruco_id)
 
-        result_folder = self.aruco_data_loc + trial_name
-        aruco_loc.save_poses(file_name_overwrite=result_folder)
+        if save_trial:
+            result_folder = self.aruco_data_loc + trial_name
+            aruco_loc.save_poses(file_name_overwrite=result_folder)
+
+        return aruco_loc
 
     def load_calibration(self, calibration_loc, dist_loc):
         """
         Function loads camera calibration and dist values from csv files.
         """
         pass
+
+    def batch_aruco_analysis(self, subject, hand, exclude_rotations=True, save_data=True,
+                             assess_indices=False, crop_trial=False):
+        """
+        Runs aruco analysis on a set of trials.
+        """
+        files_covered = list()
+
+        for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand, no_rotations=exclude_rotations):
+            trial_name = f"{s}_{h}_{t}_{r}_{n}" #TODO: add generate filename to datamanager to handle this
+
+            #TODO: use try, except here
+            trial_data = self.aruco_analyze_trial(trial_name, self.aruco_hand_to_id[hand], save_trial=save_data)
+
+            if assess_indices:
+                #find indices to crop to in the data
+                pass
+
+                if crop_trial: #and follow_through_with_crop:
+                    #actually crop the trial
+                    pass
+
+            files_covered.append(trial_name)
+
+            log.info(f"Succeeded: {trial_name}, aruco analysis")
+
+        log.info("Batch aruco analysis complete.")
+
+# TODO: add the script portion, just like ast_aruco
+
+
+
 
 
 
