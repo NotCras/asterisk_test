@@ -41,9 +41,10 @@ class AstArucoAnalysis:
     def batch_aruco_analysis(self, subject, hand, exclude_rotations=True, save_data=True,
                              assess_indices=False, crop_trial=False):
         """
-        Runs aruco analysis on a set of trials.
+        Runs aruco analysis on a set of trials. Collects data into a dictionary (trial_name) -> (trial data, as aruco_loc obj)
         """
         files_covered = list()
+        batch_trial_data = dict()
 
         for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand, no_rotations=exclude_rotations):
             trial_name = f"{s}_{h}_{t}_{r}_{n}" #TODO: add generate filename to datamanager to handle this
@@ -59,11 +60,13 @@ class AstArucoAnalysis:
                     #actually crop the trial
                     pass
 
+            batch_trial_data[trial_name] = trial_data
             files_covered.append(trial_name)
 
             log.info(f"Succeeded: {trial_name}, aruco analysis")
 
         log.info("Batch aruco analysis complete.")
+        return batch_trial_data
 
 # TODO: add the script portion, just like ast_aruco
 
