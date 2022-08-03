@@ -8,11 +8,14 @@ from ast_hand_translation import AstHandTranslation
 from ast_hand_rotation import AstHandRotation
 from ast_study import AstStudyTrials
 from ast_aruco import AstAruco
+from aruco_analysis import AstArucoAnalysis
 from metric_analyzers import AstHandAnalyzer
 from alive_progress import alive_bar
+from file_manager import AstDirectory
 import data_manager as datamanager
 import matplotlib.pyplot as plt
 import ast_trial as t
+import numpy as np
 
 
 def run_ast_study():
@@ -27,6 +30,15 @@ def run_ast_study():
 
     home_directory = Path(__file__).parent.absolute()
 
+    ast_files = AstDirectory()
+    ast_files.compressed_data = None
+    ast_files.aruco_pics = None
+    ast_files.aruco_data = None
+    ast_files.path_data = None
+    ast_files.metric_results = None
+    ast_files.result_figs = None
+    ast_files.debug_figs = None
+
     # right now, just compiles data and saves it all using the AsteriskHandData object
     subjects = datamanager.generate_options("subjects")
     hand_names = ["2v2", "2v3", "3v3", "barrett",  "m2active", "m2stiff", "basic", "modelvf"]
@@ -40,6 +52,13 @@ def run_ast_study():
     run_standing_rotations = True
     if normalize_data is False:
         run_standing_rotations = False
+
+    # camera calibration
+    mtx = np.array(((617.0026849655, -0.153855356, 315.5900337131),  # fx, s,cx
+                         (0, 614.4461785395, 243.0005874753),  # 0,fy,cy
+                         (0, 0, 1)))
+    # k1,k2,p1,p2 ie radial dist and tangential dist
+    dist = np.array((0.1611730644, -0.3392379107, 0.0010744837, 0.000905697))
 
     # failed_files = []  # TODO: make a log of everything that happens when data is run using logging library
 
@@ -62,6 +81,10 @@ def run_ast_study():
     else:
         entries = num_calculation_sets
 
+    # setup for aruco analysis
+    if run_aruco:
+        ar = AstArucoAnalysis(ast_files, mtx, dist, 0.03)
+
     # the actual calculations
     with alive_bar(entries) as bar:
         for h in hand_names:
@@ -71,7 +94,10 @@ def run_ast_study():
             if run_aruco:
                 print(f"Analyzing aruco codes on {h} viz data...")
                 for s in subjects:
-                    AstAruco.batch_aruco_analysis(s, h, no_rotations=False, home=home_directory, indices=False, crop=False)
+                    #AstAruco.batch_aruco_analysis(s, h, no_rotations=False, home=home_directory, indices=False, crop=False)
+                    ar.batch_aruco_analysis(s, h, exclude_rotations=True, save_data=True,
+                                            assess_indices=False, crop_trial=False)
+
                 bar()
 
             if run_translations:
