@@ -18,7 +18,7 @@ from data_plotting import AsteriskPlotting as aplt
 
 
 class AstHandTranslation:
-    def __init__(self, subjects, hand_name, rotation='n', blocklist_file=None, normalized_data=True):
+    def __init__(self, file_loc_obj, subjects, hand_name, rotation='n', blocklist_file=None, normalized_data=True):
         """
         Class to hold all the data pertaining to a specific hand.
         Combines data from all subjects
@@ -27,6 +27,7 @@ class AstHandTranslation:
         """
         self.hand = HandInfo(hand_name)
         self.subjects_containing = subjects
+        self.file_locs = file_loc_obj
 
         if blocklist_file is not None:
             blocklist = self._check_blocklist(blocklist_file)
@@ -206,12 +207,6 @@ class AstHandTranslation:
 
         return gotten_trials
 
-    def plot_specific_trials(self, trial_list):
-        """
-        Give it a list of trials to plot and this will single out those trials and plot it on a full asterisk plot
-        """
-        pass
-
     def replace_trial_data(self, trial_obj):
         """
         Delete trial data obj from stored data and replace with new trial data obj
@@ -219,6 +214,38 @@ class AstHandTranslation:
         """
         # TODO: implement this
         pass
+
+    def _parse_trial_name(self, trial_name):
+        """Takes a filename and returns the dict key that it is in
+
+        Args:
+            trial_name (string): trial name string
+        """
+        _, t, r, s, n = file_name.split("_")
+
+        return f"{t}_{r}", s, n
+
+    def _get_trial(self, trial_name):
+        """Gets a trial out of data object. If trial doesn't exist, will throw an error
+
+        Args:
+            trial_name (string): trial name string
+        """
+        key, s, n = self._parse_trial_name(trial_name)
+
+        trials = self.data[key]
+
+        trial_to_return = None
+        for t in trials:
+            if t.subject == s and t.trial_num == n:
+                trial_to_return = t
+                break
+
+        if trial_to_return is None:
+            raise AttributeError(f"Could not find the trial you specified: {trial_name}")
+        else:
+            return trial_to_return
+
 
     def _average_dir(self, translation, subject=None, exclude_path_labels=None):
         """
@@ -430,6 +457,40 @@ class AstHandTranslation:
 
             # TODO: add ability to make comparison plot between n, m15, and p15
             # TODO: have an ability to plot a single average trial
+
+
+    def plot_specific_trials(self, trial_list, show_plot=True, save_plot=False, include_notes=True,
+                     linestyle="solid", plot_contributions=False, exclude_path_labels=None,
+                     picky_tlines=False, td_labels=True, incl_obj_img=True):
+        """
+        Give it a list of trials to plot and this will single out those trials and plot it on a full asterisk plot
+        """
+        selected_trial_objs = []
+
+        for t in trial_list:
+            selected_trial_objs.append(self._get_trial(t))
+
+        plt = self._make_plot(selected_trial_objs, use_filtered=False, stds=False, linestyle=linestyle, include_notes=include_notes,
+                              picky_tlines=picky_tlines, td_labels=td_labels,
+                              incl_obj_img=incl_obj_img, plot_contributions=plot_contributions)
+
+        # TODO: add orientation markers to each line so we have some idea of orientation along the path
+        # TODO: add attributes for object shape, size, and initial position!
+        #plt.title(f"Avg {self.hand.get_name()}, {subjects}, {self.set_rotation} \n Cube (0.25 span), 0.75 depth init pos")
+
+        if save_plot:
+            plt.savefig(f"results/pics/selected/selected_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{self.set_rotation}.jpg", format='jpg')
+
+            # name -> tuple: subj, hand  names
+            print("Figure saved.")
+            print(" ")
+
+        if show_plot:
+            # plt.legend()  # TODO: showing up weird, need to fix
+            plt.show()
+        
+        
+        
 
     def plot_ast_avg(self, subjects=None, show_plot=True, save_plot=False, include_notes=True,
                      linestyle="solid", plot_contributions=False, exclude_path_labels=None,
