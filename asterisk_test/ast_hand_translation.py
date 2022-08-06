@@ -15,6 +15,7 @@ import ast_trial as atrial
 from ast_hand_info import HandInfo
 from ast_avg_translation import AveragedTrial
 from data_plotting import AsteriskPlotting as aplt
+from file_manager import AstDirectory
 
 
 class AstHandTranslation:
@@ -479,7 +480,8 @@ class AstHandTranslation:
         #plt.title(f"Avg {self.hand.get_name()}, {subjects}, {self.set_rotation} \n Cube (0.25 span), 0.75 depth init pos")
 
         if save_plot:
-            plt.savefig(f"results/pics/selected/selected_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{self.set_rotation}.jpg", format='jpg')
+            plt.savefig(self.file_locs.result_figs / f"selected_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{self.set_rotation}.jpg", format='jpg')
+            #plt.savefig(f"results/pics/selected/selected_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{self.set_rotation}.jpg", format='jpg')
 
             # name -> tuple: subj, hand  names
             print("Figure saved.")
@@ -488,8 +490,6 @@ class AstHandTranslation:
         if show_plot:
             # plt.legend()  # TODO: showing up weird, need to fix
             plt.show()
-        
-        
         
 
     def plot_ast_avg(self, subjects=None, show_plot=True, save_plot=False, include_notes=True,
@@ -527,7 +527,8 @@ class AstHandTranslation:
         #plt.title(f"Avg {self.hand.get_name()}, {subjects}, {self.set_rotation} \n Cube (0.25 span), 0.75 depth init pos")
 
         if save_plot:
-            plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{self.set_rotation}.jpg", format='jpg')
+            plt.savefig(self.file_locs.result_figs / f"avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{self.set_rotation}.jpg", format='jpg')
+            #plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{self.set_rotation}.jpg", format='jpg')
 
             # name -> tuple: subj, hand  names
             print("Figure saved.")
