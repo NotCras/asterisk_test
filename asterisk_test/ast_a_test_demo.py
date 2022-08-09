@@ -40,7 +40,7 @@ def run_ast_study():
     ast_files.debug_figs = None
 
     # right now, just compiles data and saves it all using the AsteriskHandData object
-    subjects = datamanager.generate_options("subjects")
+    subjects = datamanager.get_option_list("subjects")
     hand_names = ["2v2", "2v3", "3v3", "barrett",  "m2active", "m2stiff", "basic", "modelvf"]
     # ["basic", "m2active", "2v2", "3v3", "2v3", "barrett", "modelvf"] # "m2stiff",
     rotation_conditions = ["n", "m15", "p15"]
@@ -66,8 +66,8 @@ def run_ast_study():
     # z = len(list(set(x) - set(y)))
 
     # calculations on how many calculation sets to run for alive bar
-    len_hands_doing_rotations = len(list(set(hand_names) - set(datamanager.generate_options("hands_only_n"))))
-    num_calculation_sets = len(datamanager.generate_options("rotations_n_trans")) * len_hands_doing_rotations + \
+    len_hands_doing_rotations = len(list(set(hand_names) - set(datamanager.get_option_list("hands_only_n"))))
+    num_calculation_sets = len(datamanager.get_option_list("rotations_n_trans")) * len_hands_doing_rotations + \
                            2 * len(hand_names) + \
                            2 * len(["m15", "p15"]) * len_hands_doing_rotations
 
@@ -102,7 +102,7 @@ def run_ast_study():
 
             if run_translations:
                 for rot in rotation_conditions:
-                    if rot in ["m15", "p15"] and h in datamanager.generate_options("hands_only_n"):
+                    if rot in ["m15", "p15"] and h in datamanager.get_option_list("hands_only_n"):
                         continue  # skip hands that don't do rotations
 
                     print(f"Getting {h} ({rot}) data...")
@@ -143,12 +143,12 @@ def run_ast_study():
 
                     if run_standing_rotations:
                         print(f"Considering cw/ccw for {h}...")
-                        for rot2 in datamanager.generate_options("rotations_n_trans"):
+                        for rot2 in datamanager.get_option_list("rotations_n_trans"):
                             if rot in ["m15", "p15"]:
                                 print(f"{rot2} is not for {rot} rotation.")
                                 continue
 
-                            if h in datamanager.generate_options("hands_only_n"):
+                            if h in datamanager.get_option_list("hands_only_n"):
                                 print(f"{rot2}? ... Nope!")
                                 continue
 

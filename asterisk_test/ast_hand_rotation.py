@@ -25,10 +25,10 @@ class AstHandRotation(AstHandTranslation):
         """
         data_dictionary = dict()
 
-        for r in datamanager.generate_options("rotations_n_trans"):
+        for r in datamanager.get_option_list("rotations_n_trans"):
             key = f"n_{r}"
             data = self._make_asterisk_trials_from_filenames(subjects, r,
-                                                             datamanager.generate_options("numbers"),
+                                                             datamanager.get_option_list("numbers"),
                                                              blocklist=blocklist, normalized_data=normalized_data)
             if data:
                 data_dictionary[key] = data
@@ -97,7 +97,7 @@ class AstHandRotation(AstHandTranslation):
         :param rotation_type: rotation type of batch. Defaults to "n"
         """
         dfs = []
-        rotations = datamanager.generate_options("rotations_n_trans")  # ["cw", "ccw"]
+        rotations = datamanager.get_option_list("rotations_n_trans")  # ["cw", "ccw"]
 
         for direction in rotations:
             dict_key = f"n_{direction}"
@@ -200,7 +200,7 @@ class AstHandRotation(AstHandTranslation):
         dirs = self._get_directions_in_data()
         print(f"Directions included: {dirs}")
 
-        for r in datamanager.generate_options("rotations_n_trans"):
+        for r in datamanager.get_option_list("rotations_n_trans"):
             # make sure that we only include translations that are in the data
             if r in dirs:
                 print(f"Averaging {r}")

@@ -65,10 +65,10 @@ class AstHandTranslation:
         """
         data_dictionary = dict()
 
-        for t in datamanager.generate_options("translations"):
+        for t in datamanager.get_option_list("translations"):
             key = f"{t}_{self.set_rotation}"
             data = self._make_asterisk_trials_from_filenames(subjects, t, self.set_rotation,
-                                                             datamanager.generate_options("numbers"),
+                                                             datamanager.get_option_list("numbers"),
                                                              blocklist=blocklist, norm_data=normalized_data)
             if data:
                 data_dictionary[key] = data
@@ -146,7 +146,7 @@ class AstHandTranslation:
         :param rotation_type: rotation type of batch. Defaults to "n"
         """
         dfs = []
-        translations = datamanager.generate_options("translations")  # ["a", "b", "c", "d", "e", "f", "g", "h"]
+        translations = datamanager.get_option_list("translations")  # ["a", "b", "c", "d", "e", "f", "g", "h"]
 
         for direction in translations:
             dict_key = f"{direction}_{self.set_rotation}"
@@ -285,7 +285,7 @@ class AstHandTranslation:
         dirs = self._get_directions_in_data()
         print(f"Directions included: {dirs}")
 
-        for t in datamanager.generate_options("translations"):
+        for t in datamanager.get_option_list("translations"):
             # make sure that we only include translations that are in the data
             if t in dirs:
                 print(f"Averaging {t}")
@@ -574,7 +574,7 @@ class AstHandTranslation:
             ideal_xs = [x_a, x_b, x_c, x_d, x_e, x_f, x_g, x_h]
             ideal_ys = [y_a, y_b, y_c, y_d, y_e, y_f, y_g, y_h]
 
-            dirs = datamanager.generate_options("translations")
+            dirs = datamanager.get_option_list("translations")
             for i, d in enumerate(dirs):
                 plt.plot(ideal_xs[i], ideal_ys[i], color=aplt.get_dir_color(d), label='ideal', linestyle='--')
 

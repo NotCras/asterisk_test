@@ -148,7 +148,7 @@ class AstNaming:
 
 
 # TODO: move following functions into a AstNaming object?
-def generate_options(key):
+def get_option_list(key):
     """
     One function to return all sorts of parameter lists. Mainly to be used outside of data manager
     :param key: the key of the list that you want
@@ -164,13 +164,13 @@ def generate_t_r_pairs(hand_name, exclude_tr_trials=False, include_rotation_only
     :param hand_name: name of hand specified
     :return: yields translation and rotation combinations
     """
-    translations = generate_options("translations_all")
-    n_trans_rot_opts = generate_options("rotations_n_trans")
-    rotations = generate_options("rotations")
+    translations = get_option_list("translations_all")
+    n_trans_rot_opts = get_option_list("rotations_n_trans")
+    rotations = get_option_list("rotations")
 
     for t in translations:
         if t == "n" and include_rotation_only_trials:  # necessary to divide rotations because cw and ccw only happen with no translation
-            if hand_name in generate_options("hands_only_n"):
+            if hand_name in get_option_list("hands_only_n"):
                 # if the hand can't do rotations, then don't yield this combination
                 continue
             else:
@@ -183,7 +183,7 @@ def generate_t_r_pairs(hand_name, exclude_tr_trials=False, include_rotation_only
 
         else:
             # if we have a straightforward translation...
-            if hand_name in generate_options("hands_only_n") or exclude_tr_trials:
+            if hand_name in get_option_list("hands_only_n") or exclude_tr_trials:
                 # if the hand can't do rotations or we don't want to yield translation+rotation conditions, then we only consider translation-only trials
                 rot = "n"
             else:
@@ -201,7 +201,7 @@ def generate_names_with_s_h(subject_name, hand_name, exclude_tr_trials=False, in
     :param hand_name: name of hand
     :return: yields all parameters
     """
-    num = generate_options("numbers")
+    num = get_option_list("numbers")
 
     for t, r in generate_t_r_pairs(hand_name, exclude_tr_trials=exclude_tr_trials, include_rotation_only_trials=include_rotation_only_trials):
         for n in num:
@@ -217,10 +217,10 @@ def generate_all_names(subject=None, hand_name=None, exclude_tr_trials=False, in
     """
     # TODO: make smart version so you can be picky with your options... make the constant lists as default parameters
     if subject is None:
-        subject = generate_options("subjects")
+        subject = get_option_list("subjects")
 
     if hand_name is None:
-        hand_name = generate_options("hands")
+        hand_name = get_option_list("hands")
 
     for s in subject:
         for h in hand_name:
@@ -285,21 +285,6 @@ def smart_answer(user_input, options):
     """
     pass
 
-class AstDir:
-    """
-    Manages the folder paths where data is stored.
-    """
-    def __init__(self, home_dir=None, viz_folder_name="viz", aruco_folder_name="aruco_data",
-                 trial_folder_name="trial_data", results_folder_name="results"):
-        if home_dir is None:
-            self.home = Path(__file__).parent.absolute()
-        else:
-            self.home = home_dir
-
-        self.viz_folder = viz_folder_name  # where visual data is stored
-        self.aruco_folder = aruco_folder_name  # where aruco analysis data is stored
-        self.trial_folder = trial_folder_name  # where trial path data (with filtering) is stored
-        self.results_folder = results_folder_name  # where metric results and images are stored
 
 
 if __name__ == "__main__":
