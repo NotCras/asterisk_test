@@ -8,7 +8,8 @@ from pathlib import Path
 
 class AstDirectory:
 
-    def __init__(self):
+    def __init__(self): 
+        # TODO: maybe save the file names as entries in a dictionary? Revisit.
         self.compressed_data = None
         self.aruco_pics = None
         self.aruco_data = None
@@ -17,11 +18,11 @@ class AstDirectory:
         self.result_figs = None
         self.debug_figs = None
 
-    def file_location(self):
-        """
-        Function enables user to edit a file location. Function handles pathlib stuff
-        """
-        pass
+    # def file_location(self):
+    #     """
+    #     Function enables user to edit a file location. Function handles pathlib stuff
+    #     """
+    #     pass
 
     def import_locations(self, file_loc):
         """
@@ -29,8 +30,8 @@ class AstDirectory:
         """
         pass
 
-    def is_valid(self):
-        """
-        Function returns bool if all of the required file locations are added.
-        """
-        pass
+    # def is_valid(self):
+    #     """
+    #     Function returns bool if all of the required file locations are added.
+    #     """
+    #     pass

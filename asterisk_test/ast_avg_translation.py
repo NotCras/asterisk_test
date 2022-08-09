@@ -6,15 +6,15 @@ import numpy as np
 from numpy import sqrt, mean, std
 import pandas as pd
 import matplotlib.pyplot as plt
-from ast_trial import AstTrial
-from ast_basic import AstBasicData
+from ast_trial import AstTrialTranslation
+from ast_basic import AstTrial
 from ast_hand_info import HandInfo
 from data_plotting import AsteriskPlotting
 from data_calculations import AsteriskCalculations
 import pdb
 
 
-class AveragedTrial(AstBasicData):
+class AveragedTrial(AstTrial):
     """
     Class handles averaging a set of AstTrial objects: averaging the path and metrics
     """
@@ -167,7 +167,7 @@ class AveragedTrial(AstBasicData):
             self.assess_path_labels()
 
     def add_data_by_df(self, df, name='x_x_x_x_0'):  # don't use this
-        trial = AstTrial(file_name=name, data=df)  # TODO: need to figure out a better way for naming...
+        trial = AstTrialTranslation(file_name=name, data=df)  # TODO: need to figure out a better way for naming...
         self.add_trial(trial)
 
     def _set_check(self, expected, observed_set):
@@ -704,37 +704,37 @@ if __name__ == '__main__':
     w = 10
     normed = False
 
-    test1 = AstTrial(f'sub1_{h}_{t}_{r}_1.csv', norm_data=normed)
+    test1 = AstTrialTranslation(f'sub1_{h}_{t}_{r}_1.csv', norm_data=normed)
     test1.moving_average(window_size=w)
-    test2 = AstTrial(f'sub1_{h}_{t}_{r}_2.csv', norm_data=normed)
+    test2 = AstTrialTranslation(f'sub1_{h}_{t}_{r}_2.csv', norm_data=normed)
     test2.moving_average(window_size=w)
-    test3 = AstTrial(f'sub1_{h}_{t}_{r}_3.csv', norm_data=normed)
+    test3 = AstTrialTranslation(f'sub1_{h}_{t}_{r}_3.csv', norm_data=normed)
     test3.moving_average(window_size=w)
-    test4 = AstTrial(f'sub1_{h}_{t}_{r}_4.csv', norm_data=normed)
+    test4 = AstTrialTranslation(f'sub1_{h}_{t}_{r}_4.csv', norm_data=normed)
     test4.moving_average(window_size=w)
-    test5 = AstTrial(f'sub1_{h}_{t}_{r}_5.csv', norm_data=normed)
+    test5 = AstTrialTranslation(f'sub1_{h}_{t}_{r}_5.csv', norm_data=normed)
     test5.moving_average(window_size=w)
 
-    test6 = AstTrial(f'sub2_{h}_{t}_{r}_1.csv', norm_data=normed)
+    test6 = AstTrialTranslation(f'sub2_{h}_{t}_{r}_1.csv', norm_data=normed)
     test6.moving_average(window_size=w)
-    test7 = AstTrial(f'sub2_{h}_{t}_{r}_2.csv', norm_data=normed)
+    test7 = AstTrialTranslation(f'sub2_{h}_{t}_{r}_2.csv', norm_data=normed)
     test7.moving_average(window_size=w)
-    test8 = AstTrial(f'sub2_{h}_{t}_{r}_3.csv', norm_data=normed)
+    test8 = AstTrialTranslation(f'sub2_{h}_{t}_{r}_3.csv', norm_data=normed)
     test8.moving_average(window_size=w)
-    test9 = AstTrial(f'sub2_{h}_{t}_{r}_4.csv', norm_data=normed)
+    test9 = AstTrialTranslation(f'sub2_{h}_{t}_{r}_4.csv', norm_data=normed)
     test9.moving_average(window_size=w)
-    test10 = AstTrial(f'sub2_{h}_{t}_{r}_5.csv', norm_data=normed)
+    test10 = AstTrialTranslation(f'sub2_{h}_{t}_{r}_5.csv', norm_data=normed)
     test10.moving_average(window_size=w)
 
-    test11 = AstTrial(f'sub3_{h}_{t}_{r}_1.csv', norm_data=normed)
+    test11 = AstTrialTranslation(f'sub3_{h}_{t}_{r}_1.csv', norm_data=normed)
     test11.moving_average(window_size=w)
-    test12 = AstTrial(f'sub3_{h}_{t}_{r}_2.csv', norm_data=normed)
+    test12 = AstTrialTranslation(f'sub3_{h}_{t}_{r}_2.csv', norm_data=normed)
     test12.moving_average(window_size=w)
-    test13 = AstTrial(f'sub3_{h}_{t}_{r}_3.csv', norm_data=normed)
+    test13 = AstTrialTranslation(f'sub3_{h}_{t}_{r}_3.csv', norm_data=normed)
     test13.moving_average(window_size=w)
-    test14 = AstTrial(f'sub3_{h}_{t}_{r}_4.csv', norm_data=normed)
+    test14 = AstTrialTranslation(f'sub3_{h}_{t}_{r}_4.csv', norm_data=normed)
     test14.moving_average(window_size=w)
-    test15 = AstTrial(f'sub3_{h}_{t}_{r}_5.csv', norm_data=normed)
+    test15 = AstTrialTranslation(f'sub3_{h}_{t}_{r}_5.csv', norm_data=normed)
     test15.moving_average(window_size=w)
 
     #test16 = AstTrial(f'sub1_2v2_c_n_1.csv')

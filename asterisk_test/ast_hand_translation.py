@@ -113,7 +113,7 @@ class AstHandTranslation:
                     continue
 
                 try:
-                    trial_data = atrial.AstTrial(f"{asterisk_trial}.csv", norm_data=norm_data)
+                    trial_data = atrial.AstTrialTranslation(f"{asterisk_trial}.csv", norm_data=norm_data)
                     print(f"{trial_data.generate_name()}, labels: {trial_data.path_labels}")
 
                     gathered_data.append(trial_data)
@@ -468,7 +468,7 @@ class AstHandTranslation:
         """
         selected_trial_objs = []
 
-        for t in trial_list:
+        for t in trial_list: # TODO: skip the trials that do not pertain to this AstHandTranslation trial
             selected_trial_objs.append(self._get_trial(t))
 
         plt = self._make_plot(selected_trial_objs, use_filtered=False, stds=False, linestyle=linestyle, include_notes=include_notes,

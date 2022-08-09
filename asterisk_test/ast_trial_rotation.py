@@ -6,10 +6,10 @@ import numpy as np
 from matplotlib import cm
 from trial_labelling import AsteriskLabelling as al
 from metric_calculation import AstMetrics as am
-from ast_trial import AstTrial
+from ast_trial import AstTrialTranslation
 
 
-class AstTrialRotation(AstTrial):
+class AstTrialRotation(AstTrialTranslation):
     """
     Class which handles cw/ccw trials, separating because we would appreciate the nuance
     """

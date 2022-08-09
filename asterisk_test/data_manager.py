@@ -158,7 +158,7 @@ def generate_options(key):
     return opt.get_option(key)
 
 
-def generate_t_r_pairs(hand_name, no_rotations=False, do_t_n=True):
+def generate_t_r_pairs(hand_name, exclude_tr_trials=False, include_rotation_only_trials=True):
     """
     Generator that feeds all trial combinations pertaining to a specific hand
     :param hand_name: name of hand specified
@@ -169,25 +169,32 @@ def generate_t_r_pairs(hand_name, no_rotations=False, do_t_n=True):
     rotations = generate_options("rotations")
 
     for t in translations:
-        if t == "n" and do_t_n:  # necessary to divide rotations because cw and ccw only happen with no translation
+        if t == "n" and include_rotation_only_trials:  # necessary to divide rotations because cw and ccw only happen with no translation
             if hand_name in generate_options("hands_only_n"):
+                # if the hand can't do rotations, then don't yield this combination
                 continue
             else:
+                # otherwise include the rotation_only trials
                 rot = n_trans_rot_opts
-        elif t == "n":
+
+        elif t == "n" and not include_rotation_only_trials:
+            # if we don't include rotation only, then we don't yield this combination
             continue
 
         else:
-            if hand_name in generate_options("hands_only_n") or no_rotations:
+            # if we have a straightforward translation...
+            if hand_name in generate_options("hands_only_n") or exclude_tr_trials:
+                # if the hand can't do rotations or we don't want to yield translation+rotation conditions, then we only consider translation-only trials
                 rot = "n"
             else:
                 rot = rotations
 
+        # based on the t value and the what the hand can do and what the user specified, yield the salient t, r combinations
         for r in rot:
             yield t, r
 
 
-def generate_names_with_s_h(subject_name, hand_name, no_rotations=False, do_t_n=True):
+def generate_names_with_s_h(subject_name, hand_name, exclude_tr_trials=False, include_rotation_only_trials=True):
     """
     Generates all trial combinations with a specific hand name
     :param subject_name: name of subject
@@ -196,12 +203,12 @@ def generate_names_with_s_h(subject_name, hand_name, no_rotations=False, do_t_n=
     """
     num = generate_options("numbers")
 
-    for t, r in generate_t_r_pairs(hand_name, no_rotations=no_rotations, do_t_n=do_t_n):
+    for t, r in generate_t_r_pairs(hand_name, exclude_tr_trials=exclude_tr_trials, include_rotation_only_trials=include_rotation_only_trials):
         for n in num:
             yield subject_name, hand_name, t, r, n
 
 
-def generate_all_names(subject=None, hand_name=None, no_rotations=False):
+def generate_all_names(subject=None, hand_name=None, exclude_tr_trials=False, include_rotation_only_trials=False):
     """
     Generate all combinations of all parameters
     :param subject: list of subjects to provide, if none provided defaults to all subjects
@@ -217,7 +224,7 @@ def generate_all_names(subject=None, hand_name=None, no_rotations=False):
 
     for s in subject:
         for h in hand_name:
-            yield generate_names_with_s_h(s, h, no_rotations=no_rotations)
+            yield generate_names_with_s_h(s, h, exclude_tr_trials=exclude_tr_trials, include_rotation_only_trials=include_rotation_only_trials)
 
 
 def generate_fname(subject_name, hand):

@@ -23,11 +23,16 @@ class AstArucoAnalysis:
         """
         Analyzes a folder of aruco images
         """
-        trial_folder = self.aruco_pics_loc + trial_name #todo:double check that this is correct syntax
+        h, t, r, s, n = file_name.split("_")
+        trial_attributes = {"hand":h, "translation":t, "rotation":r, "subject":s, "trial_num":n}
+
+        trial_folder = self.aruco_pics_loc / trial_name # TODO:double check that this is correct syntax
         aruco_loc = self.af.full_analysis_single_id(trial_folder, aruco_id)
 
+        aruco_loc.data_attributes = trial_attributes
+
         if save_trial:
-            result_folder = self.aruco_data_loc + trial_name
+            result_folder = self.aruco_data_loc / trial_name
             aruco_loc.save_poses(file_name_overwrite=result_folder)
 
         return aruco_loc
@@ -47,25 +52,28 @@ class AstArucoAnalysis:
         batch_trial_data = dict()
 
         for s, h, t, r, n in datamanager.generate_names_with_s_h(subject, hand, no_rotations=exclude_rotations):
-            trial_name = f"{s}_{h}_{t}_{r}_{n}" #TODO: add generate filename to datamanager to handle this
+            trial_name = f"{s}_{h}_{t}_{r}_{n}" # TODO: add generate filename to datamanager to handle this
+            log.info(f"Attempting {trial_name}, aruco analysis.")
 
             #TODO: use try, except here
             trial_data = self.aruco_analyze_trial(trial_name, self.aruco_hand_to_id[hand], save_trial=save_data)
 
             if assess_indices:
-                #find indices to crop to in the data
-                pass
+                # find indices to crop to in the data
+                # TODO: do this
+                raise NotImplementedError("Can't assess indices yet.")
 
                 if crop_trial: #and follow_through_with_crop:
-                    #actually crop the trial
-                    pass
+                    # actually crop the trial
+                    # TODO: do this
+                    raise NotImplementedError("Can't crop trial data by indices yet.")
 
             batch_trial_data[trial_name] = trial_data
             files_covered.append(trial_name)
 
-            log.info(f"Succeeded: {trial_name}, aruco analysis")
+            log.info(f"Succeeded: {trial_name}, aruco analysis.")
 
-        log.info("Batch aruco analysis complete.")
+        log.info(f"========  Batch aruco analysis complete for {hand}, {subject}.")
         return batch_trial_data
 
 # TODO: add the script portion, just like ast_aruco
