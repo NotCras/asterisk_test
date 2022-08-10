@@ -16,8 +16,11 @@ from trial_labelling import AsteriskLabelling as al
 import pdb
 from ast_hand_info import HandInfo
 from scipy import stats
-from ast_basic import AstTrial
-from aruco_tool import ArucoLoc
+from ast_trial import AstTrial
+from aruco_tool import ArucoLoc, ArucoFunc
+from aruco_analysis import AstArucoAnalysis
+from file_manager import AstDirectory, my_ast_files
+from pathlib import Path
 
 
 class AstTrialTranslation(AstTrial):
@@ -32,12 +35,15 @@ class AstTrialTranslation(AstTrial):
         self.path_labels = []
         self.poses = None
         self.metrics = None
+        self.aruco_id = None
 
         self.controller_label = controller_label  # TODO: integrate controller label into the plot title
 
-        self.normalized = norm_data
+        self.normalized = None
         self.filtered = False
         self.window_size = 0
+
+        self.file_loc_obj = file_loc_obj
 
         # try:
         #     # Data can either be a dataframe or a filename
@@ -84,14 +90,44 @@ class AstTrialTranslation(AstTrial):
         self.add_hand_info(h)
         self.data_demographics(s, t, r, n)
 
-    def add_data_by_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True, condition_data=True):
+    def _read_file(self, file_name, folder="aruco_data/", norm_data=True, condition_data=True):
+        """
+        Function to read file and save relevant data in the object
+        :param file_name: name of file to read in
+        :param folder: name of folder to read file from. Defaults csv folder
+        """
+        total_path = self.file_loc_obj.aruco_data / file_name
+        try:
+            # print(f"Reading file: {total_path}")
+            df = pd.read_csv(total_path, skip_blank_lines=True)
+            df = df.set_index("frame")
+        except Exception as e:  # TODO: add more specific except clauses
+            # print(e)
+            print(f"{total_path} has failed to read csv")
+            return None
+
+        if condition_data:
+            try:
+                # print(f"Now at data conditioning.")
+                df = self._condition_df(df, norm_data=norm_data)
+            except Exception as e:
+                # print(e)
+                print(f"{total_path} has failed at data conditioning. There's a problem with the data.")
+                return None
+
+        return df
+
+    def add_data_by_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True, condition_data=True, aruco_id=None):
         """
         Add object path data as a file. By default, will run data through conditioning function
         """
         # Data will not be filtered in this step
+        self.demographics_from_filename(file_name)
         path_df = self._read_file(file_name, condition_data=condition_data, norm_data=norm_data)
+        self.aruco_id = aruco_id
 
         self.poses = path_df[["x", "y", "rmag"]]
+        self.normalized = norm_data
 
         self.target_line, self.total_distance = self.generate_target_line(100, norm_data)  # 100 samples
         self.target_rotation = self.generate_target_rot()
@@ -116,8 +152,15 @@ class AstTrialTranslation(AstTrial):
         self.data_demographics(subject=aruco_loc.data_attributes["subject"], translation=aruco_loc.data_attributes["translation"], 
                                 rotation=aruco_loc.data_attributes["rotation"], number=aruco_loc.data_attributes["trial_num"])
         self.add_hand_info(aruco_loc.data_attributes["hand"])
+        self.aruco_id = aruco_loc.id
+
+        if condition_data:
+            data = self._condition_df(path_df, norm_data=norm_data)
+        else:
+            data = path_df
         
         self.poses = path_df[["x", "y", "rmag"]]
+        self.normalized = norm_data
 
         self.target_line, self.total_distance = self.generate_target_line(100, norm_data)  # 100 samples
         self.target_rotation = self.generate_target_rot()
@@ -128,14 +171,16 @@ class AstTrialTranslation(AstTrial):
         if do_metrics and self.poses is not None and "no_mvt" not in self.path_labels:
             self.update_all_metrics()
 
-    def add_data_by_df(self, path_df, condition_df=True, do_metrics=True, norm_data=True):
+    def add_data_by_df(self, path_df, condition_df=True, do_metrics=True, norm_data=True, aruco_id=None):
         """
         Add object path data as a dataframe. By default, will run dataframe through conditioning function
         """
         path_df = path_df.set_index("frame")
+        self.normalized = norm_data
+        self.aruco_id = aruco_id
 
         if condition_df:
-            data = self._condition_df(path_df, norm_data)
+            data = self._condition_df(path_df, norm_data=norm_data)
         else:
             data = path_df
 
@@ -149,33 +194,6 @@ class AstTrialTranslation(AstTrial):
         if do_metrics and self.poses is not None and "no_mvt" not in self.path_labels:
             self.update_all_metrics()
 
-    def _read_file(self, file_name, folder="aruco_data/", norm_data=True, condition_data=True):
-        """
-        Function to read file and save relevant data in the object
-        :param file_name: name of file to read in
-        :param folder: name of folder to read file from. Defaults csv folder
-        """
-        total_path = f"{folder}{file_name}"
-        try:
-            # print(f"Reading file: {total_path}")
-            df = pd.read_csv(total_path, skip_blank_lines=True)
-            df = df.set_index("frame")
-        except Exception as e:  # TODO: add more specific except clauses
-            # print(e)
-            print(f"{total_path} has failed to read csv")
-            return None
-
-        if condition_data:
-            try:
-                # print(f"Now at data conditioning.")
-                df = self._condition_df(df, norm_data=norm_data)
-            except Exception as e:
-                # print(e)
-                print(f"{total_path} has failed at data conditioning. There's a problem with the data.")
-                return None
-
-        return df
-
     def _condition_df(self, df, norm_data=True):
         """
         Data conditioning procedure used to:
@@ -187,19 +205,15 @@ class AstTrialTranslation(AstTrial):
         # df_numeric = df.apply(pd.to_numeric)
         #df = df.set_index("frame")
 
-        # df_numeric.columns = ["pitch", "rmag", "roll", "tmag", "x", "y", "yaw", "z"]
-        # TODO: is there a way I can make this directly hit each column without worrying about the order?
         # convert m to mm in translational data
-        df = df * [1., 1., 1., 1000., 1000., 1000., 1., 1000.]
+        df["x"] = df["x"]*1000
+        df["y"] = df["y"]*1000
+        df["z"] = df["z"]*1000
 
         if norm_data:
-            # normalize translational data by hand span
-            df = df / [1., 1., 1.,  # orientation data
-                       1., # translational magnitude, don't use
-                       self.hand.span,  # x
-                       self.hand.depth,  # y
-                       1.,  # yaw
-                       1.]  # z - doesn't matter
+            df["x"] = df["x"] / self.hand.span
+            df["y"] = df["y"] / self.hand.depth
+
             df = df.round(4)
 
         # occasionally get an outlier value (probably from vision algorithm), I filter them out here
@@ -306,11 +320,25 @@ class AstTrialTranslation(AstTrial):
             plt.show()
 
 if __name__ == '__main__':
-    test = AstTrialTranslation(file_name="sub1_basic_c_n_2.csv", do_metrics=True, norm_data=False)
+    test = AstTrialTranslation(my_ast_files)
+
+    # test out arucoloc
+    # mtx = np.array(((617.0026849655, -0.153855356, 315.5900337131),  # fx, s,cx
+    #                 (0, 614.4461785395, 243.0005874753),  # 0,fy,cy
+    #                 (0, 0, 1)))
+    # dists = np.array((0.1611730644, -0.3392379107, 0.0010744837, 0.000905697))
+    # aruco = AstArucoAnalysis(my_ast_files, mtx, dists, 0.03)
+    # test_al = aruco.aruco_analyze_trial("2v2_a_n_sub1_1", 2)
+    # test.add_data_by_arucoloc(test_al, condition_data=True, do_metrics=True, norm_data=True)
+
+    # testing out filename
+    test.add_data_by_file(file_name="sub1_2v2_a_n_1.csv", do_metrics=True, norm_data=False)
+
     print(f"name: {test.generate_name()}")
     print(f"tot dist: {test.total_distance}")
     print(f"path labels: {test.path_labels}")
     print(f"metrics: {test.metrics}")
+    print(f"poses: {test.poses}")
 
     test.moving_average(window_size=10)
-    test.plot_trial(use_filtered=False, provide_notes=True)
+    #test.plot_trial(use_filtered=False, provide_notes=True)

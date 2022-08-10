@@ -23,10 +23,10 @@ class AstArucoAnalysis:
         """
         Analyzes a folder of aruco images
         """
-        h, t, r, s, n = file_name.split("_")
+        h, t, r, s, n = trial_name.split("_")
         trial_attributes = {"hand":h, "translation":t, "rotation":r, "subject":s, "trial_num":n}
 
-        trial_folder = self.aruco_pics_loc / trial_name # TODO:double check that this is correct syntax
+        trial_folder = self.aruco_pics_loc / f"{s}_{h}_{t}_{r}_{n}" # TODO:double check that this is correct syntax
         aruco_loc = self.af.full_analysis_single_id(trial_folder, aruco_id)
 
         aruco_loc.data_attributes = trial_attributes
