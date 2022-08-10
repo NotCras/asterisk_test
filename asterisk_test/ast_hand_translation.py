@@ -12,6 +12,7 @@ import pdb
 import matplotlib.pyplot as plt
 import data_manager as datamanager
 import ast_trial as atrial
+from ast_trial_translation import AstTrialTranslation
 from ast_hand_info import HandInfo
 from ast_avg_translation import AveragedTrial
 from data_plotting import AsteriskPlotting as aplt
@@ -19,7 +20,7 @@ from file_manager import AstDirectory
 
 
 class AstHandTranslation:
-    def __init__(self, file_loc_obj, subjects, hand_name, rotation='n', blocklist_file=None, normalized_data=True):
+    def __init__(self, file_loc_obj, hand_name, rotation='n', blocklist_file=None, normalized_data=True):
         """
         Class to hold all the data pertaining to a specific hand.
         Combines data from all subjects
@@ -27,7 +28,7 @@ class AstHandTranslation:
         :param hand_name: name of hand for this object
         """
         self.hand = HandInfo(hand_name)
-        self.subjects_containing = subjects
+        self.subjects_containing = None
         self.file_locs = file_loc_obj
 
         if blocklist_file is not None:
@@ -36,7 +37,7 @@ class AstHandTranslation:
             blocklist = None
 
         self.set_rotation = rotation
-        self.data = self._gather_hand_data(subjects, blocklist=blocklist, normalized_data=normalized_data)
+        self.data = None  # self._gather_hand_data(subjects, blocklist=blocklist, normalized_data=normalized_data)
         self.filtered = False
         self.window_size = None
         self.averages = []
@@ -55,14 +56,14 @@ class AstHandTranslation:
 
         return blocked_files
 
-    def _gather_hand_data(self, subjects, blocklist=None, normalized_data=True):
+    def get_data_from_files(self, subjects, blocklist=None, normalized_data=True):
         """
         Returns a dictionary with the data for the hand, sorted by task.
         Each key,value pair of dictionary is:
         key: name of task, string. Ex: "a_n"
         value: list of AsteriskTrial objects for the corresponding task, with all subjects specified
         :param subjects: list of subjects to get
-        """
+        """ # TODO: change this to add trials to the data dictionary. If the key doesn't exist, then add it. Add it all directly to the self.data attribute
         data_dictionary = dict()
 
         for t in datamanager.get_option_list("translations"):
@@ -77,7 +78,7 @@ class AstHandTranslation:
                 print(f"{key} not included, no valid data")
                 # pdb.set_trace()
 
-        return data_dictionary
+        return data_dictionary  # TODO: remove this!
 
     def _get_directions_in_data(self):
         """
@@ -113,7 +114,7 @@ class AstHandTranslation:
                     continue
 
                 try:
-                    trial_data = atrial.AstTrialTranslation(f"{asterisk_trial}.csv", norm_data=norm_data)
+                    trial_data = AstTrialTranslation(f"{asterisk_trial}.csv", norm_data=norm_data)
                     print(f"{trial_data.generate_name()}, labels: {trial_data.path_labels}")
 
                     gathered_data.append(trial_data)
@@ -126,7 +127,41 @@ class AstHandTranslation:
 
         return gathered_data
 
-    def _import_data_from_ast_trial_list(self, trial_list):  # TODO: to implement later
+    def get_data_from_arucolocs(self, arucoloc_list):
+        """
+
+        Args:
+            arucoloc_list (_type_): _description_
+        """
+        pass  # TODO: flesh this out after I tackle filenames
+
+    def _make_asterisk_trials_from_arucoloc(self, arucoloc_list, blocklist=None, norm_data=True):
+        """_summary_
+
+        Args:
+            arucoloc_list (_type_): _description_
+            blocklist (_type_, optional): _description_. Defaults to None.
+            norm_data (bool, optional): _description_. Defaults to True.
+        """
+
+        # for each arucoloc obj, we need to get its attributes and find the appropriate location to store the data
+        # then we need to make the asterisk trial obj from the arucoloc obj
+        for al in arucoloc_list:
+            t_label = al.data_attributes["translation"]
+            r_label = al.data_attributes["rotation"]
+            trial_label = f"{t_label}_{r_label}"
+
+            trial = AstTrialTranslation().add_data_by_arucoloc(al)
+
+            self.data[trial_label].append(trial)
+
+
+    def _import_data_from_ast_trial_list(self, trial_list):  # TODO: implement!
+        """Adds data from a list of asterisk trial objects
+
+        Args:
+            trial_list (_type_): _description_
+        """
         pass
 
     def add_trial(self, ast_trial):
@@ -134,6 +169,7 @@ class AstHandTranslation:
         add an ast_trial after the asteriskhanddata object was created
         :param ast_trial: asterisktrialdata to add
         """
+        # TODO: check that the hand is correct!
         label = f"{ast_trial.trial_translation}_{ast_trial.trial_rotation}"
         self.data[label].append(ast_trial)
 
@@ -246,7 +282,6 @@ class AstHandTranslation:
             raise AttributeError(f"Could not find the trial you specified: {trial_name}")
         else:
             return trial_to_return
-
 
     def _average_dir(self, translation, subject=None, exclude_path_labels=None):
         """

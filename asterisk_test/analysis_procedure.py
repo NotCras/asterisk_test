@@ -79,97 +79,101 @@ tr_hands = None
 to_hands = None
 total_bars = 1 
 
+if not do_rotation_conditions_for_tr:
+    included_rotation_conditions = ["n"]
+
 # TODO: so far, things are set up for translation only trials... need to revisit for rotation_only and tr
 with alive_bar(total_bars) as bar:
-    for h in included_hands:
-        log.info(f"Running: {h}, {included_subjects}")
+    for rot in included_rotation_conditions:
+        for h in included_hands:
+            log.info(f"Running: {h}, {included_subjects}")
 
-        """ Now for each set of trial data...
-        Step 3: run aruco analysis, if desired
-        """
-        ar_data = None
-        if run_aruco_analysis:
-            log.info("======  Running aruco analysis")
-            mtx = np.array(((617.0026849655, -0.153855356, 315.5900337131),  # fx, s,cx
-                            (0, 614.4461785395, 243.0005874753),  # 0,fy,cy
-                            (0, 0, 1)))
-            dists = np.array((0.1611730644, -0.3392379107, 0.0010744837, 0.000905697))
+            """ Now for each set of trial data...
+            Step 3: run aruco analysis, if desired
+            """
+            ar_data = None
+            if run_aruco_analysis:
+                log.info("======  Running aruco analysis")
+                mtx = np.array(((617.0026849655, -0.153855356, 315.5900337131),  # fx, s,cx
+                                (0, 614.4461785395, 243.0005874753),  # 0,fy,cy
+                                (0, 0, 1)))
+                dists = np.array((0.1611730644, -0.3392379107, 0.0010744837, 0.000905697))
 
-            marker_side_dims = 0.03 # in meters
+                marker_side_dims = 0.03 # in meters
 
-            ar = AstArucoAnalysis(ast_files, mtx, dists, marker_side_dims)
+                ar = AstArucoAnalysis(ast_files, mtx, dists, marker_side_dims)
 
-            ar_data = []
-            for s in included_subjects: # TODO: how should I separate between the rotation_only trials, the tr trials, and the t_only trials?
-                ar_analysis = ar.batch_aruco_analysis(s, h, 
-                                                    include_rotation_only_trials=do_rotation_only_trials, 
-                                                    exclude_tr_trials=do_rotation_conditions_for_tr,  
-                                                    save_data=False, assess_indices=False, crop_trial=False)
+                ar_data = []
+                for s in included_subjects: # TODO: how should I separate between the rotation_only trials, the tr trials, and the t_only trials?
+                    ar_analysis = ar.batch_aruco_analysis(s, h, 
+                                                        include_rotation_only_trials=do_rotation_only_trials, 
+                                                        exclude_tr_trials=do_rotation_conditions_for_tr,  
+                                                        save_data=False, assess_indices=False, crop_trial=False)
 
-                ar_data.append(ar_analysis) 
+                    ar_data.append(ar_analysis) 
 
-        """
-        Step 4: Data conditioning and organizing, plotting paths
-        """
-        log.info("=====  Running data conditioning and organizing, plotting paths")
+            """
+            Step 4: Data conditioning and organizing, plotting paths
+            """
+            log.info("=====  Running data conditioning and organizing, plotting paths")
 
-        data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
+            data = AstHandTranslation(ast_files, h, rotation=rot, blocklist_file="trial_blocklist.csv")
 
-        if ar_data is None:
-            # If we didn't run the aruco analysis, then we need to import the aruco data
-            data.get_data_from_filenames() 
+            if ar_data is None:
+                # If we didn't run the aruco analysis, then we need to import the aruco data
+                data.get_data_from_files(s, normalized_data=normalize_data) 
 
-        else:
-            # Otherwise, we take the aruco data we just generated
-            data.get_data_from_arucolocs(ar_data) 
+            else:
+                # Otherwise, we take the aruco data we just generated
+                data.get_data_from_arucolocs(ar_data) 
 
-        data.filter_data(10)
-
-
-        # make plots... a) averaged plot, if desired, b) average debug plots, if desired, and c) is there anything else?
-        data.plot_ast_avg(show_plot=False, save_plot=True, exclude_path_labels=['major deviation'])
-
-        if save_avg_debug_plots:
-            for a in data.averages:
-                a.avg_debug_plot(show_plot=False, save_plot=True, use_filtered=True)
-
-        # although we don't show the plots, a matplotlib warning suggests that it still keeps those plots open
-        plt.close("all")
-
-        # TODO: I should save plots both as jpgs and as svgs (in separate folders!)
-
-        """
-        Step 5: Metric calculation, if desired
-        """
-        if run_metric_calculation:
-            log.info("=====  Running metric calculation")
-            raise NotImplementedError("Can't run metric calculation yet.")
-
-            metric_data = AstHandAnalyzer(data)
+            data.filter_data(10)
 
 
-        """
-        Step 6: Saving data (aruco, path data, metric results), if desired
-        """
-        if run_aruco_analysis:
-            log.info("Saving aruco data.")
-            for a_data in ar_data:
-                a_hand = a_data.data_attributes["hand"]
-                a_t = a_data.data_attributes["translation"]
-                a_rot = a_data.data_attributes["rotation"]
-                a_sub = a_data.data_attributes["subject"]
-                a_num = a_data.data_attributes["trial_num"]
+            # make plots... a) averaged plot, if desired, b) average debug plots, if desired, and c) is there anything else?
+            data.plot_ast_avg(show_plot=False, save_plot=True, exclude_path_labels=['major deviation'])
 
-                a_data.save_poses(file_name_overwrite=f"aruco_{a_hand}_{a_t}_{a_rot}_{a_sub}_{a_num}")
+            if save_avg_debug_plots:
+                for a in data.averages:
+                    a.avg_debug_plot(show_plot=False, save_plot=True, use_filtered=True)
 
-        log.info("Saving path data.")
-        data.save_all_data()
+            # although we don't show the plots, a matplotlib warning suggests that it still keeps those plots open
+            plt.close("all")
 
-        if run_metric_calculation:
-            log.info("Saving metric results.")
-            metric_data.save_data(file_name_overwrite=f"{h}_{rot}")
+            # TODO: I should save plots both as jpgs and as svgs (in separate folders!)
+
+            """
+            Step 5: Metric calculation, if desired
+            """
+            if run_metric_calculation:
+                log.info("=====  Running metric calculation")
+                raise NotImplementedError("Can't run metric calculation yet.")
+
+                metric_data = AstHandAnalyzer(data)
 
 
-        """
-        Now we repeat for the next set of trial data... 
-        """
+            """
+            Step 6: Saving data (aruco, path data, metric results), if desired
+            """
+            if run_aruco_analysis:
+                log.info("Saving aruco data.")
+                for a_data in ar_data:
+                    a_hand = a_data.data_attributes["hand"]
+                    a_t = a_data.data_attributes["translation"]
+                    a_rot = a_data.data_attributes["rotation"]
+                    a_sub = a_data.data_attributes["subject"]
+                    a_num = a_data.data_attributes["trial_num"]
+
+                    a_data.save_poses(file_name_overwrite=f"aruco_{a_hand}_{a_t}_{a_rot}_{a_sub}_{a_num}")
+
+            log.info("Saving path data.")
+            data.save_all_data()
+
+            if run_metric_calculation:
+                log.info("Saving metric results.")
+                metric_data.save_data(file_name_overwrite=f"{h}_{rot}")
+
+            bar()
+            """
+            Now we repeat for the next set of trial data... 
+            """

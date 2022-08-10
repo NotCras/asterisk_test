@@ -124,3 +124,5 @@ class AsteriskPlotting:
             pass
 
         return x_vals, y_vals
+
+    # TODO: more functions: plot_asterisk, plot_avg_asterisk, plot_one_direction -> move this here and out of the other objects

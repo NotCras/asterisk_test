@@ -7,6 +7,7 @@ Included are a base class which implements simple
 
 import numpy as np
 import pandas as pd
+import logging as log
 import matplotlib.pyplot as plt
 from data_plotting import AsteriskPlotting as aplt
 from data_calculations import AsteriskCalculations as acalc
@@ -23,8 +24,7 @@ class AstTrialTranslation(AstTrial):
     """
     Class to represent a single Asterisk Test Trial.
     """
-    def __init__(self, file_name, data=None, folder=None, do_metrics=True, norm_data=True,
-                 controller_label=None, condition_data=True):
+    def __init__(self, file_loc_obj, controller_label=None):
         """ # TODO: redo comment for constructor
         Class to represent a single asterisk test trial.
         """
@@ -39,37 +39,37 @@ class AstTrialTranslation(AstTrial):
         self.filtered = False
         self.window_size = 0
 
-        try:
-            # Data can either be a dataframe or a filename
-            # if a dataframe is provided, add that data
-            try:
-                if data is not None and isinstance(data, pd.DataFrame):
-                    self.add_data_by_df(data, condition_df=condition_data,
-                                        do_metrics=do_metrics, norm_data=norm_data)
-                    # will need to add demographic data separately
-            except Exception as e:
-                raise IndexError("Dataframe is not formed correctly.")
+        # try:
+        #     # Data can either be a dataframe or a filename
+        #     # if a dataframe is provided, add that data
+        #     try:
+        #         if data is not None and isinstance(data, pd.DataFrame):
+        #             self.add_data_by_df(data, condition_df=condition_data,
+        #                                 do_metrics=do_metrics, norm_data=norm_data)
+        #             # will need to add demographic data separately
+        #     except Exception as e:
+        #         raise IndexError("Dataframe is not formed correctly.")
 
-            # if a filename is provided and we don't have dataframe data
-            if file_name is not None and data is None and isinstance(file_name, str):
-                self.demographics_from_filename(file_name=file_name)
+        #     # if a filename is provided and we don't have dataframe data
+        #     if file_name is not None and data is None and isinstance(file_name, str):
+        #         self.demographics_from_filename(file_name=file_name)
 
-                self.add_data_by_file(file_name, condition_data=condition_data,
-                                      do_metrics=do_metrics, norm_data=norm_data)
+        #         self.add_data_by_file(file_name, condition_data=condition_data,
+        #                               do_metrics=do_metrics, norm_data=norm_data)
 
-            # if a filename is provided and a dataframe is provided
-            elif file_name is not None and data is not None and isinstance(file_name, str):
-                self.demographics_from_filename(file_name=file_name)
+        #     # if a filename is provided and a dataframe is provided
+        #     elif file_name is not None and data is not None and isinstance(file_name, str):
+        #         self.demographics_from_filename(file_name=file_name)
 
-            else:
-                raise TypeError("Filename failed.")
+        #     else:
+        #         raise TypeError("Filename failed.")
 
-            print(self.generate_name())
+        #     print(self.generate_name())
 
-        except Exception as e:
-            print(e)
-            print("AstTrial loading failed.")
-            raise ImportError("Filename failed, AstTrial failed to generate.")
+        # except Exception as e:
+        #     print(e)
+        #     print("AstTrial loading failed.")
+        #     raise ImportError("Filename failed, AstTrial failed to generate.")
 
         # if file_name:
         #     print(self.generate_name())
