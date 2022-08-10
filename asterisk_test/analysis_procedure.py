@@ -8,6 +8,7 @@ from alive_progress import alive_bar
 from ast_hand_translation import AstHandTranslation
 from ast_hand_rotation import AstHandRotation
 from file_manager import AstDirectory
+from ast_iterator import AstIterator, my_option_dict
 from aruco_analysis import AstArucoAnalysis
 from metric_analyzers import AstHandAnalyzer
 
@@ -37,6 +38,7 @@ else:
     #TODO: add this
     raise NotImplementedError("Can't load a file directory by file yet!")
 
+ast_options = AstIterator(my_option_dict)
 
 """
 Step 2: Set up the process

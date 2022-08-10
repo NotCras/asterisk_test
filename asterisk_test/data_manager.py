@@ -93,59 +93,6 @@ class AstData:
             self.single_extract(s, h, t, r, n)
 
 
-class AstNaming:
-    options = {  # TODO: to make it easier for user, should we have it read the options in from a txt file?
-        "subjects": ["sub1", "sub2", "sub3"],
-        "hands": ["2v2", "2v3", "3v3", "barrett", "basic", "m2active", "m2stiff", "modelvf"],  # "human"
-        "hands_only_n": ["basic", "m2stiff", "modelvf"],
-        "translations": ["a", "b", "c", "d", "e", "f", "g", "h"],
-        "translations_all": ["a", "b", "c", "d", "e", "f", "g", "h", "n"],
-        "rotations": ["n", "m15", "p15"],
-        "rotations_n_trans": ["cw", "ccw"],  # TODO: maybe change to n_trans_rotations? or n_rotations
-        "numbers": ["1", "2", "3", "4", "5"]
-    }
-    values = {  # TODO: make this use generate_options
-        "subjects": ["sub1", "sub2", "sub3"],
-        "hands": ["2v2", "2v3", "3v3", "barrett", "basic", "human", "m2active", "m2stiff", "modelvf"],
-        "translations": ["a", "b", "c", "d", "e", "f", "g", "h"],
-        "translations_w_n": ["a", "b", "c", "d", "e", "f", "g", "h", "n"],
-        "rotation_combos": ["n", "m15", "p15"],
-        "rotations_n_trans": ["cw", "ccw"],
-        "numbers": ["1", "2", "3", "4", "5"],
-        "consent": ["y", "n"]
-    }
-
-    def __init__(self):
-        pass
-
-    def get_option(self, key):
-        """
-        Return set of objects for a given key. If no key, returns
-        :param key:
-        :return:
-        """
-        try:
-            return self.options[key]
-        except:
-            return None
-
-    def add_option(self, key, options, overwrite=False):
-        """
-        Adds a set of options at given key.
-        Has the option to overwrite at an existing key, otherwise it won't overwrite.
-
-        Returns True if operation succeeded, otherwise returns False
-        """
-        if key in self.options.keys:
-            if overwrite:
-                self.options[key] = options
-                return True
-            else:
-                return False
-        else:
-            self.options[key] = options
-            return True
-
 
 # TODO: move following functions into a AstNaming object?
 def get_option_list(key):
