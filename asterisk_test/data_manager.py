@@ -18,14 +18,15 @@ from zipfile import ZipFile
 
 
 class AstData:
-    def __init__(self):
+    def __init__(self, file_loc_obj):
         """
         Class which contains helper functions for data wrangling - getting ready for asterisk data analysis
         :param home: home directory of git repo
         """
         self.home = Path(__file__).parent.absolute()
+        self.file_loc = file_loc_obj
 
-    def view_images(self, subject_name, hand_name, translation_name, rotation_name, trial_number):
+    def view_images(self, hand_name, translation_name, rotation_name, subject_name, trial_number):
         """
         View images of trial specified as a video
         :param subject_name: name of subject
@@ -143,7 +144,7 @@ def generate_t_r_pairs(hand_name, exclude_tr_trials=False, include_rotation_only
 
 def generate_names_with_s_h(subject_name, hand_name, exclude_tr_trials=False, include_rotation_only_trials=True):
     """
-    Generates all trial combinations with a specific hand name
+    Generates all trial combinations with a specific hand name and subject
     :param subject_name: name of subject
     :param hand_name: name of hand
     :return: yields all parameters
@@ -154,6 +155,17 @@ def generate_names_with_s_h(subject_name, hand_name, exclude_tr_trials=False, in
         for n in num:
             yield subject_name, hand_name, t, r, n
 
+def generate_names_with_h(hand_name, exclude_tr_trials=False, include_rotation_only_trials=True):
+    """
+    Generates all trial combinations with a specific hand name
+    :param subject_name: name of subject
+    :param hand_name: name of hand
+    :return: yields all parameters
+    """
+    for s in get_option_list("subjects"):
+        for t, r in generate_t_r_pairs(hand_name, exclude_tr_trials=exclude_tr_trials, include_rotation_only_trials=include_rotation_only_trials):
+            for n in get_option_list("numbers"):
+                yield s, hand_name, t, r, n
 
 def generate_all_names(subject=None, hand_name=None, exclude_tr_trials=False, include_rotation_only_trials=False):
     """

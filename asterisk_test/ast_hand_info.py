@@ -16,7 +16,7 @@ class HandInfo:
         :param num_fingers: number of fingers on hand
         """
         self.hand_name = name
-        self.span, self.depth = self._load_measurements()
+        self.span, self.depth, self.aruco_id = self._load_measurements()
         self.num_fingers = num_fingers
 
     def get_name(self):
@@ -58,13 +58,29 @@ class HandInfo:
         """
         Get hand span and depth measurements from file
         """
-        dims_df = pd.read_csv('.hand_dimensions', names=['name', 'mx_span', 'mx_depth'], index_col=0)
+        dims_df = pd.read_csv('.hand_stats', names=['name', 'mx_span', 'mx_depth', 'id_num'], index_col=0)
 
         dims = dims_df.loc[self.hand_name]
         span = dims.mx_span
         depth = dims.mx_depth
+        aruco_id = dims.id_num
 
-        return span, depth
+        return span, depth, aruco_id
+
+def get_hand_stats(specific_hand = None):
+    """
+    Gets the data out of the hand_stats file
+    """
+    dims_df = pd.read_csv('.hand_stats', names=['name', 'mx_span', 'mx_depth', 'id_num'], index_col=0)
+    if specific_hand is None:
+        return dims_df
+    else:
+        # returning piecemeal so I don't have to rely on pandas row obj
+        dims = dims_df.loc[specific_hand]
+        span = dims.mx_span
+        depth = dims.mx_depth
+        aruco_id = dims.id_num
+        return span, depth, aruco_id
 
 
 if __name__ == '__main__':

@@ -38,12 +38,12 @@ class AstDirectory:
     #     """
     #     pass
 
-
+# no __name__ == __main__ here, want this to be accessible
 home_directory = Path(__file__).parent.parent.absolute()
 data_directory = home_directory / "data"
 
 # put together an AstDirectory manually
-my_ast_files = AstDirectory()   
+my_ast_files = AstDirectory()
 my_ast_files.compressed_data = data_directory / "compressed_data"
 my_ast_files.aruco_pics = data_directory / "viz"
 my_ast_files.aruco_data = data_directory / "aruco_data"

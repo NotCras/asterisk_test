@@ -19,6 +19,13 @@ import os, shutil, keyboard, subprocess
 from curtsies import Input 
 from pathlib import Path 
 import data_manager as prompts
+from aruco_analysis import AstArucoAnalysis
+from aruco_tool import ArucoFunc, ArucoLoc
+import numpy as np
+from file_manager import my_ast_files
+from ast_hand_info import get_hand_stats
+from ast_trial_translation import AstTrialTranslation
+
 
 #------------------------------------
 
@@ -183,6 +190,44 @@ def full_camera_process(home, toFolder, zip_name):
                 quit()
                 break
 
+
+def approve_new_data(home, data_folder, trial_name, thresholds):
+
+    mtx = np.array(((617.0026849655, -0.153855356, 315.5900337131),  # fx, s,cx
+                    (0, 614.4461785395, 243.0005874753),  # 0,fy,cy
+                    (0, 0, 1)))
+    dists = np.array((0.1611730644, -0.3392379107, 0.0010744837, 0.000905697))
+
+    marker_side_dims = 0.03  # in meters
+
+    h, _, _, _, _ = trial_name.split("_")
+    _, _, hand_id = get_hand_stats()
+
+    aruco = AstArucoAnalysis(file_loc_obj=my_ast_files, camera_calib=mtx, camera_dists=dists,
+                             marker_side_dims=marker_side_dims)
+
+    # aruco analyze data you just collected
+    path_al = aruco.aruco_analyze_trial(trial_name=trial_name, aruco_id=2, save_trial=False)
+
+    # calculate metrics
+    path = AstTrialTranslation(my_ast_files)
+    path.add_data_by_arucoloc(path_al, norm_data=True, condition_data=True, do_metrics=True)
+
+    # get best trial metrics
+
+
+    # compare the two
+
+
+    # output the findings as a report
+
+
+    # generate plots
+
+
+    pass
+
+
 def remove_data():
     print("DELETING DATA")
     full_folder_path = Path.cwd()
@@ -199,8 +244,8 @@ if __name__ == "__main__":
 
     dir_label, trial_num = choose_test(trial_type)
 
-    folder_path = "data/" + subject_name + "/" + hand + "/" + dir_label + "/" + trial_type + "/" + trial_num + "/"
-    zipfile = subject_name + "_" + hand + "_" + dir_label + "_" + trial_type + "_" + trial_num
+    folder_path = "data/" + "/" + hand + "/" + dir_label + "/" + trial_type + "/" + subject_name + "/" + trial_num + "/"
+    zipfile = hand + "_" + dir_label + "_" + trial_type + "_" + subject_name + "_" + trial_num
 
     print("FOLDER PATH")
     print(folder_path)

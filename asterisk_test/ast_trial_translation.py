@@ -149,9 +149,9 @@ class AstTrialTranslation(AstTrial):
         """
         path_df = aruco_loc.gen_poses_df()
 
-        self.data_demographics(subject=aruco_loc.data_attributes["subject"], translation=aruco_loc.data_attributes["translation"], 
-                                rotation=aruco_loc.data_attributes["rotation"], number=aruco_loc.data_attributes["trial_num"])
-        self.add_hand_info(aruco_loc.data_attributes["hand"])
+        self.data_demographics(subject=aruco_loc.name["subject"], translation=aruco_loc.name["translation"],
+                                rotation=aruco_loc.name["rotation"], number=aruco_loc.name["trial_num"])
+        self.add_hand_info(aruco_loc.name["hand"])
         self.aruco_id = aruco_loc.id
 
         if condition_data:
@@ -327,12 +327,13 @@ if __name__ == '__main__':
     #                 (0, 614.4461785395, 243.0005874753),  # 0,fy,cy
     #                 (0, 0, 1)))
     # dists = np.array((0.1611730644, -0.3392379107, 0.0010744837, 0.000905697))
+    #
     # aruco = AstArucoAnalysis(my_ast_files, mtx, dists, 0.03)
     # test_al = aruco.aruco_analyze_trial("2v2_a_n_sub1_1", 2)
     # test.add_data_by_arucoloc(test_al, condition_data=True, do_metrics=True, norm_data=True)
 
     # testing out filename
-    test.add_data_by_file(file_name="sub1_2v2_a_n_1.csv", do_metrics=True, norm_data=False)
+    test.add_data_by_file(file_name="sub1_2v2_a_n_1.csv", do_metrics=True, norm_data=True)
 
     print(f"name: {test.generate_name()}")
     print(f"tot dist: {test.total_distance}")
