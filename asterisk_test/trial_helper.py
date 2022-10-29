@@ -18,7 +18,6 @@ e) compress the data into a zip file
 import os, shutil, keyboard, subprocess 
 from curtsies import Input 
 from pathlib import Path 
-import data_manager as prompts
 from aruco_analysis import AstArucoAnalysis
 from aruco_tool import ArucoFunc, ArucoLoc
 import numpy as np
@@ -72,15 +71,15 @@ def double_check_trial_type(lines):
     else:
         print("Then please enter the new asterisk type.")
         trial_type = collect_prompt_data(
-            prompts.type_prompt, prompts.type_options)
+            type_prompt, type_options)
 
     return subject_name, hand, trial_type
 
 
 def redo_prev_settings():
     subject_name = collect_prompt_data(
-        prompts.subject_name_prompt, prompts.subject_name_options)
-    hand = collect_prompt_data(prompts.hand_prompt, prompts.hand_options)
+        subject_name_prompt, subject_name_options)
+    hand = collect_prompt_data(hand_prompt, hand_options)
 
     trial_type = "none"  # if we are starting a new hand, we will definitely start with none
     print("Set trial type to `none' because new hand.")
@@ -91,13 +90,13 @@ def redo_prev_settings():
 def choose_test(trial_type):
     if trial_type == "none":
         dir_label = collect_prompt_data(
-            prompts.dir_prompt, prompts.dir_options)
+            dir_prompt, dir_options)
     else:
         dir_label = collect_prompt_data(
-            prompts.dir_prompt, prompts.dir_options_no_rot)
+            dir_prompt, dir_options_no_rot)
 
     trial_num = collect_prompt_data(
-        prompts.trial_prompt, prompts.trial_options)
+        trial_prompt, trial_options)
 
     return dir_label, trial_num
 
@@ -193,7 +192,7 @@ def full_camera_process(file_obj, trial_name, metrics_and_thresholds):
         print("reminder: " + trial_name)
         print(" ")
         response = collect_prompt_data(
-            prompts.check_prompt, prompts.check_options)
+            check_prompt, check_options)
 
         if response == "yes":
                 break
@@ -330,6 +329,65 @@ def remove_data(file_obj, trial_name):
     pics_path = file_obj.aruco_pics / trial_name
     print(pics_path)
     shutil.rmtree(pics_path)
+
+
+#
+# because I'm pressed for time, I'm adding this below. Will code this out later by properly using data manager
+#------------------------------------
+subject_name_prompt = """
+ENTER SUBJECTS NAME
+(lowercase!)
+
+Possible options:
+"""
+subject_name_options = ["john", "josh", "sage", "garth", "test"]
+
+#------------------------------------
+hand_prompt = """
+ENTER HAND YOU ARE USING FOR THIS TRIAL
+(lowercase!)
+
+Possible options:
+"""
+hand_options = ["human", "basic",  "m2stiff", "m2active",
+                "2v2", "3v3", "2v3", "barrett", "modelvf"]  # "modelo", "modelk",
+
+#------------------------------------
+dir_prompt = """
+ENTER DIRECTION OF CURRENT TRIAL
+(lowercase!)
+
+Possible options:
+"""
+dir_options = ["a", "b", "c", "d", "e", "f", "g", "h", "cw", "ccw"]
+dir_options_no_rot = ["a", "b", "c", "d", "e", "f", "g", "h"]
+
+#------------------------------------
+trial_prompt = """
+WHAT NUMBER TRIAL IS THIS
+(lowercase! ... :P)
+
+Up to ...
+"""
+trial_options = ["1", "2", "3", "4", "5"]  # , "6", "7", "8", "9", "10"]
+
+#------------------------------------
+type_prompt = """
+WHAT TYPE OF TRIAL IS THIS
+(lowercase!)
+
+Options ...
+"""
+type_options = ["none", "plus15", "minus15"]
+
+#------------------------------------
+check_prompt = "Are you happy with this data? : "
+check_options = ["yes", "no", "cancel"]
+
+temp_file_check = "Are you still doing"
+
+
+
 
 
 # =========================================================================
