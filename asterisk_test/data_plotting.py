@@ -1,5 +1,7 @@
 import math as m
 import numpy as np
+from matplotlib import pyplot as plt
+import ast_trial, ast_trial_translation, ast_trial_rotation
 
 
 class AsteriskPlotting:
@@ -126,3 +128,30 @@ class AsteriskPlotting:
         return x_vals, y_vals
 
     # TODO: more functions: plot_asterisk, plot_avg_asterisk, plot_one_direction -> move this here and out of the other objects
+
+    @staticmethod
+    def compare_paths(first_path: ast_trial.AstTrial, second_path: ast_trial.AstTrial):
+        """
+        Takes two paths (assuming the same direction) and plots them on top of each other.
+        Also plots the ideal line, taken from the first trial obj
+        """
+        colors = ["black", "red", "blue"]
+
+        plot_direction = first_path.trial_translation
+
+        ideal_x, ideal_y = AsteriskPlotting.get_direction(plot_direction)
+
+        # plot ideal line
+        plt.plot(ideal_x, ideal_y, color=colors[0], label=f"ideal line, dir {plot_direction}")
+        plt.title(f"Dir {plot_direction} comparison")
+
+        # plot first path
+        first_x, first_y, _ = first_path.get_poses()
+        first_name = first_path.generate_name()
+        plt.plot(first_x, first_y, color=colors[1], label=f"path 1: {first_name}")
+
+        # plot second path
+        second_x, second_y, _ = second_path.get_poses()
+        second_name = second_path.generate_name()
+        plt.plot(second_x, second_y, color=colors[2], label=f"path 2: {second_name}")
+

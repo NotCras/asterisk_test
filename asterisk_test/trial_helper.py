@@ -25,6 +25,7 @@ import numpy as np
 from file_manager import my_ast_files
 from ast_hand_info import get_hand_stats
 from ast_trial_translation import AstTrialTranslation
+from data_plotting import AsteriskPlotting
 
 
 #------------------------------------
@@ -240,9 +241,7 @@ def approve_new_data(file_obj, trial_name, metrics_and_thresholds):
     metrics, final = compare_paths(path, best_trial, metrics_and_thresholds)
 
     # generate plots
-
-
-    pass
+    AsteriskPlotting.compare_paths(best_trial, path)
 
 
 def get_best_trial(file_obj, hand, direction, rotation, best_trial_dict=None):
