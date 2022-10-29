@@ -36,6 +36,8 @@ trial_num = None
 trial_type = None
 
 #------------------------------------
+
+
 def check_prev_settings():
     try:
         answer, lines = check_temp_file()
@@ -56,6 +58,7 @@ def check_prev_settings():
     
     return subject_name, hand, trial_type
 
+
 def double_check_trial_type(lines):
     subject_name = lines[0]
     hand = lines[1]
@@ -72,6 +75,7 @@ def double_check_trial_type(lines):
 
     return subject_name, hand, trial_type
 
+
 def redo_prev_settings():
     subject_name = collect_prompt_data(
         prompts.subject_name_prompt, prompts.subject_name_options)
@@ -81,6 +85,7 @@ def redo_prev_settings():
     print("Set trial type to `none' because new hand.")
 
     return subject_name, hand, trial_type
+
 
 def choose_test(trial_type):
     if trial_type == "none":
@@ -94,6 +99,7 @@ def choose_test(trial_type):
         prompts.trial_prompt, prompts.trial_options)
 
     return dir_label, trial_num
+
 
 def check_temp_file():
     with open('.asterisk_temp') as f:
@@ -109,6 +115,7 @@ def check_temp_file():
 
     return answer, lines
 
+
 def update_temp_file(subject, hand, trial):
     with open(".asterisk_temp", 'w') as filetowrite:
         filetowrite.write(subject + '\n')
@@ -116,6 +123,7 @@ def update_temp_file(subject, hand, trial):
         filetowrite.write(trial)
 
     print("Updated settings.")
+
 
 def collect_prompt_data(prompt, options):
     print(prompt)
@@ -139,6 +147,7 @@ def collect_prompt_data(prompt, options):
 
     print("======================================== ")
     return variable
+
 
 def run_the_camera():
     print("   ")
@@ -166,17 +175,19 @@ def run_the_camera():
 
             break
 
-def full_camera_process(home, toFolder, zip_name):
+
+def full_camera_process(file_obj, trial_name):
     run_camera = True
     while run_camera:
-        os.chdir(home)
-        Path(toFolder).mkdir(parents=True)  # , exist_ok=True)
-        os.chdir(toFolder)
+        #os.chdir(home)
+        #Path(toFolder).mkdir(parents=True)  # , exist_ok=True)
+        pics_path = file_obj.aruco_pics / trial_name
+        os.chdir(pics_path)
 
         run_the_camera()
 
         print(" ")
-        print("reminder: " + zip_name)
+        print("reminder: " + trial_name)
         print(" ")
         response = collect_prompt_data(
             prompts.check_prompt, prompts.check_options)
@@ -184,7 +195,7 @@ def full_camera_process(home, toFolder, zip_name):
         if response == "yes":
                 break
         else:
-            remove_data()
+            remove_data(file_obj, trial_name)
 
             if response == "cancel":
                 quit()
@@ -214,13 +225,28 @@ def approve_new_data(home, data_folder, trial_name, thresholds):
     path.add_data_by_arucoloc(path_al, norm_data=True, condition_data=True, do_metrics=True)
 
     # get best trial metrics
+    dict_of_best_trials = my_ast_files.data_home / "best_trials.csv"
+    best_trial = get_best_trial(my_ast_files,
+                                path.hand.hand_name, path.trial_translation, path.trial_rotation,
+                                dict_of_best_trials)
 
+    # compare the two sets of metrics
 
-    # compare the two
-
+    # which metrics do we want to compare?
+    # total_distance, mvt_efficiency, max_error, max_rotation error
+    # also can calculate the frechet distance between the two lines
+    td, mvt, mx_err, rot_err, fd, final = metric_comparison(path, best_trial)
 
     # output the findings as a report
-
+    print(f"Quality Report for {trial_name}"
+          f"Total Distance: {td}"
+          f"Mvt Efficiency: {mvt}"
+          f"Max Error: {mx_err}"
+          f"Max Rotation Error: {rot_err}"
+          f"Frechet Distance between both lines: {fd}"
+          f""
+          f"Final Recommendation: {final}"
+          f"")
 
     # generate plots
 
@@ -228,15 +254,44 @@ def approve_new_data(home, data_folder, trial_name, thresholds):
     pass
 
 
-def remove_data():
-    print("DELETING DATA")
-    full_folder_path = Path.cwd()
-    print(full_folder_path)
-    shutil.rmtree(full_folder_path)
+def get_best_trial(file_obj, hand, direction, rotation, best_trial_dict=None):
+    """
+    Retrieves the file_name of the best trial. Data needs to have been saved already in aruco_data location.
+    If no best trial exists, then returns ideal line.
+    """
+    best_trial = AstTrialTranslation(file_obj)
 
-#=========================================================================
-#============================ SCRIPT START ===============================
-#=========================================================================
+    best_trial_key = f"{hand}_{direction}"
+    try:
+        best_trial_name = best_trial_dict[best_trial_key]
+        best_trial.add_data_by_file(best_trial_name)
+
+    except KeyError or TypeError:
+        # if key doesn't exist, or we didn't get a dict, then we get the ideal line to compare to
+        pass  # TODO: if no best trial exists, replace with ideal line... *actually, do we want this like this? Revisit
+
+    return best_trial
+
+
+def metric_comparison(path, best_trial):
+    """
+    Compares the metrics of the path that you just took to the best trial.
+    """
+
+    # need to have thresholds for each metric, save in a dict
+    pass
+
+
+def remove_data(file_obj, trial_name):
+    print("DELETING DATA")
+    pics_path = file_obj.aruco_pics / trial_name
+    print(pics_path)
+    shutil.rmtree(pics_path)
+
+
+# =========================================================================
+# ============================ SCRIPT START ===============================
+# =========================================================================
 if __name__ == "__main__":
     home_directory = Path(__file__).parent.absolute()
 
@@ -244,13 +299,15 @@ if __name__ == "__main__":
 
     dir_label, trial_num = choose_test(trial_type)
 
-    folder_path = "data/" + "/" + hand + "/" + dir_label + "/" + trial_type + "/" + subject_name + "/" + trial_num + "/"
-    zipfile = hand + "_" + dir_label + "_" + trial_type + "_" + subject_name + "_" + trial_num
+    trial_name = f"{hand}_{dir_label}_{trial_type}_{subject_name}_{trial_num}"
+
+    # folder_path = "data/" + "/" + hand + "/" + dir_label + "/" + trial_type + "/" + subject_name + "/" + trial_num + "/"
+    # zipfile = hand + "_" + dir_label + "_" + trial_type + "_" + subject_name + "_" + trial_num
 
     print("FOLDER PATH")
-    print(folder_path)
+    print(my_ast_files.aruco_pics / trial_name)
 
-    full_camera_process(home_directory, folder_path, zipfile)
+    full_camera_process(my_ast_files, trial_name)
     
     print("COMPRESSING DATA")
     os.chdir(home_directory)
@@ -258,9 +315,10 @@ if __name__ == "__main__":
     # todo: log that we did this trial, double check if we are repeating trials based on the text input
     # note: currently script will error out if you enter the info for an existing trial... keeping as is
 
-    shutil.make_archive(zipfile, 'zip', folder_path)
-    print("COMPLETED TRIAL")
-    print(zipfile)
+    compress_path = my_ast_files.compressed_data
+    shutil.make_archive(trial_name, 'zip', compress_path)
+    print(f"COMPLETED TRIAL: {trial_name}")
+    print("  ")
 
         
 

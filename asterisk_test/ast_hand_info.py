@@ -3,9 +3,12 @@ An object which holds important information about the hand, readily accessible w
 Holds a hand's name, span & depth measurements, number of fingers.
 Loads this information from hidden file in the root.
 """
+import pdb
 
 import pandas as pd
 from numpy import abs
+from file_manager import my_ast_files
+from pathlib import Path
 
 
 class HandInfo:
@@ -58,12 +61,14 @@ class HandInfo:
         """
         Get hand span and depth measurements from file
         """
-        dims_df = pd.read_csv('.hand_stats', names=['name', 'mx_span', 'mx_depth', 'id_num'], index_col=0)
-
+        home_directory = Path(__file__).parent.absolute()
+        hand_stats_loc = str(home_directory) + '/.hand_stats'
+        dims_df = pd.read_csv(hand_stats_loc,
+                              index_col=0)  # names=['name', 'mx_span', 'mx_depth', 'id_num'], index_col=0)
         dims = dims_df.loc[self.hand_name]
-        span = dims.mx_span
-        depth = dims.mx_depth
-        aruco_id = dims.id_num
+        span = dims[0]  # mx_span
+        depth = dims[1]  # mx_depth
+        aruco_id = dims[2]  # .id_num
 
         return span, depth, aruco_id
 
@@ -71,15 +76,18 @@ def get_hand_stats(specific_hand = None):
     """
     Gets the data out of the hand_stats file
     """
-    dims_df = pd.read_csv('.hand_stats', names=['name', 'mx_span', 'mx_depth', 'id_num'], index_col=0)
+    home_directory = Path(__file__).parent.absolute()
+    hand_stats_loc = str(home_directory) + '/.hand_stats'
+    dims_df = pd.read_csv(hand_stats_loc, index_col=0) #names=['name', 'mx_span', 'mx_depth', 'id_num'], index_col=0)
+
     if specific_hand is None:
         return dims_df
     else:
         # returning piecemeal so I don't have to rely on pandas row obj
         dims = dims_df.loc[specific_hand]
-        span = dims.mx_span
-        depth = dims.mx_depth
-        aruco_id = dims.id_num
+        span = dims[0]  # mx_span
+        depth = dims[1]  # mx_depth
+        aruco_id = dims[2]  # .id_num
         return span, depth, aruco_id
 
 

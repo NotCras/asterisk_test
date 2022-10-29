@@ -1,4 +1,4 @@
-hand_name, span, depth, id_num
+hand_name, mx_span, mx_depth, id_num
 modelvf, 80, 115, 0
 basic, 82, 110, 0
 m2stiff, 85, 105, 0

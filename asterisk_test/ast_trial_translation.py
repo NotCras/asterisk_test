@@ -37,7 +37,7 @@ class AstTrialTranslation(AstTrial):
         self.metrics = None
         self.aruco_id = None
 
-        self.controller_label = controller_label  # TODO: integrate controller label into the plot title
+        self.controller_label = controller_label  # TODO: integrate controller label into the plot title?
 
         self.normalized = None
         self.filtered = False
@@ -84,7 +84,7 @@ class AstTrialTranslation(AstTrial):
         """
         Takes a file_name and gets relevant information out
         """
-        s, h, t, r, e = file_name.split("_")
+        h, t, r, s, e = file_name.split("_")
         n, _ = e.split(".")
 
         self.add_hand_info(h)
@@ -100,10 +100,14 @@ class AstTrialTranslation(AstTrial):
         try:
             # print(f"Reading file: {total_path}")
             df = pd.read_csv(total_path, skip_blank_lines=True)
-            df = df.set_index("frame")
-        except Exception as e:  # TODO: add more specific except clauses
+            #df = df.set_index("frame")
+        except FileNotFoundError:  # TODO: add more specific except clauses
             # print(e)
-            print(f"{total_path} has failed to read csv")
+            print(f"{total_path} has failed to read csv, returning None")
+            return None
+
+        except KeyError:
+            print(f"Probably incorrect headers at {total_path}, returning None")
             return None
 
         if condition_data:
@@ -133,7 +137,10 @@ class AstTrialTranslation(AstTrial):
         self.target_rotation = self.generate_target_rot()
 
         self.assess_path_labels()
-        print(self.path_labels)
+        if self.path_labels:
+            print(self.path_labels)
+        else:
+            print("No labels attributed to this data.")
 
         if do_metrics and self.poses is not None and "no_mvt" not in self.path_labels:
             self.update_all_metrics()
@@ -166,7 +173,10 @@ class AstTrialTranslation(AstTrial):
         self.target_rotation = self.generate_target_rot()
 
         self.assess_path_labels()
-        print(self.path_labels)
+        if self.path_labels:
+            print(self.path_labels)
+        else:
+            print("No labels attributed to this data.")
 
         if do_metrics and self.poses is not None and "no_mvt" not in self.path_labels:
             self.update_all_metrics()
@@ -323,17 +333,19 @@ if __name__ == '__main__':
     test = AstTrialTranslation(my_ast_files)
 
     # test out arucoloc
+    # print("running aruco analysis")
     # mtx = np.array(((617.0026849655, -0.153855356, 315.5900337131),  # fx, s,cx
     #                 (0, 614.4461785395, 243.0005874753),  # 0,fy,cy
     #                 (0, 0, 1)))
     # dists = np.array((0.1611730644, -0.3392379107, 0.0010744837, 0.000905697))
-    #
     # aruco = AstArucoAnalysis(my_ast_files, mtx, dists, 0.03)
-    # test_al = aruco.aruco_analyze_trial("2v2_a_n_sub1_1", 2)
+    # test_al = aruco.aruco_analyze_trial("2v2_a_n_sub1_1", aruco_id=2)  # for first trial, id was always 2
+    #
+    # print("adding data to trial translation object")
     # test.add_data_by_arucoloc(test_al, condition_data=True, do_metrics=True, norm_data=True)
 
     # testing out filename
-    test.add_data_by_file(file_name="sub1_2v2_a_n_1.csv", do_metrics=True, norm_data=True)
+    test.add_data_by_file(file_name="2v2_a_n_sub1_1.csv", do_metrics=True, norm_data=True)
 
     print(f"name: {test.generate_name()}")
     print(f"tot dist: {test.total_distance}")
@@ -342,4 +354,4 @@ if __name__ == '__main__':
     print(f"poses: {test.poses}")
 
     test.moving_average(window_size=10)
-    #test.plot_trial(use_filtered=False, provide_notes=True)
+    test.plot_trial(use_filtered=False, provide_notes=True)

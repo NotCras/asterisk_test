@@ -10,6 +10,7 @@ class AstDirectory:
 
     def __init__(self): 
         # TODO: maybe save the file names as entries in a dictionary? Revisit.
+        self.data_home = None
         self.compressed_data = None
         self.aruco_pics = None
         self.aruco_data = None
@@ -44,6 +45,7 @@ data_directory = home_directory / "data"
 
 # put together an AstDirectory manually
 my_ast_files = AstDirectory()
+my_ast_files.data_home = data_directory
 my_ast_files.compressed_data = data_directory / "compressed_data"
 my_ast_files.aruco_pics = data_directory / "viz"
 my_ast_files.aruco_data = data_directory / "aruco_data"
