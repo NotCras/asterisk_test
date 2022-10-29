@@ -176,7 +176,7 @@ def run_the_camera():
             break
 
 
-def full_camera_process(file_obj, trial_name):
+def full_camera_process(file_obj, trial_name, metrics_and_thresholds):
     run_camera = True
     while run_camera:
         #os.chdir(home)
@@ -185,6 +185,8 @@ def full_camera_process(file_obj, trial_name):
         os.chdir(pics_path)
 
         run_the_camera()
+
+        approve_new_data(file_obj, trial_name, metrics_and_thresholds)
 
         print(" ")
         print("reminder: " + trial_name)
@@ -202,51 +204,40 @@ def full_camera_process(file_obj, trial_name):
                 break
 
 
-def approve_new_data(home, data_folder, trial_name, thresholds):
+def approve_new_data(file_obj, trial_name, metrics_and_thresholds):
 
     mtx = np.array(((617.0026849655, -0.153855356, 315.5900337131),  # fx, s,cx
                     (0, 614.4461785395, 243.0005874753),  # 0,fy,cy
                     (0, 0, 1)))
     dists = np.array((0.1611730644, -0.3392379107, 0.0010744837, 0.000905697))
-
     marker_side_dims = 0.03  # in meters
 
     h, _, _, _, _ = trial_name.split("_")
     _, _, hand_id = get_hand_stats()
 
-    aruco = AstArucoAnalysis(file_loc_obj=my_ast_files, camera_calib=mtx, camera_dists=dists,
+    aruco = AstArucoAnalysis(file_loc_obj=file_obj, camera_calib=mtx, camera_dists=dists,
                              marker_side_dims=marker_side_dims)
 
     # aruco analyze data you just collected
     path_al = aruco.aruco_analyze_trial(trial_name=trial_name, aruco_id=2, save_trial=False)
 
     # calculate metrics
-    path = AstTrialTranslation(my_ast_files)
+    path = AstTrialTranslation(file_obj)
     path.add_data_by_arucoloc(path_al, norm_data=True, condition_data=True, do_metrics=True)
 
     # get best trial metrics
-    dict_of_best_trials = my_ast_files.data_home / "best_trials.csv"
-    best_trial = get_best_trial(my_ast_files,
+    dict_of_best_trials = file_obj.data_home / "best_trials.csv"
+    best_trial = get_best_trial(file_obj,
                                 path.hand.hand_name, path.trial_translation, path.trial_rotation,
                                 dict_of_best_trials)
 
     # compare the two sets of metrics
-
     # which metrics do we want to compare?
     # total_distance, mvt_efficiency, max_error, max_rotation error
     # also can calculate the frechet distance between the two lines
-    td, mvt, mx_err, rot_err, fd, final = metric_comparison(path, best_trial)
-
-    # output the findings as a report
-    print(f"Quality Report for {trial_name}"
-          f"Total Distance: {td}"
-          f"Mvt Efficiency: {mvt}"
-          f"Max Error: {mx_err}"
-          f"Max Rotation Error: {rot_err}"
-          f"Frechet Distance between both lines: {fd}"
-          f""
-          f"Final Recommendation: {final}"
-          f"")
+    print(f"=========================================")
+    print(f" Metric Comparison results for {trial_name}")
+    metrics, final = compare_paths(path, best_trial, metrics_and_thresholds)
 
     # generate plots
 
@@ -261,7 +252,7 @@ def get_best_trial(file_obj, hand, direction, rotation, best_trial_dict=None):
     """
     best_trial = AstTrialTranslation(file_obj)
 
-    best_trial_key = f"{hand}_{direction}"
+    best_trial_key = f"{hand}_{direction}"  # TODO: add rotation, so its hand_direction_rotation
     try:
         best_trial_name = best_trial_dict[best_trial_key]
         best_trial.add_data_by_file(best_trial_name)
@@ -273,13 +264,66 @@ def get_best_trial(file_obj, hand, direction, rotation, best_trial_dict=None):
     return best_trial
 
 
-def metric_comparison(path, best_trial):
+def metric_comparison(best_value, path_value, threshold, direction="band"):
     """
-    Compares the metrics of the path that you just took to the best trial.
+    Compares the metrics of the path that you just took to the best trial. Returns True or False given if path value
+    falls within acceptable range of best_value.
+
+    threshold - acceptable percent error
+    direction (-1, 0, 1) - indicates whether low-pass ("low"), high-pass ("high"), or band-pass ("band")
+
+    Band-pass will respect the threshold up and down (+/- threshold).
+    Low-pass will only respect upper threshold (+ threshold and lower is allowed)
+    High-pass will only respect lower threshold (- threshold and higher is allowed)
     """
 
     # need to have thresholds for each metric, save in a dict
-    pass
+    percent_error = best_value - path_value
+    percent_error /= best_value
+
+    if direction is "high":
+        fit = percent_error >= -threshold
+
+    elif direction is "low":
+        fit = percent_error <= threshold
+
+    else:  # direction is band
+        fit = threshold >= percent_error >= -threshold
+
+    return fit
+
+
+def compare_paths(best_trial_obj, path_trial_obj, metrics={}):
+    """
+    Compares the path trial to the best trial at the metrics specified
+    Metrics is a dict where the key is the metric name, and the value is a tuple (threshold, direction)
+    Will always compute frechet distance between best trial and path trial
+    """
+    best_trial_metric_values = best_trial_obj.metrics
+    path_trial_metric_values = path_trial_obj.metrics
+
+    metric_recommendations = {}
+
+    for m in metrics.keys():
+        finding = metric_comparison(best_trial_metric_values[m], path_trial_metric_values[m],
+                                    metrics[m][0], metrics[m][1])
+
+        print(f"{m}: {best_trial_metric_values[m]} v {path_trial_metric_values[m]}      | {finding}")
+        metric_recommendations[m] = finding
+
+    # frechet distance calculation
+    fd = 0  # TODO: make calculations happen
+    fd_finding = 0.2 >= fd >= -0.2
+
+    print(f"fd: {fd}    |{fd_finding}")
+    metric_recommendations["fd"] = fd
+
+    # make final recommendation, if all are within the thresholds
+    final = all(i for i in list(metric_recommendations))
+    print(f"Final Recommendation: {final}")
+    print(f"   ")
+
+    return metric_recommendations, final
 
 
 def remove_data(file_obj, trial_name):
@@ -301,13 +345,19 @@ if __name__ == "__main__":
 
     trial_name = f"{hand}_{dir_label}_{trial_type}_{subject_name}_{trial_num}"
 
+    metrics_to_check = {"dist": (0.2, "high"),
+                        "mvt_eff": (0.2, "high"),
+                        "max_err": (0.2, "low"),
+                        "max_err_rot": (0.2, "low")
+                        }
+
     # folder_path = "data/" + "/" + hand + "/" + dir_label + "/" + trial_type + "/" + subject_name + "/" + trial_num + "/"
     # zipfile = hand + "_" + dir_label + "_" + trial_type + "_" + subject_name + "_" + trial_num
 
     print("FOLDER PATH")
     print(my_ast_files.aruco_pics / trial_name)
 
-    full_camera_process(my_ast_files, trial_name)
+    full_camera_process(my_ast_files, trial_name, metrics_to_check)
     
     print("COMPRESSING DATA")
     os.chdir(home_directory)
