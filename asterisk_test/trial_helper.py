@@ -88,7 +88,7 @@ def redo_prev_settings():
 
 
 def choose_test(trial_type):
-    if trial_type == "none":
+    if trial_type == "x":
         dir_label = collect_prompt_data(
             dir_prompt, dir_options)
     else:
@@ -340,7 +340,7 @@ ENTER SUBJECTS NAME
 
 Possible options:
 """
-subject_name_options = ["john", "josh", "sage", "garth", "test"]
+subject_name_options = ["11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"]
 
 #------------------------------------
 hand_prompt = """
@@ -349,8 +349,7 @@ ENTER HAND YOU ARE USING FOR THIS TRIAL
 
 Possible options:
 """
-hand_options = ["human", "basic",  "m2stiff", "m2active",
-                "2v2", "3v3", "2v3", "barrett", "modelvf"]  # "modelo", "modelk",
+hand_options = ["1v1", "2v1", "p1vp1", "2v2", "2v3", "3v3", "p2vp2"]
 
 #------------------------------------
 dir_prompt = """
@@ -359,8 +358,8 @@ ENTER DIRECTION OF CURRENT TRIAL
 
 Possible options:
 """
-dir_options = ["a", "b", "c", "d", "e", "f", "g", "h", "cw", "ccw"]
-dir_options_no_rot = ["a", "b", "c", "d", "e", "f", "g", "h"]
+dir_options = ["N", "NE", "E", "SE", "S", "SW", "W", "NW", "+", "-"]
+dir_options_no_rot = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 
 #------------------------------------
 trial_prompt = """
@@ -369,7 +368,7 @@ WHAT NUMBER TRIAL IS THIS
 
 Up to ...
 """
-trial_options = ["1", "2", "3", "4", "5"]  # , "6", "7", "8", "9", "10"]
+trial_options = ["1", "2", "3"] #, "4", "5"]  # , "6", "7", "8", "9", "10"]
 
 #------------------------------------
 type_prompt = """
@@ -378,7 +377,7 @@ WHAT TYPE OF TRIAL IS THIS
 
 Options ...
 """
-type_options = ["none", "plus15", "minus15"]
+type_options = ["x", "+15", "-15"]
 
 #------------------------------------
 check_prompt = "Are you happy with this data? : "
