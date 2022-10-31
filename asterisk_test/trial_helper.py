@@ -25,6 +25,7 @@ from file_manager import my_ast_files
 from ast_hand_info import get_hand_stats
 from ast_trial_translation import AstTrialTranslation
 from data_plotting import AsteriskPlotting
+from data_manager import AstData
 
 
 #------------------------------------
@@ -177,8 +178,32 @@ def run_the_camera():
 
 
 def full_camera_process(file_obj, trial_name, metrics_and_thresholds):
-    run_camera = True
-    while run_camera:
+
+    h, t, r, s, e = trial_name.split("_")
+    n, _ = e.split(".")
+
+    # get best trial metrics
+    dict_of_best_trials = file_obj.data_home / "best_trials.csv"
+    best_trial = get_best_trial(file_obj,
+                                h, t, r,
+                                dict_of_best_trials)
+
+    # view the best trial, repeat as needed
+    while True:
+        manager = AstData(my_ast_files)
+        manager.view_images(h, t, r, s, n)
+
+        response = collect_prompt_data(
+            check_prompt, check_options)
+
+        if response == "yes":
+            break
+        else:
+            if response == "cancel":
+                quit()
+                break
+
+    while True:
         #os.chdir(home)
         #Path(toFolder).mkdir(parents=True)  # , exist_ok=True)
         pics_path = file_obj.aruco_pics / trial_name
@@ -186,7 +211,7 @@ def full_camera_process(file_obj, trial_name, metrics_and_thresholds):
 
         run_the_camera()
 
-        approve_new_data(file_obj, trial_name, metrics_and_thresholds)
+        approve_new_data(file_obj, trial_name, best_trial, metrics_and_thresholds)
 
         print(" ")
         print("reminder: " + trial_name)
@@ -204,7 +229,7 @@ def full_camera_process(file_obj, trial_name, metrics_and_thresholds):
                 break
 
 
-def approve_new_data(file_obj, trial_name, metrics_and_thresholds):
+def approve_new_data(file_obj, trial_name, best_trial, metrics_and_thresholds):
 
     mtx = np.array(((617.0026849655, -0.153855356, 315.5900337131),  # fx, s,cx
                     (0, 614.4461785395, 243.0005874753),  # 0,fy,cy
@@ -225,12 +250,6 @@ def approve_new_data(file_obj, trial_name, metrics_and_thresholds):
     path = AstTrialTranslation(file_obj)
     path.add_data_by_arucoloc(path_al, norm_data=True, condition_data=True, do_metrics=True)
 
-    # get best trial metrics
-    dict_of_best_trials = file_obj.data_home / "best_trials.csv"
-    best_trial = get_best_trial(file_obj,
-                                path.hand.hand_name, path.trial_translation, path.trial_rotation,
-                                dict_of_best_trials)
-
     # compare the two sets of metrics
     # which metrics do we want to compare?
     # total_distance, mvt_efficiency, max_error, max_rotation error
@@ -250,14 +269,15 @@ def get_best_trial(file_obj, hand, direction, rotation, best_trial_dict=None):
     """
     best_trial = AstTrialTranslation(file_obj)
 
-    best_trial_key = f"{hand}_{direction}"  # TODO: add rotation, so its hand_direction_rotation
-    try:
-        best_trial_name = best_trial_dict[best_trial_key]
-        best_trial.add_data_by_file(best_trial_name)
+    best_trial_key = f"{hand}_{direction}_{rotation}"  # TODO: add rotation, so its hand_direction_rotation
 
-    except KeyError or TypeError:
-        # if key doesn't exist, or we didn't get a dict, then we get the ideal line to compare to
-        pass  # TODO: if no best trial exists, replace with ideal line... *actually, do we want this like this? Revisit
+    # try:
+    best_trial_name = best_trial_dict[best_trial_key]
+    best_trial.add_data_by_file(best_trial_name)
+
+    # except KeyError or TypeError:
+    #     # if key doesn't exist, or we didn't get a dict, then we get the ideal line to compare to
+    #     pass  # TODO: if no best trial exists, replace with ideal line... *actually, do we want this like this? Revisit
 
     return best_trial
 
