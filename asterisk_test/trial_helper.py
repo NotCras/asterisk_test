@@ -209,7 +209,7 @@ def full_camera_process(file_obj, trial_name, metrics_and_thresholds):
         pics_path = file_obj.aruco_pics / trial_name
         os.chdir(pics_path)
 
-        run_the_camera()
+        # run_the_camera()
 
         approve_new_data(file_obj, trial_name, best_trial, metrics_and_thresholds)
 
@@ -299,10 +299,10 @@ def metric_comparison(best_value, path_value, threshold, direction="band"):
     percent_error = best_value - path_value
     percent_error /= best_value
 
-    if direction is "high":
+    if direction == "high":
         fit = percent_error >= -threshold
 
-    elif direction is "low":
+    elif direction == "low":
         fit = percent_error <= threshold
 
     else:  # direction is band
@@ -406,9 +406,6 @@ check_options = ["yes", "no", "cancel"]
 temp_file_check = "Are you still doing"
 
 
-
-
-
 # =========================================================================
 # ============================ SCRIPT START ===============================
 # =========================================================================
@@ -434,7 +431,7 @@ if __name__ == "__main__":
     print(my_ast_files.aruco_pics / trial_name)
 
     full_camera_process(my_ast_files, trial_name, metrics_to_check)
-    
+
     print("COMPRESSING DATA")
     os.chdir(home_directory)
 
