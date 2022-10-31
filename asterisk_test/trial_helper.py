@@ -15,7 +15,10 @@ e) compress the data into a zip file
 
 '''
 
-import os, shutil, keyboard, subprocess 
+import os, shutil, keyboard, subprocess, csv
+import pdb
+
+import pandas as pd
 from curtsies import Input 
 from pathlib import Path 
 from aruco_analysis import AstArucoAnalysis
@@ -82,7 +85,7 @@ def redo_prev_settings():
         subject_name_prompt, subject_name_options)
     hand = collect_prompt_data(hand_prompt, hand_options)
 
-    trial_type = "none"  # if we are starting a new hand, we will definitely start with none
+    trial_type = "x"  # if we are starting a new hand, we will definitely start with none
     print("Set trial type to `none' because new hand.")
 
     return subject_name, hand, trial_type
@@ -179,19 +182,24 @@ def run_the_camera():
 
 def full_camera_process(file_obj, trial_name, metrics_and_thresholds):
 
-    h, t, r, s, e = trial_name.split("_")
-    n, _ = e.split(".")
+    h, t, r, s, n = trial_name.split("_")
+    # n, _ = e.split(".")
 
     # get best trial metrics
-    dict_of_best_trials = file_obj.data_home / "best_trials.csv"
+    best_trials_list_loc = file_obj.data_home / "top_trials1.csv"
+    dict_of_best_trials = read_best_trials(best_trials_list_loc)
     best_trial = get_best_trial(file_obj,
                                 h, t, r,
                                 dict_of_best_trials)
 
+    best_name = best_trial.generate_name()
+    _, _, _, b_s, b_n = best_name.split("_")
+    old_h, old_t, old_r = convert_notation_new_to_old(h, t, r)
+
     # view the best trial, repeat as needed
     while True:
         manager = AstData(my_ast_files)
-        manager.view_images(h, t, r, s, n)
+        manager.view_images_light(old_h, old_t, old_r, b_s, b_n, do_quit=False)
 
         response = collect_prompt_data(
             check_prompt, check_options)
@@ -209,7 +217,7 @@ def full_camera_process(file_obj, trial_name, metrics_and_thresholds):
         pics_path = file_obj.aruco_pics / trial_name
         os.chdir(pics_path)
 
-        # run_the_camera()
+        run_the_camera()
 
         approve_new_data(file_obj, trial_name, best_trial, metrics_and_thresholds)
 
@@ -262,18 +270,37 @@ def approve_new_data(file_obj, trial_name, best_trial, metrics_and_thresholds):
     AsteriskPlotting.compare_paths(best_trial, path)
 
 
+def read_best_trials(best_trial_file):
+    # from: https://stackoverflow.com/questions/33858989/how-to-read-a-csv-into-a-dictionary-in-python
+
+    df = pd.read_csv(best_trial_file)
+    df = df.set_index('key')
+
+    return df.to_dict()['best_trial']
+
+
+def convert_notation_new_to_old(hand, direction, rotation):
+    t_dict = {"n": "a", "ne": "b", "e": "c", "se": "d", "s": "e", "sw": "f", "w": "g", "nw": "h", "x": "n"}
+    r_dict = {"p": "cw", "m": "ccw", "m15": "m15", "p15": "p15", "x": "n"}
+    h_dict = {"1v1": "basic", "2v1": "m2active", "p1vp1": "palm1r",
+              "2v2": "2v2", "2v3": "2v3", "3v3": "3v3", "p2vp2": "palm2r"}
+
+    return h_dict[hand], t_dict[direction], r_dict[rotation]
+
+
 def get_best_trial(file_obj, hand, direction, rotation, best_trial_dict=None):
     """
     Retrieves the file_name of the best trial. Data needs to have been saved already in aruco_data location.
     If no best trial exists, then returns ideal line.
     """
     best_trial = AstTrialTranslation(file_obj)
+    old_hand, old_direction, old_rotation = convert_notation_new_to_old(hand, direction, rotation)
 
-    best_trial_key = f"{hand}_{direction}_{rotation}"  # TODO: add rotation, so its hand_direction_rotation
+    best_trial_key = f"{old_hand}_{old_direction}_{old_rotation}"  # TODO: add rotation, so its hand_direction_rotation
 
     # try:
     best_trial_name = best_trial_dict[best_trial_key]
-    best_trial.add_data_by_file(best_trial_name)
+    best_trial.add_data_by_file(best_trial_name+".csv")
 
     # except KeyError or TypeError:
     #     # if key doesn't exist, or we didn't get a dict, then we get the ideal line to compare to
@@ -360,7 +387,7 @@ ENTER SUBJECTS NAME
 
 Possible options:
 """
-subject_name_options = ["11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"]
+subject_name_options = ["s11", "s12", "s13", "s14", "s15", "s16", "s17", "s18", "s19", "s20", "s21", "s22"]
 
 #------------------------------------
 hand_prompt = """
@@ -378,8 +405,8 @@ ENTER DIRECTION OF CURRENT TRIAL
 
 Possible options:
 """
-dir_options = ["N", "NE", "E", "SE", "S", "SW", "W", "NW", "+", "-"]
-dir_options_no_rot = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+dir_options = ["n", "ne", "e", "se", "s", "sw", "w", "nw", "p", "m"]
+dir_options_no_rot = ["n", "ne", "e", "se", "s", "sw", "w", "nw"]
 
 #------------------------------------
 trial_prompt = """
@@ -397,7 +424,7 @@ WHAT TYPE OF TRIAL IS THIS
 
 Options ...
 """
-type_options = ["x", "+15", "-15"]
+type_options = ["x", "p15", "m15"]
 
 #------------------------------------
 check_prompt = "Are you happy with this data? : "

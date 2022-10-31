@@ -11,10 +11,14 @@ Handles various data management classes:
 """
 
 import os
+import pdb
+
 import matplotlib.pyplot as plt
 
 from pathlib import Path
 from zipfile import ZipFile
+
+from file_manager import my_ast_files
 
 
 class AstData:
@@ -26,7 +30,7 @@ class AstData:
         self.home = Path(__file__).parent.absolute()
         self.file_loc = file_loc_obj
 
-    def view_images(self, hand_name, translation_name, rotation_name, subject_name, trial_number):
+    def view_images(self, hand_name, translation_name, rotation_name, subject_name, trial_number, do_quit=True):
         """
         View images of trial specified as a video
         :param subject_name: name of subject
@@ -37,7 +41,7 @@ class AstData:
         """
         os.chdir(self.home)
         data_name = f"{subject_name}_{hand_name}_{translation_name}_{rotation_name}_{trial_number}"
-        file_dir = f"viz/{data_name}/"
+        file_dir = self.file_loc.aruco_pics / data_name
         os.chdir(file_dir)
 
         files = [f for f in os.listdir('.') if f[-3:] == 'jpg']
@@ -55,15 +59,62 @@ class AstData:
             plt.pause(.01)
             plt.draw()
 
+        os.chdir(self.home)
         repeat = smart_input("Show again? [y/n]", "consent")
         if repeat == "y":
             # run again
-            self.view_images(subject_name, hand_name, translation_name,
-                             rotation_name, trial_number)
+
+            self.view_images(hand_name, translation_name,
+                             rotation_name, subject_name, trial_number)
         else:
             # stop running
-            quit()
-    
+            if do_quit:
+                quit()
+
+
+    def view_images_light(self, hand_name, translation_name, rotation_name, subject_name, trial_number, do_quit=True):
+        """
+        View images of trial specified as a video
+        :param subject_name: name of subject
+        :param hand_name: name of hand
+        :param translation_name: name of direction
+        :param rotation_name: name of rotation
+        :param trial_number: trial number
+        """
+        #os.chdir(self.home)
+        data_name = f"{subject_name}_{hand_name}_{translation_name}_{rotation_name}_{trial_number}"
+        file_dir = self.file_loc.aruco_pics / data_name
+        #os.chdir(file_dir)
+
+        #pdb.set_trace()
+        files = [f for f in os.listdir(file_dir) if f[-3:] == 'jpg']
+        files.sort()
+
+        img = None
+        for f in files:
+            full_f = file_dir / f
+            im = plt.imread(full_f)
+
+            if img is None:
+                img = plt.imshow(im)
+            else:
+                img.set_data(im)
+
+            plt.pause(.01)
+            plt.draw()
+
+        #os.chdir(self.home)
+        repeat = smart_input("Show again? [y/n]", "consent")
+        if repeat == "y":
+            # run again
+
+            self.view_images_light(hand_name, translation_name,
+                             rotation_name, subject_name, trial_number, do_quit=do_quit)
+        else:
+            # stop running
+            if do_quit:
+                quit()
+
     def single_extract(self, subject_name, hand_name, translation_name, rotation_name, trial_number):
         """
         Extract a single zip file, specified by parameters.
@@ -102,7 +153,7 @@ def get_option_list(key):
     :param key: the key of the list that you want
     :return: list of parameters
     """
-    opt = AstNaming()
+    opt = AstNaming()  # TODO: revisit this!!!
     return opt.get_option(key)
 
 
@@ -250,7 +301,7 @@ if __name__ == "__main__":
     """
     Run this file like a script and you can do everything you need to here.
     """
-    data_manager = AstData()
+    data_manager = AstData(my_ast_files)
 
     print("""
         ========= ASTERISK TEST DATA MANAGER ==========
