@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib import cm
 from trial_labelling import AsteriskLabelling as al
 from metric_calculation import AstMetrics as am
-from ast_trial import AstTrialTranslation
+from ast_trial_translation import AstTrialTranslation
 
 
 class AstTrialRotation(AstTrialTranslation):

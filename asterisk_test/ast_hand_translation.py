@@ -258,7 +258,7 @@ class AstHandTranslation:
         Args:
             trial_name (string): trial name string
         """
-        _, t, r, s, n = file_name.split("_")
+        _, t, r, s, n = trial_name.split("_")
 
         return f"{t}_{r}", s, n
 
@@ -373,7 +373,6 @@ class AstHandTranslation:
         :param stds: flag whether to plot standard deviations. Only for AsteriskAverage objects. Default is False
         """
         # TODO: plot orientation error?
-        colors = ["tab:blue", "tab:purple", "tab:red", "tab:olive", "tab:cyan", "tab:green", "tab:pink", "tab:orange"]
 
         #plt.figure(figsize=(7, 7))
         fig = plt.figure(figsize=(7, 7))
@@ -387,9 +386,9 @@ class AstHandTranslation:
 
         if picky_tlines and len(dir_labels) < 8:
             # plot target lines as dotted lines
-            self.plot_all_target_lines(specific_lines=list(dir_labels))
+            aplt.plot_all_target_lines(specific_lines=list(dir_labels))
         else:
-            self.plot_all_target_lines()
+            aplt.plot_all_target_lines()
 
         # plot data
         for i, t in enumerate(trials):
@@ -404,16 +403,16 @@ class AstHandTranslation:
 
             # plot total_distance value in each direction
             if td_labels:
-                self._add_dist_label(t, ax=ax)
+                aplt.add_dist_label(t, ax=ax)
 
             if stds and t.is_avg_trial():  # only for AsteriskAverage objs
                 t.plot_sd(aplt.get_dir_color(t.trial_translation))
 
         if include_notes:
-            self._plot_notes(trials, ax=ax)
+            aplt.plot_notes(trials, ax=ax)
 
         if incl_obj_img:
-            self._add_obj_img(self.set_rotation, fig)
+            aplt.add_obj_img(self.set_rotation, fig)
 
         if plot_contributions:
             for a in trials:
@@ -429,45 +428,6 @@ class AstHandTranslation:
         plt.gca().set_aspect('equal', adjustable='box')
         return plt
 
-    def _add_dist_label(self, atrial, ax=None):
-        """  # TODO: move to data_plotting
-        Makes a text object appear at the head of the target line
-        """
-        modifiers = dict(a=(0, 1), b=(1, 1), c=(1, 0), d=(1, -1), e=(0, -1), f=(-1, -1), g=(-1, 0), h=(-1, 1))
-
-        #for t in trial:
-        xt, yt = aplt.get_direction(atrial.trial_translation, n_samples=2)
-        # print(f"{atrial.trial_translation} => [{xt[1]}, {yt[1]}]")
-
-        # get the spacing just right for the labels
-        if atrial.trial_translation in ["b", "d", "f", "h"]:
-            x_plt = xt[1] + np.abs(xt[1]) * 0.1 * modifiers[atrial.trial_translation][0] + 0.05 * modifiers[atrial.trial_translation][0]
-            y_plt = yt[1] + np.abs(yt[1]) * 0.1 * modifiers[atrial.trial_translation][1]
-        elif atrial.trial_translation in ["a", "c", "e", "g"]:
-            x_plt = xt[1] + np.abs(xt[1]) * 0.1 * modifiers[atrial.trial_translation][0] + 0.03 * modifiers[atrial.trial_translation][0]
-            y_plt = yt[1] + np.abs(yt[1]) * 0.1 * modifiers[atrial.trial_translation][1] + 0.03 * modifiers[atrial.trial_translation][1]
-        else:
-            print("Else triggered incorrectly.")
-            x_plt = xt[1] + np.abs(xt[1]) * 0.1 * modifiers[atrial.trial_translation][0]
-            y_plt = yt[1] + np.abs(yt[1]) * 0.1 * modifiers[atrial.trial_translation][1]
-
-        # print(f"{atrial.trial_translation} => [{x_plt}, {y_plt}]")
-
-        ax.text(x_plt, y_plt, f"{atrial.trial_translation}: {np.round(atrial.total_distance, 2)}",
-                style='italic', ha='center', va='center'
-                #bbox={'facecolor': 'white', 'alpha': 0.75, 'pad': 2}
-                )
-
-    def _add_obj_img(self, rotation, fig):
-        """  # TODO: move to AsteriskPlotting
-        Plots a small image which illustrates the AstHandTranslation.set_rotation value
-        """
-        img_locs = dict(n="resources/cube_n.jpg", m15="resources/cube_m15.jpg", p15="resources/cube_p15.jpg")
-
-        im = plt.imread(img_locs[rotation])
-        newax = fig.add_axes([0.07, 0.86, 0.12, 0.12], anchor='NW', zorder=0)
-        newax.imshow(im)
-        newax.axis('off')
 
     def plot_ast_subset(self, subjects, trial_number="1", show_plot=True, save_plot=False):
         """
@@ -573,92 +533,6 @@ class AstHandTranslation:
             # plt.legend()  # TODO: showing up weird, need to fix
             plt.show()
 
-    def _plot_notes(self, trials, ax):  # TODO: move to aplt, make it take in a list of labels so HandTranslation can also use it
-        """
-        Plots the labels and trial ID in the bottom left corner of the plot
-        """
-        note = "Labels in plotted data:"
-
-        labels = set()
-        for a in trials:  # self.averages:
-            for l in a.trialset_labels:
-                labels.add(l)
-
-        for l in list(labels):
-            note = f"{note} {l} |"
-
-        #ax = plt.gca()
-        # plt.text(0.1, 0.2, self.generate_name()) #, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
-        ax.text(-0.1, -0.12, note, transform=ax.transAxes) #, bbox=dict(facecolor='blue', alpha=0.5))
-
-    def plot_all_target_lines(self, specific_lines=None):
-        """
-        Plot all target lines on a plot for easy reference
-        :param order_of_colors:
-        """
-        if specific_lines is None:
-            x_a, y_a = aplt.get_a()
-            x_b, y_b = aplt.get_b()
-            x_c, y_c = aplt.get_c()
-            x_d, y_d = aplt.get_d()
-            x_e, y_e = aplt.get_e()
-            x_f, y_f = aplt.get_f()
-            x_g, y_g = aplt.get_g()
-            x_h, y_h = aplt.get_h()
-
-            ideal_xs = [x_a, x_b, x_c, x_d, x_e, x_f, x_g, x_h]
-            ideal_ys = [y_a, y_b, y_c, y_d, y_e, y_f, y_g, y_h]
-
-            dirs = datamanager.get_option_list("translations")
-            for i, d in enumerate(dirs):
-                plt.plot(ideal_xs[i], ideal_ys[i], color=aplt.get_dir_color(d), label='ideal', linestyle='--')
-
-        else:  # there are specific directions you want to plot, and only those directions
-            ideal_xs = list()
-            ideal_ys = list()
-
-            if "a" in specific_lines:
-                x_a, y_a = aplt.get_a()
-                ideal_xs.append(x_a)
-                ideal_ys.append(y_a)
-
-            if "b" in specific_lines:
-                x_b, y_b = aplt.get_b()
-                ideal_xs.append(x_b)
-                ideal_ys.append(y_b)
-
-            if "c" in specific_lines:
-                x_c, y_c = aplt.get_c()
-                ideal_xs.append(x_c)
-                ideal_ys.append(y_c)
-
-            if "d" in specific_lines:
-                x_d, y_d = aplt.get_d()
-                ideal_xs.append(x_d)
-                ideal_ys.append(y_d)
-
-            if "e" in specific_lines:
-                x_e, y_e = aplt.get_e()
-                ideal_xs.append(x_e)
-                ideal_ys.append(y_e)
-
-            if "f" in specific_lines:
-                x_f, y_f = aplt.get_f()
-                ideal_xs.append(x_f)
-                ideal_ys.append(y_f)
-
-            if "g" in specific_lines:
-                x_g, y_g = aplt.get_g()
-                ideal_xs.append(x_g)
-                ideal_ys.append(y_g)
-
-            if "h" in specific_lines:
-                x_h, y_h = aplt.get_h()
-                ideal_xs.append(x_h)
-                ideal_ys.append(y_h)
-
-            for i, dir in enumerate(specific_lines):
-                plt.plot(ideal_xs[i], ideal_ys[i], color=aplt.get_dir_color(dir), label='ideal', linestyle='--')
 
 if __name__ == '__main__':
     h = AstHandTranslation(["sub1", "sub2", "sub3"], "2v2", rotation="p15")
