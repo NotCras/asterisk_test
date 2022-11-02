@@ -264,7 +264,7 @@ class AsteriskPlotting:
     # TODO: more functions: plot_asterisk, plot_avg_asterisk, plot_one_direction -> move this here and out of the other objects
 
     @staticmethod
-    def plot_a_trial(trial,
+    def plot_a_trial(file_loc, trial,
                      use_filtered=True, include_notes=False, labels=None, plot_orientations=False,
                      incl_obj_img=True, save_plot=False, show_plot=True):
         """
@@ -312,7 +312,7 @@ class AsteriskPlotting:
             trial._plot_notes()
 
         if save_plot:
-            plt.savefig(f"results/pics/plot_{trial.generate_name()}.jpg", format='jpg')
+            plt.savefig(file_loc.result_figs / f"plot_{trial.generate_name()}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
@@ -352,9 +352,8 @@ class AsteriskPlotting:
 
         return plt
 
-
     @staticmethod
-    def plot_asterisk(dict_of_trials, rotation_condition="x", hand_name="",
+    def plot_asterisk(file_loc, dict_of_trials, rotation_condition="x", hand_name="",
                       use_filtered=True, linestyle="solid",
                       include_notes=False, labels=None,
                       plot_orientations=False, tdist_labels=True,
@@ -402,7 +401,7 @@ class AsteriskPlotting:
         plt.gca().set_aspect('equal', adjustable='box')
 
         if save_plot:  # TODO: how will I do file locations here?
-            plt.savefig(self.file_locs.result_figs / f"avgd_{hand_name}_{rotation_condition}.jpg", format='jpg')
+            plt.savefig(file_loc.result_figs / f"ast_{hand_name}_{rotation_condition}.jpg", format='jpg')
             #plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{self.set_rotation}.jpg", format='jpg')
 
             # name -> tuple: subj, hand  names
