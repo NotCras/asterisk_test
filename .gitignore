@@ -2,6 +2,7 @@ zips/
 __pycache__/
 *.zip
 *.csv
+*.csv#
 *.png
 *.jpg
 *.jpeg

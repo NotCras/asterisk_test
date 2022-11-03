@@ -18,6 +18,7 @@ class AstDirectory:
         self.metric_results = None
         self.result_figs = None
         self.debug_figs = None
+        self.resources = None
 
     # def file_location(self):
     #     """
@@ -53,3 +54,4 @@ my_ast_files.path_data = data_directory / "trial_paths"
 my_ast_files.metric_results = data_directory / "results"
 my_ast_files.result_figs = data_directory / "results" / "plots"
 my_ast_files.debug_figs = data_directory / "results" / "debug_plots"
+my_ast_files.resources = data_directory.parent / "resources"

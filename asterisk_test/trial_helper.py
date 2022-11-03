@@ -288,15 +288,16 @@ def convert_notation_new_to_old(hand, direction, rotation):
     return h_dict[hand], t_dict[direction], r_dict[rotation]
 
 
-def get_best_trial(file_obj, hand, direction, rotation, best_trial_dict=None):
+def get_best_trial(file_obj, hand, direction, rotation, convert_notation=True, best_trial_dict=None):
     """
     Retrieves the file_name of the best trial. Data needs to have been saved already in aruco_data location.
     If no best trial exists, then returns ideal line.
     """
     best_trial = AstTrialTranslation(file_obj)
-    old_hand, old_direction, old_rotation = convert_notation_new_to_old(hand, direction, rotation)
+    if convert_notation:
+        hand, direction, rotation = convert_notation_new_to_old(hand, direction, rotation)
 
-    best_trial_key = f"{old_hand}_{old_direction}_{old_rotation}"  # TODO: add rotation, so its hand_direction_rotation
+    best_trial_key = f"{hand}_{direction}_{rotation}"
 
     # try:
     best_trial_name = best_trial_dict[best_trial_key]

@@ -1,7 +1,9 @@
 import math as m
 import numpy as np
+import pdb
+
 from matplotlib import pyplot as plt
-from data_manager import data_manager as datamanager
+import data_manager as datamanager
 
 
 class AsteriskPlotting:
@@ -148,7 +150,8 @@ class AsteriskPlotting:
 
             dirs = datamanager.get_option_list("translations")
             for i, d in enumerate(dirs):
-                plt.plot(ideal_xs[i], ideal_ys[i], color=AsteriskPlotting.get_dir_color(d), label='ideal', linestyle='--')
+                plt.plot(ideal_xs[i], ideal_ys[i], color=AsteriskPlotting.get_dir_color(d),
+                         label='ideal', linestyle='--', zorder=10)
 
         else:  # there are specific directions you want to plot, and only those directions
             ideal_xs = list()
@@ -195,7 +198,8 @@ class AsteriskPlotting:
                 ideal_ys.append(y_h)
 
             for i, dir in enumerate(specific_lines):
-                plt.plot(ideal_xs[i], ideal_ys[i], color=AsteriskPlotting.get_dir_color(dir), label='ideal', linestyle='--')
+                plt.plot(ideal_xs[i], ideal_ys[i], color=AsteriskPlotting.get_dir_color(dir),
+                         label='ideal', linestyle='--', zorder=10)
 
     @staticmethod
     def plot_notes(labels, ax):  # TODO: move to aplt, make it take in a list of labels so HandTranslation can also use it
@@ -248,13 +252,15 @@ class AsteriskPlotting:
                 )
 
     @staticmethod
-    def add_obj_img(rotation, fig):
+    def add_obj_img(file_loc_obj, rotation, fig):
         """
         Plots a small image which illustrates the AstHandTranslation.set_rotation value
         """
-        # TODO: revisit the file structure here -> this won't work anymore
-        img_locs = dict(n="resources/cube_n.jpg", m15="resources/cube_m15.jpg", p15="resources/cube_p15.jpg",
-                        x="resources/cube_n.jpg")
+        n_loc = file_loc_obj.resources / "cube_n.jpg"
+        m_loc = file_loc_obj.resources / "cube_m15.jpg"
+        p_loc = file_loc_obj.resources / "cube_p15.jpg"
+        img_locs = dict(n=n_loc, m15=m_loc, p15=p_loc,
+                        x=n_loc)
 
         im = plt.imread(img_locs[rotation])
         newax = fig.add_axes([0.07, 0.86, 0.12, 0.12], anchor='NW', zorder=0)
@@ -276,7 +282,8 @@ class AsteriskPlotting:
         fig.subplots_adjust(top=0.85)
 
         ideal_x, ideal_y = AsteriskPlotting.get_direction(trial.trial_translation)
-        ax.plot(ideal_x, ideal_y, color=AsteriskPlotting.get_dir_color(trial.trial_translation), label='ideal', linestyle='--')
+        ax.plot(ideal_x, ideal_y, color=AsteriskPlotting.get_dir_color(trial.trial_translation),
+                label='ideal', linestyle='--', zorder=30)
 
         data_x, data_y, _ = trial.get_poses(use_filtered)
         ax.plot(data_x, data_y, color="xkcd:dark blue", label='trajectory')
@@ -293,6 +300,7 @@ class AsteriskPlotting:
         # gives a realistic view of what the path looks like
         plt.xticks(np.linspace(AsteriskPlotting.round_half_down(min_x, decimals=2),
                                AsteriskPlotting.round_half_up(max_x, decimals=2), 10), rotation=30)
+
         if trial.trial_translation in ["a", "b", "c", "g", "h", "no", "so", "ea", "we"]:
             plt.yticks(np.linspace(0, AsteriskPlotting.round_half_up(max_y, decimals=2), 10))
         else:
@@ -306,10 +314,14 @@ class AsteriskPlotting:
             trial._plot_orientations(scale=1.0)
 
         if incl_obj_img:
-            AsteriskPlotting.add_obj_img(trial.trial_rotation, fig)
+            AsteriskPlotting.add_obj_img(file_loc, trial.trial_rotation, fig)
 
         if include_notes:
             trial._plot_notes()
+
+        if show_plot:
+            plt.legend()
+            plt.show()
 
         if save_plot:
             plt.savefig(file_loc.result_figs / f"plot_{trial.generate_name()}.jpg", format='jpg')
@@ -317,11 +329,7 @@ class AsteriskPlotting:
             print("Figure saved.")
             print(" ")
 
-        if show_plot:
-            plt.legend()
-            plt.show()
-
-        return plt
+        return ax
 
     @staticmethod
     def compare_paths(first_path, second_path):
@@ -331,33 +339,37 @@ class AsteriskPlotting:
         """
         colors = ["black", "red", "blue"]
 
+        fig = plt.figure(figsize=(7, 7))
+        ax = fig.add_subplot()
+        fig.subplots_adjust(top=0.85)
+
         plot_direction = first_path.trial_translation
 
         ideal_x, ideal_y = AsteriskPlotting.get_direction(plot_direction)
 
         # plot ideal line
-        plt.plot(ideal_x, ideal_y, color=colors[0], label=f"ideal line, dir {plot_direction}")
+        ax.plot(ideal_x, ideal_y, color=colors[0], label=f"ideal line, dir {plot_direction}", zorder=10)
 
         # plot first path
         first_x, first_y, _ = first_path.get_poses()
         first_name = first_path.generate_name()
-        plt.plot(first_x, first_y, color=colors[1], label=f"path 1: {first_name}")
+        ax.plot(first_x, first_y, color=colors[1], label=f"path 1: {first_name}", zorder=15)
 
         # plot second path
         second_x, second_y, _ = second_path.get_poses()
         second_name = second_path.generate_name()
-        plt.plot(second_x, second_y, color=colors[2], label=f"path 2: {second_name}")
+        ax.plot(second_x, second_y, color=colors[2], label=f"path 2: {second_name}", zorder=20)
 
-        plt.title(f"Dir {plot_direction} comparison")
+        ax.title(f"Dir {plot_direction} comparison")
 
-        return plt
+        return ax
 
     @staticmethod
     def plot_asterisk(file_loc, dict_of_trials, rotation_condition="x", hand_name="",
                       use_filtered=True, linestyle="solid",
                       include_notes=False, labels=None,
                       plot_orientations=False, tdist_labels=True,
-                      incl_obj_img=True,
+                      incl_obj_img=True, gray_it_out=False,
                       save_plot=False, show_plot=True):
         """
         Takes a dictionary of trials
@@ -374,8 +386,12 @@ class AsteriskPlotting:
                 data_x, data_y, theta = t.get_poses(use_filtered)
 
                 # ax.plot(data_x, data_y, color=colors[i], label='trajectory', linestyle=linestyle)
-                ax.plot(data_x, data_y, color=AsteriskPlotting.get_dir_color(t.trial_translation),
-                        label='trajectory', linestyle=linestyle)
+                if gray_it_out:  # TODO: make a gradient of grey, so that we can tell what direction is what
+                    ax.plot(data_x, data_y, color="lightgrey",
+                            label='trajectory', linestyle=linestyle, zorder=30)
+                else:
+                    ax.plot(data_x, data_y, color=AsteriskPlotting.get_dir_color(t.trial_translation),
+                            label='trajectory', linestyle=linestyle, zorder=30)
 
                 if plot_orientations:
                     t._plot_orientations(marker_scale=15, line_length=0.025, scale=1)
@@ -389,7 +405,7 @@ class AsteriskPlotting:
             AsteriskPlotting.plot_notes(labels, ax=ax)
 
         if incl_obj_img:
-            AsteriskPlotting.add_obj_img(rotation_condition, fig)
+            AsteriskPlotting.add_obj_img(file_loc, rotation_condition, fig)
 
         fig.suptitle(f"{hand_name}, {rotation_condition} Avg Asterisk", fontweight="bold", fontsize=14)
         ax.set_title("Cube size: ~0.25 span, init pos: 0.75 depth")  # , pad=10)
@@ -400,6 +416,10 @@ class AsteriskPlotting:
         # plt.yticks(np.linspace(-0.7, 0.7, 15))
         plt.gca().set_aspect('equal', adjustable='box')
 
+        if show_plot:
+            # plt.legend()  # TODO: showing up weird, need to fix
+            plt.show()
+
         if save_plot:  # TODO: how will I do file locations here?
             plt.savefig(file_loc.result_figs / f"ast_{hand_name}_{rotation_condition}.jpg", format='jpg')
             #plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{self.set_rotation}.jpg", format='jpg')
@@ -408,8 +428,4 @@ class AsteriskPlotting:
             print("Figure saved.")
             print(" ")
 
-        if show_plot:
-            # plt.legend()  # TODO: showing up weird, need to fix
-            plt.show()
-
-        return plt
+        return ax

@@ -84,7 +84,8 @@ class AstTrialTranslation(AstTrial):
         """
         Takes a file_name and gets relevant information out
         """
-        h, t, r, s, e = file_name.split("_")
+        # TODO: had to convert back to old way, please fix
+        s, h, t, r, e = file_name.split("_")
         n, _ = e.split(".")
 
         self.add_hand_info(h)
@@ -97,6 +98,7 @@ class AstTrialTranslation(AstTrial):
         :param folder: name of folder to read file from. Defaults csv folder
         """
         total_path = self.file_loc_obj.aruco_data / file_name
+        print(f"{total_path}")
         try:
             # print(f"Reading file: {total_path}")
             df = pd.read_csv(total_path, skip_blank_lines=True)
@@ -124,7 +126,7 @@ class AstTrialTranslation(AstTrial):
     def add_data_by_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True, condition_data=True, aruco_id=None):
         """
         Add object path data as a file. By default, will run data through conditioning function
-        """
+        """  # TODO: this is for aruco_data, but we also should make one for trial_paths
         # Data will not be filtered in this step
         self.demographics_from_filename(file_name)
         path_df = self._read_file(file_name, condition_data=condition_data, norm_data=norm_data)
