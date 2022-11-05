@@ -396,7 +396,7 @@ class AstTrial:
         mvt_efficiency, arc_len = am.calc_mvt_efficiency(self)
 
         max_error = am.calc_max_error(self, arc_len)
-        max_error_rot = am.calc_rot_max_error(self, arc_len)
+        max_error_rot = am.calc_rot_max_error(self, arc_len)[0]
 
         area_btwn = am.calc_area_btwn_curves(self)
 

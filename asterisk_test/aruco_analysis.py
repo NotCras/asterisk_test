@@ -11,6 +11,7 @@ from ast_hand_info import get_hand_stats
 import logging as log
 from pathlib import Path
 import numpy as np
+import pdb
 
 
 class AstArucoAnalysis:
@@ -18,7 +19,6 @@ class AstArucoAnalysis:
     aruco_hand_to_id = {}
 
     def __init__(self, file_loc_obj, camera_calib, camera_dists, marker_side_dims):
-        pass
         self.af = ArucoFunc(camera_calib, camera_dists, marker_side_dims)
 
         self.aruco_pics_loc = file_loc_obj.aruco_pics
@@ -29,13 +29,13 @@ class AstArucoAnalysis:
         Analyzes a folder of aruco images
         """
         h, t, r, s, n = trial_name.split("_")
-        trial_attributes = {"hand": h, "translation": t, "rotation": r, "subject": s, "trial_num": n}
+        #trial_attributes = {"hand": h, "translation": t, "rotation": r, "subject": s, "trial_num": n}
         # TODO: want to check that you give a valid trial
 
-        trial_folder = self.aruco_pics_loc / f"{s}_{h}_{t}_{r}_{n}"
+        trial_folder = self.aruco_pics_loc / f"{h}_{t}_{r}_{s}_{n}"
         aruco_loc = self.af.full_analysis_single_id(trial_folder, aruco_id)
 
-        aruco_loc.name = trial_attributes
+        aruco_loc.name = {"hand": h, "translation": t, "rotation": r, "subject": s, "trial_num": n}
 
         if save_trial:
             result_folder = self.aruco_data_loc / trial_name

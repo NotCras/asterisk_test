@@ -103,17 +103,20 @@ class AstData:
             plt.pause(.01)
             plt.draw()
 
-        #os.chdir(self.home)
-        repeat = smart_input("Show again? [y/n]", "consent")
-        if repeat == "y":
-            # run again
 
-            self.view_images_light(hand_name, translation_name,
-                             rotation_name, subject_name, trial_number, do_quit=do_quit)
-        else:
-            # stop running
-            if do_quit:
-                quit()
+        plt.pause(1)
+        plt.close()
+        #os.chdir(self.home)
+#        repeat = smart_input("Show again? [y/n]", "consent")
+#        if repeat == "y":
+#            # run again
+#
+#            self.view_images_light(hand_name, translation_name,
+#                             rotation_name, subject_name, trial_number, do_quit=do_quit)
+#        else:
+#            # stop running
+#            if do_quit:
+#                quit()
 
     def single_extract(self, subject_name, hand_name, translation_name, rotation_name, trial_number):
         """

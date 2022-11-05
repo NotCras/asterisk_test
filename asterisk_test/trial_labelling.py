@@ -95,7 +95,7 @@ class AsteriskLabelling:  # TODO: add in rotational variants to metrics to work 
             angle_btwn = acalc.angle_between(last_target_pt, [x, y])
 
             if angle_btwn > threshold or angle_btwn < -threshold:
-                print(f"Greater than {threshold} deg deviation detected ({angle_btwn}) at pt: ({x}, {y})")
+                #print(f"Greater than {threshold} deg deviation detected ({angle_btwn}) at pt: ({x}, {y})")
                 # count this towards the number of points that are out of bounds
                 pts_deviated += 1
                 result = True
@@ -123,7 +123,7 @@ class AsteriskLabelling:  # TODO: add in rotational variants to metrics to work 
             # for a AstTrialRotation, we don't care about the angle between b/c we (hopefully) are staying
             # in one spot. So instead, we will look at whether the
             if x > threshold or y > threshold:
-                print(f"Greater than {threshold} deviation from center detected at pt: ({x}, {y})")
+                #print(f"Greater than {threshold} deviation from center detected at pt: ({x}, {y})")
                 # count this towards the number of points that are out of bounds
                 pts_deviated += 1
                 result = True

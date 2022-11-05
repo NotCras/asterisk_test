@@ -14,30 +14,36 @@ class AstTrialRotation(AstTrialTranslation):
     Class which handles cw/ccw trials, separating because we would appreciate the nuance
     """
 
-    def __init__(self, file_name, data=None,  # subject_label=None, rotation_label=None, number_label=None,
+    def __init__(self, file_loc_obj, data=None,  # subject_label=None, rotation_label=None, number_label=None,
                  controller_label=None, do_metrics=True, norm_data=True, condition_data=True):
 
         self.total_distance = 0  # This will be the max rotation value of the trial
         self.dir = 1  # this will be another way to check cw and ccw
-        super().__init__(file_name=file_name, data=data, controller_label=controller_label, do_metrics=do_metrics,
-                         condition_data=condition_data, norm_data=norm_data)
+        self.file_loc_obj = file_loc_obj
+        super().__init__(file_loc_obj, controller_label=controller_label)#), do_metrics=do_metrics,
+                         #condition_data=condition_data, norm_data=norm_data)
 
         # TODO: will need to revisit how metrics are calculated
 
-    def _read_file(self, file_name, folder="aruco_data/", norm_data=True, condition_data=True):
+    def _read_file(self, file_name, norm_data=True, condition_data=True):
         """
         Function to read file and save relevant data in the object
         :param file_name: name of file to read in
         :param folder: name of folder to read file from. Defaults csv folder
         """
-        total_path = f"{folder}{file_name}"
+        total_path = self.file_loc_obj.aruco_data / file_name
+        #total_path = f"{folder}{file_name}"
         try:
             # print(f"Reading file: {total_path}")
             df = pd.read_csv(total_path, skip_blank_lines=True)
-            df = df.set_index("frame")
-        except Exception as e:  # TODO: add more specific except clauses
+            #df = df.set_index("frame")
+        except FileNotFoundError:  # TODO: add more specific except clauses
             # print(e)
-            print(f"{total_path} has failed to read csv")
+            print(f"{total_path} has failed to read csv, returning None")
+            return None
+
+        except KeyError:
+            print(f"Probably incorrect headers at {total_path}, returning None")
             return None
 
         if condition_data:
@@ -51,20 +57,58 @@ class AstTrialRotation(AstTrialTranslation):
 
         return df
 
-    def add_data_by_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True, condition_data=True):
+    def add_data_by_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True, condition_data=True, old=False):
         """
         Add object path data as a file. By default, will run data through conditioning function
         """
         # Data will not be filtered in this step
+        self.demographics_from_filename(file_name, old=old)
         path_df = self._read_file(file_name, condition_data=condition_data, norm_data=norm_data)
 
         self.poses = path_df[["x", "y", "rmag"]]
+        self.normalized = norm_data
 
         # self.target_line = self.generate_target_line(100)  # 100 samples
         self.target_line, self.total_distance = self.generate_target_rot()
 
         self.assess_path_labels()
         print(self.path_labels)
+
+        if do_metrics and self.poses is not None and "no_mvt" not in self.path_labels:
+            self.update_all_metrics()
+            
+    def add_data_by_arucoloc(self, aruco_loc, norm_data=True, condition_data=True, do_metrics=True):
+        """ Loads in data in aruco loc form (from aruco-tool)
+
+        Args:
+            aruco_loc (ArucoLoc): aruco analysis object
+            norm_data (bool, optional): normalize data? Defaults to True.
+            condition_data (bool, optional): condition data? Defaults to True.
+            do_metrics (bool, optional): run metric analysis? Defaults to True.
+        """
+        path_df = aruco_loc.gen_poses_df()
+
+        self.data_demographics(subject=aruco_loc.name["subject"], translation=aruco_loc.name["translation"],
+                                rotation=aruco_loc.name["rotation"], number=aruco_loc.name["trial_num"])
+        self.add_hand_info(aruco_loc.name["hand"])
+        self.aruco_id = aruco_loc.id
+
+        if condition_data:
+            data = self._condition_df(path_df, norm_data=norm_data)
+        else:
+            data = path_df
+        
+        self.poses = path_df[["x", "y", "rmag"]]
+        self.normalized = norm_data
+
+        # self.target_line = self.generate_target_line(100)  # 100 samples
+        self.target_line, self.total_distance = self.generate_target_rot()
+
+        self.assess_path_labels()
+        if self.path_labels:
+            print(self.path_labels)
+        else:
+            print("No labels attributed to this data.")
 
         if do_metrics and self.poses is not None and "no_mvt" not in self.path_labels:
             self.update_all_metrics()
@@ -81,6 +125,7 @@ class AstTrialRotation(AstTrialTranslation):
             data = path_df
 
         self.poses = data[["x", "y", "rmag"]]
+        self.normalized = norm_data
 
         # self.target_line = self.generate_target_line(100)  # 100 samples
         self.target_line, self.total_distance = self.generate_target_rot()

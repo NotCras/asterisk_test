@@ -61,8 +61,8 @@ class HandInfo:
         """
         Get hand span and depth measurements from file
         """
-        home_directory = Path(__file__).parent.absolute()
-        hand_stats_loc = str(home_directory) + '/.hand_stats'
+        home_directory = Path(__file__).parent.absolute()  # TODO: fix home directory here
+        hand_stats_loc = home_directory / ".hand_stats"
         dims_df = pd.read_csv(hand_stats_loc,
                               index_col=0)  # names=['name', 'mx_span', 'mx_depth', 'id_num'], index_col=0)
         dims = dims_df.loc[self.hand_name]
@@ -76,8 +76,8 @@ def get_hand_stats(specific_hand = None):
     """
     Gets the data out of the hand_stats file
     """
-    home_directory = Path(__file__).parent.absolute()
-    hand_stats_loc = str(home_directory) + '/.hand_stats'
+    home_directory = Path(__file__).parent.absolute() # TODO: fix home directory here
+    hand_stats_loc = home_directory / ".hand_stats"
     dims_df = pd.read_csv(hand_stats_loc, index_col=0) #names=['name', 'mx_span', 'mx_depth', 'id_num'], index_col=0)
 
     if specific_hand is None:

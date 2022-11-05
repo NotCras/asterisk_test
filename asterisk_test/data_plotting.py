@@ -351,18 +351,21 @@ class AsteriskPlotting:
         ax.plot(ideal_x, ideal_y, color=colors[0], label=f"ideal line, dir {plot_direction}", zorder=10)
 
         # plot first path
-        first_x, first_y, _ = first_path.get_poses()
+        first_path.moving_average()
+        first_x, first_y, _ = first_path.get_poses(use_filtered=True)
         first_name = first_path.generate_name()
         ax.plot(first_x, first_y, color=colors[1], label=f"path 1: {first_name}", zorder=15)
 
         # plot second path
-        second_x, second_y, _ = second_path.get_poses()
+        second_path.moving_average()
+        second_x, second_y, _ = second_path.get_poses(use_filtered=True)
         second_name = second_path.generate_name()
         ax.plot(second_x, second_y, color=colors[2], label=f"path 2: {second_name}", zorder=20)
 
-        ax.title(f"Dir {plot_direction} comparison")
-
-        return ax
+        ax.set_title(f"Dir {plot_direction} comparison")
+                
+        plt.legend()
+        plt.show()
 
     @staticmethod
     def plot_asterisk(file_loc, dict_of_trials, rotation_condition="x", hand_name="",

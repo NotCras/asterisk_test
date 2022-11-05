@@ -80,18 +80,21 @@ class AstTrialTranslation(AstTrial):
         # if file_name:
         #     print(self.generate_name())
 
-    def demographics_from_filename(self, file_name):
+    def demographics_from_filename(self, file_name, old=False):
         """
         Takes a file_name and gets relevant information out
         """
-        # TODO: had to convert back to old way, please fix
-        s, h, t, r, e = file_name.split("_")
+        if old:
+            s, h, t, r, e = file_name.split("_")
+        else:
+            h, t, r, s, e = file_name.split("_")    
+            
         n, _ = e.split(".")
-
+        
         self.add_hand_info(h)
         self.data_demographics(s, t, r, n)
 
-    def _read_file(self, file_name, folder="aruco_data/", norm_data=True, condition_data=True):
+    def _read_file(self, file_name, norm_data=True, condition_data=True):
         """
         Function to read file and save relevant data in the object
         :param file_name: name of file to read in
@@ -123,12 +126,13 @@ class AstTrialTranslation(AstTrial):
 
         return df
 
-    def add_data_by_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True, condition_data=True, aruco_id=None):
+    def add_data_by_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True, 
+                         condition_data=True, aruco_id=None, old=False):
         """
         Add object path data as a file. By default, will run data through conditioning function
         """  # TODO: this is for aruco_data, but we also should make one for trial_paths
         # Data will not be filtered in this step
-        self.demographics_from_filename(file_name)
+        self.demographics_from_filename(file_name, old=old)
         path_df = self._read_file(file_name, condition_data=condition_data, norm_data=norm_data)
         self.aruco_id = aruco_id
 
