@@ -235,28 +235,34 @@ def full_camera_process(file_obj, trial_name, metrics_and_thresholds, best_loc=N
     _, _, _, b_s, b_n = best_name.split("_")
     old_h, old_t, old_r = convert_notation_new_to_old(h, t, r)
 
-    print("Ready to view the best trial? Hit space+enter to continue. Hit q+enter to stop.")
+    print("Ready to view the best trial?")
+    print("Hit space+enter to watch. Hit s+enter to skip. Hit q+enter to stop.")
     char = input(" ")
     print("")
 
+    if char == "q":
+        quit()
+    elif char == "s":
+        print("Skipping best trial!")
+    else:    
     # view the best trial, repeat as needed
-    view_best_trial = True
-    while view_best_trial:
-        if best_loc is not None:
-            manager = AstData(best_loc)
-        else:
-            manager = AstData(my_ast_files)
+        view_best_trial = True
+        while view_best_trial:
+            if best_loc is not None:
+                manager = AstData(best_loc)
+            else:
+                manager = AstData(my_ast_files)
 
-        manager.view_images_light(old_h, old_t, old_r, b_s, b_n, do_quit=False)
+            manager.view_images_light(old_h, old_t, old_r, b_s, b_n, do_quit=False)
         
-        response = collect_prompt_data(
-            view_check_prompt, check_options)
+            response = collect_prompt_data(
+                view_check_prompt, check_options)
 
-        if response == "no":
-            view_best_trial = False
-        else:
-            if response == "cancel":
-                quit()
+            if response == "no":
+                view_best_trial = False
+            else:
+                if response == "cancel":
+                    quit()
     
     print("============================")
     print("NOW IT'S TIME TO COLLECT DATA!")
@@ -591,11 +597,14 @@ def trial_full_round(hand, dir_label, trial_type, subject_name, trial_num):
     print(f"        {trial_name}       ")
     print("|=============================|")
     print(" ")
+    print(f"      {dir_label}, {trial_type}       ")
+    print("|=============================|")
+    print(" ")
 
-    metrics_to_check = {"dist": (0.2, "high"),
-                        "mvt_eff": (0.2, "high"),
-                        "max_err": (0.2, "low"),
-                        "max_err_rot": (0.2, "low")
+    metrics_to_check = {"dist": (0.25, "high"),
+                        "mvt_eff": (0.5, "high"),
+                        "max_err": (1.0, "band"),
+                        "max_err_rot": (5.0, "band")
                         }
 
     print("LOOKING AT THIS FOLDER PATH")
@@ -624,15 +633,8 @@ def trial_full_round(hand, dir_label, trial_type, subject_name, trial_num):
     print(f"Moved uncompressed data to hard drive: {full_viz_path}")
 
     print("============================")
-    print(f"COMPLETED TRIAL: {trial_name}")
     print("  ")
-    print("Get ready to move on! Hit space+enter to continue. Hit q+enter to stop.")
-    char = input(" ")
-    print("")
-    os.system('cls' if os.name=='nt' else 'clear')
-    
-    if char == "q":
-        quit()
+
 
 
 # =========================================================================
@@ -642,6 +644,11 @@ if __name__ == "__main__":
     home_directory = Path(__file__).parent.absolute()
 
     subject_name, hand, temp_trial_type = check_prev_settings() 
+
+    # ["no", "ne", "ea", "se", "so", "sw", "we", ]
+    # "no", "ne", "nw", "ea", "we", "so", "se", "sw",
+    dir_options = ["no", "ne", "nw", "ea", "we", "so", "se", "sw", "x"]
+    dir_options_no_rot = ["no", "ne", "nw", "ea", "we", "so", "se", "sw"]
     
     if hand in ["2v1", "p1vp1"]:
         directions = dir_options_no_rot
@@ -655,16 +662,27 @@ if __name__ == "__main__":
 
     for d in directions:
         if d == "x":
-            trial_type = ["cw", "ccw"]
+            trial_type = ["pp", "mm"]
         else:
             trial_type = [temp_trial_type]		
         
         for r in trial_type:
+            trial_options = ["1","2","3"]
             for n in trial_options:
                 trial_full_round(hand, d, r, subject_name, n)
                 #print(f"{hand}_{d}_{r}_{subject_name}_{n}")
+            
+            print(f"Completed direction {d}!")
+            print(" ")
+            print("TIME TO DO THE SURVEY!")
+            print("  ")
+            print("Get ready to move on! Hit space+enter to continue. Hit q+enter to stop.")
+            char = input(" ")
+            print("")
+            os.system('cls' if os.name=='nt' else 'clear')
+    
+            if char == "q":
+                quit()
 
     
-
-        
 
