@@ -2,6 +2,7 @@
 """
 Class for organizing asterisk trial data for one specific hand. Handles analysis, averaging, and plotting.
 """
+import logging
 import os
 
 import numpy as np
@@ -33,9 +34,9 @@ class AstHandTranslation:
         self.file_locs = file_loc_obj
 
         if blocklist_file is not None:
-            blocklist = self._check_blocklist(blocklist_file)
+            self.blocklist = self._check_blocklist(blocklist_file)
         else:
-            blocklist = None
+            self.blocklist = None
 
         self.set_rotation = rotation
         self.data = None  # self._gather_hand_data(subjects, blocklist=blocklist, normalized_data=normalized_data)
@@ -57,14 +58,14 @@ class AstHandTranslation:
 
         return blocked_files
 
-    def load_single_trial(self, data_loc, directions_to_exclude=None, subjects_to_exclude=None, trial_num_to_exclude=None):
+    def load_trials(self, data_type="aruco_data", directions_to_exclude=None, subjects_to_exclude=None, trial_num_to_exclude=None):
         """
         Searches the file location indicated by data_loc (either "aruco_data" or "trial_paths")
         """
 
-        if data_loc == "aruco_data":
+        if data_type == "aruco_data":
             folder_to_check = self.file_locs.aruco_data
-        elif data_loc == "trial_paths":
+        elif data_type == "trial_paths":
             folder_to_check = self.file_locs.path_data
         else:
             folder_to_check = None
@@ -76,6 +77,7 @@ class AstHandTranslation:
             # parse filename
             h, t, r, s, e = file_name.split("_")
             n, _ = e.split(".")
+            logging.info(f"Considering: {h}_{t}_{r}_{s}_{n}")
 
             if h != self.hand.get_name(): # TODO: change to target_hand
                 continue  # skip this hand
@@ -95,15 +97,32 @@ class AstHandTranslation:
                 if t in directions_to_exclude or r in directions_to_exclude:  # TODO: just trying to capture cw/ccw here
                     continue
 
+            if self.blocklist is not None:
+                if file_name in self.blocklist:  # TODO: make sure that the blocklist is implemented correctly
+                    continue
+
+            logging.info(f"{h}_{t}_{r}_{s}_{n} has passed!")
+
             # Now we are sure that this trial is one that we want
             trial = AstTrialTranslation(file_loc_obj=self.file_locs)
-            if data_loc == "aruco_data":
+            if data_type == "aruco_data":
                 trial.add_data_by_file(file_name)
-            elif data_loc == "trial_paths":
-                trial.add_data_by_df() # TODO: not actually correct, need a new function for this
+            # elif data_type == "trial_paths":
+            #     trial.add_data_by_df() # TODO: not actually correct, need a new function for this
             else:
                 pass
-                # TODO: actually, throw error here
+                raise TypeError("Incorrect aruco_data.")
+
+            # now, add this to the data dict
+            label = f"{t}_{r}"  # TODO: actually... don't need r here, right?
+
+            self.data[label].append(trial)  # TODO: its up to the user to make sure data doubles don't happen?
+
+    def load_aruco_file(self):
+        """
+
+        """
+        pass
 
     def get_data_from_files(self, subjects, blocklist=None, normalized_data=True):
         """
@@ -119,7 +138,7 @@ class AstHandTranslation:
             key = f"{t}_{self.set_rotation}"
             data = self._make_asterisk_trials_from_filenames(subjects, t, self.set_rotation,
                                                              datamanager.get_option_list("numbers"),
-                                                             blocklist=blocklist, norm_data=normalized_data)
+                                                             blocklist=self.blocklist, norm_data=normalized_data)
             if data:
                 data_dictionary[key] = data
                 # pdb.set_trace()
@@ -142,7 +161,7 @@ class AstHandTranslation:
 
         return list_of_dirs
 
-    def _make_asterisk_trials_from_filenames(self, subjects, translation_label, rotation_label, trials,
+    def _make_asterisk_trials_from_filenames(self, subjects, translation_label, rotation_label, trial_nums,
                                              blocklist=None, norm_data=True):
         """
         Goes through data and compiles data with set attributes into an AsteriskTrial objects
@@ -155,7 +174,7 @@ class AstHandTranslation:
 
         gathered_data = list()
         for s in subjects:  # TODO: subjects is a list, make a type recommendation?
-            for n in trials:
+            for n in trial_nums:
                 asterisk_trial = f"{s}_{self.hand.get_name()}_{translation_label}_{rotation_label}_{n}"
 
                 if blocklist is not None and asterisk_trial in blocklist:
@@ -163,7 +182,9 @@ class AstHandTranslation:
                     continue
 
                 try:
-                    trial_data = AstTrialTranslation(f"{asterisk_trial}.csv", norm_data=norm_data)  # TODO: this is wrong now
+                    trial_data = AstTrialTranslation(self.file_locs)
+                    trial_data.add_data_by_file(f"{asterisk_trial}.csv",
+                                                norm_data=norm_data, condition_data=True, do_metrics=True)
                     print(f"{trial_data.generate_name()}, labels: {trial_data.path_labels}")
 
                     gathered_data.append(trial_data)
@@ -200,7 +221,8 @@ class AstHandTranslation:
             r_label = al.data_attributes["rotation"]
             trial_label = f"{t_label}_{r_label}"
 
-            trial = AstTrialTranslation().add_data_by_arucoloc(al)
+            trial = AstTrialTranslation(self.file_locs)
+            trial.add_data_by_arucoloc(al)
 
             self.data[trial_label].append(trial)
 
@@ -221,49 +243,6 @@ class AstHandTranslation:
         # TODO: check that the hand is correct!
         label = f"{ast_trial.trial_translation}_{ast_trial.trial_rotation}"
         self.data[label].append(ast_trial)
-
-    def _get_ast_set(self, subjects, trial_number=None, exclude_path_labels=None):
-        """
-        Picks out an asterisk of data (all translational directions) with specific parameters
-        :param subjects: specify the subject or subjects you want
-        :param trial_number: specify the number trial you want, if None then it will
-            return all trials for a specific subject
-        :param rotation_type: rotation type of batch. Defaults to "n"
-        """
-        dfs = []
-        translations = datamanager.get_option_list("translations")  # ["a", "b", "c", "d", "e", "f", "g", "h"]
-
-        for direction in translations:
-            dict_key = f"{direction}_{self.set_rotation}"
-            # TODO: maybe we set the rotation type per hand trial... might be easier to handle
-            trials = self.data[dict_key]
-            # print(f"For {subject_to_run} and {trial_number}: {direction}")
-
-            for t in trials:
-                # print(t.generate_name())
-                if trial_number:  # if we want a specific trial, look for it
-                    if (t.subject == subjects) and (t.trial_num == trial_number):
-                        for l in t.path_labels:
-                            if exclude_path_labels is not None and l in exclude_path_labels:
-                                continue  # skip trial if it has that path_label
-
-                        dfs.append(t)
-                    elif (t.subject in subjects) and (t.trial_num == trial_number):
-                        for l in t.path_labels:
-                            if exclude_path_labels is not None and l in exclude_path_labels:
-                                continue  # skip trial if it has that path_label
-
-                        dfs.append(t)
-
-                else:  # otherwise, grab trial as long as it has the right subject
-                    if t.subject == subjects or t.subject in subjects:
-                        for l in t.path_labels:
-                            if exclude_path_labels is not None and l in exclude_path_labels:
-                                continue  # skip trial if it has that path_label
-
-                        dfs.append(t)
-
-        return dfs
 
     def _get_ast_dir(self, direction_label, subjects, exclude_path_labels=None):
         """
@@ -381,6 +360,29 @@ class AstHandTranslation:
         self.averages = averages
         return averages
 
+    def get_averages(self, directions_to_include=None, path_labels_to_exclude=None):
+        """
+        Calculate and store all averages.
+        """
+        avg_dict = {}
+
+        if directions_to_include is not None:
+            dirs = self._get_directions_in_data()
+        else:
+            dirs = directions_to_include
+
+        for t in dirs:
+            label = f"{t}_{self.set_rotation}"
+
+            avg = self._average_dir(translation=t, exclude_path_labels=path_labels_to_exclude)
+
+            if avg is not None:
+                avg_dict[label] = [avg]
+
+        self.averages = avg_dict
+
+        return avg_dict
+
     def filter_data(self, window_size=15):
         """
         Runs moving average on data stored inside object
@@ -477,33 +479,6 @@ class AstHandTranslation:
         plt.gca().set_aspect('equal', adjustable='box')
         return plt
 
-
-    def plot_ast_subset(self, subjects, trial_number="1", show_plot=True, save_plot=False):
-        """
-        Plots a subset of the data, as specified in parameters
-        :param subjects: subjects or list of subjects,
-        :param trial_number: the number of trial to include
-        :param show_plot: flag to show plot. Default is true
-        :param save_plot: flat to save plot as a file. Default is False
-        """
-        dfs = self._get_ast_set(subjects, trial_number)  # TODO: make this work for the hand data object
-        plt = self._make_plot(dfs)
-        plt.title(f"Plot: {self.hand.get_name()}, {subjects}, set #{trial_number}")
-
-        if save_plot:
-            plt.savefig(f"results/pics/fullplot4_{self.hand.get_name()}_{subjects}_{trial_number}.jpg", format='jpg')
-            # name -> tuple: subj, hand  names
-            print("Figure saved.")
-            print(" ")
-
-        if show_plot:
-            plt.legend()
-            plt.show()
-
-            # TODO: add ability to make comparison plot between n, m15, and p15
-            # TODO: have an ability to plot a single average trial
-
-
     def plot_specific_trials(self, trial_list, show_plot=True, save_plot=False, include_notes=True,
                      linestyle="solid", plot_contributions=False, exclude_path_labels=None,
                      picky_tlines=False, td_labels=True, incl_obj_img=True):
@@ -534,7 +509,6 @@ class AstHandTranslation:
         if show_plot:
             # plt.legend()  # TODO: showing up weird, need to fix
             plt.show()
-        
 
     def plot_ast_avg(self, subjects=None, show_plot=True, save_plot=False, include_notes=True,
                      linestyle="solid", plot_contributions=False, exclude_path_labels=None,
@@ -581,6 +555,37 @@ class AstHandTranslation:
         if show_plot:
             # plt.legend()  # TODO: showing up weird, need to fix
             plt.show()
+
+    def plot_avg_asterisk(self, show_plot=True, save_plot=False, include_notes=True,
+                          linestyle="solid", plot_contributions=False, exclude_path_labels=None,
+                          picky_tlines=False, td_labels=True, incl_obj_img=True):
+
+        # generate averages (or get existing ones)
+        averages = self.get_averages()
+
+        # throw averages into plot_asterisk  # TODO: make an option to plot the avg paths ontop of the trials, greyed out?
+        ax = aplt.plot_asterisk(self.file_locs, averages,
+                                rotation_condition=self.set_rotation, hand_name=self.hand.get_name(),
+                                use_filtered=True, tdist_labels=True,
+                                save_plot=False, show_plot=show_plot)
+
+        """
+        (file_loc, dict_of_trials, rotation_condition="x", hand_name="",
+        use_filtered=True, linestyle="solid",
+        include_notes=False, labels=None,
+        plot_orientations=False, tdist_labels=True,
+        incl_obj_img=True, gray_it_out=False,
+        save_plot=False, show_plot=True):
+        """
+
+        if save_plot:
+            ax.savefig(self.file_locs.result_figs / f"avg_ast_{self.hand.get_name()}_{self.set_rotation}.jpg", format='jpg')
+            #plt.savefig(self.file_locs.result_figs / f"avg_ast_{self.hand.get_name()}_{self.set_rotation}.jpg", format='jpg')
+            #plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{self.set_rotation}.jpg", format='jpg')
+
+            # name -> tuple: subj, hand  names
+            print("Figure saved.")
+            print(" ")
 
 
 if __name__ == '__main__':

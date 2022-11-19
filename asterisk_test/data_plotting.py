@@ -432,3 +432,4 @@ class AsteriskPlotting:
             print(" ")
 
         return ax
+
