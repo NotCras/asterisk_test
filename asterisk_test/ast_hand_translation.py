@@ -2,6 +2,7 @@
 """
 Class for organizing asterisk trial data for one specific hand. Handles analysis, averaging, and plotting.
 """
+import os
 
 import numpy as np
 import pandas as pd
@@ -55,6 +56,54 @@ class AstHandTranslation:
             print(f"Will block these files: {blocked_files}")
 
         return blocked_files
+
+    def load_single_trial(self, data_loc, directions_to_exclude=None, subjects_to_exclude=None, trial_num_to_exclude=None):
+        """
+        Searches the file location indicated by data_loc (either "aruco_data" or "trial_paths")
+        """
+
+        if data_loc == "aruco_data":
+            folder_to_check = self.file_locs.aruco_data
+        elif data_loc == "trial_paths":
+            folder_to_check = self.file_locs.path_data
+        else:
+            folder_to_check = None
+            # TODO: actually, throw error here
+
+        data_files = [f for f in os.listdir(folder_to_check) if f[-3] == 'csv']
+
+        for file_name in data_files:
+            # parse filename
+            h, t, r, s, e = file_name.split("_")
+            n, _ = e.split(".")
+
+            if h != self.hand.get_name(): # TODO: change to target_hand
+                continue  # skip this hand
+
+            if r != self.set_rotation:
+                continue
+
+            if subjects_to_exclude is not None:
+                if s in subjects_to_exclude:
+                    continue
+
+            if trial_num_to_exclude is not None:
+                if n in trial_num_to_exclude:
+                    continue
+
+            if directions_to_exclude is not None:
+                if t in directions_to_exclude or r in directions_to_exclude:  # TODO: just trying to capture cw/ccw here
+                    continue
+
+            # Now we are sure that this trial is one that we want
+            trial = AstTrialTranslation(file_loc_obj=self.file_locs)
+            if data_loc == "aruco_data":
+                trial.add_data_by_file(file_name)
+            elif data_loc == "trial_paths":
+                trial.add_data_by_df() # TODO: not actually correct, need a new function for this
+            else:
+                pass
+                # TODO: actually, throw error here
 
     def get_data_from_files(self, subjects, blocklist=None, normalized_data=True):
         """
@@ -114,7 +163,7 @@ class AstHandTranslation:
                     continue
 
                 try:
-                    trial_data = AstTrialTranslation(f"{asterisk_trial}.csv", norm_data=norm_data)
+                    trial_data = AstTrialTranslation(f"{asterisk_trial}.csv", norm_data=norm_data)  # TODO: this is wrong now
                     print(f"{trial_data.generate_name()}, labels: {trial_data.path_labels}")
 
                     gathered_data.append(trial_data)
