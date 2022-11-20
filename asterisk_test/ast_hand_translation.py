@@ -42,7 +42,7 @@ class AstHandTranslation:
         self.data = {}
         self.filtered = False
         self.window_size = None
-        self.averages = []
+        self.averages = {}
 
     def _check_blocklist(self, file_name):
         """
@@ -367,7 +367,7 @@ class AstHandTranslation:
                                         exclude_path_labels=exclude_path_labels)
                 if avg is not None:
                     label = f"{t}_{self.rotation_type}"
-                    averages[label] = [avg]
+                    averages[label] = [avg]  # it is put in a list so it works with aplt.plot_asterisk()
 
         self.averages = averages
         return averages
@@ -566,7 +566,7 @@ class AstHandTranslation:
             # plt.legend()  # TODO: showing up weird, need to fix
             plt.show()
 
-    def plot_avg_asterisk(self, show_plot=True, save_plot=False, include_notes=True,
+    def plot_avg_asterisk(self, show_plot=True, save_plot=False, include_notes=True, show_avg_deviation=True,
                           linestyle="solid", plot_contributions=False, exclude_path_labels=None, plot_orientations=False,
                           picky_tlines=False, tdist_labels=True, incl_obj_img=True):
 
@@ -581,6 +581,10 @@ class AstHandTranslation:
                                 save_plot=False, show_plot=show_plot)
 
         # TODO: add in the average deviation regions
+        if show_avg_deviation:
+            for a_k in list(averages.keys()):
+                a_trial = averages[a_k][0]
+                a_trial.plot_sd(aplt.get_dir_color(a_trial.trial_translation))
 
         """
         (file_loc, dict_of_trials, rotation_condition="x", hand_name="",
