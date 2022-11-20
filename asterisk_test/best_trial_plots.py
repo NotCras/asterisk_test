@@ -32,7 +32,7 @@ for h in ["2v2", "2v3", "3v3", "m2active", "palm1r", "palm2r"]:
                 h, t, r, s, n = best_trial_name.split("_")
                 best_name_old_way = f"{s}_{h}_{t}_{r}_{n}"
 
-                best_trial.add_data_by_file(best_name_old_way+".csv")
+                best_trial.load_data_by_aruco_file(best_name_old_way + ".csv")
                 best_trial.moving_average(window_size=15)
 
                 # insert it into the dict
@@ -70,7 +70,7 @@ for h in ["2v2", "2v3", "3v3", "m2active", "palm1r", "palm2r"]:
                     h, t, r, s, n = best_trial_name.split("_")
                     best_name_old_way = f"{s}_{h}_{t}_{r}_{n}"
 
-                    best_trial.add_data_by_file(best_name_old_way+".csv")
+                    best_trial.load_data_by_aruco_file(best_name_old_way + ".csv")
                     best_trial.moving_average(window_size=15)
 
                     # insert it into the dict
@@ -82,7 +82,7 @@ for h in ["2v2", "2v3", "3v3", "m2active", "palm1r", "palm2r"]:
                             try:
                                 trial = AstTrialTranslation(my_ast_files)
                                 trial_name = f"{s}_{h}_{t}_{r}_{n}"
-                                trial.add_data_by_file(trial_name+".csv")
+                                trial.load_data_by_aruco_file(trial_name + ".csv")
                                 trial.moving_average(window_size=15)
                                 plot_all_dict[t].append(trial)
                             except:

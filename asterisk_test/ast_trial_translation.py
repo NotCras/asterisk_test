@@ -126,8 +126,8 @@ class AstTrialTranslation(AstTrial):
 
         return df
 
-    def add_data_by_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True, 
-                         condition_data=True, aruco_id=None, old=False):
+    def load_data_by_aruco_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True,
+                                condition_data=True, aruco_id=None, old=False):
         """
         Add object path data as a file. By default, will run data through conditioning function
         """  # TODO: this is for aruco_data, but we also should make one for trial_paths
@@ -351,7 +351,7 @@ if __name__ == '__main__':
     # test.add_data_by_arucoloc(test_al, condition_data=True, do_metrics=True, norm_data=True)
 
     # testing out filename
-    test.add_data_by_file(file_name="2v2_a_n_sub1_1.csv", do_metrics=True, norm_data=True)
+    test.load_data_by_aruco_file(file_name="2v2_a_n_sub1_1.csv", do_metrics=True, norm_data=True)
 
     print(f"name: {test.generate_name()}")
     print(f"tot dist: {test.total_distance}")

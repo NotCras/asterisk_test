@@ -148,7 +148,7 @@ class AsteriskPlotting:
             ideal_xs = [x_a, x_b, x_c, x_d, x_e, x_f, x_g, x_h]
             ideal_ys = [y_a, y_b, y_c, y_d, y_e, y_f, y_g, y_h]
 
-            dirs = datamanager.get_option_list("translations")
+            dirs = datamanager.get_option_list("translation_only")
             for i, d in enumerate(dirs):
                 plt.plot(ideal_xs[i], ideal_ys[i], color=AsteriskPlotting.get_dir_color(d),
                          label='ideal', linestyle='--', zorder=10)
@@ -382,7 +382,7 @@ class AsteriskPlotting:
         ax = fig.add_subplot()
         fig.subplots_adjust(top=0.85)
 
-        AsteriskPlotting.plot_all_target_lines(specific_lines=list(dict_of_trials.keys()))
+        AsteriskPlotting.plot_all_target_lines()
 
         for dir in dict_of_trials.keys():
             for t in dict_of_trials[dir]:

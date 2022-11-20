@@ -416,7 +416,7 @@ def get_best_trial(file_obj, hand, direction, rotation, convert_notation=True, b
     best_trial_key = f"{hand}_{direction}_{rotation}"
 
     best_trial_name = best_trial_dict[best_trial_key]
-    best_trial.add_data_by_file(best_trial_name+".csv", old=False)
+    best_trial.load_data_by_aruco_file(best_trial_name + ".csv", old=False)
 
     return best_trial
 

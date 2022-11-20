@@ -6,15 +6,15 @@ import numpy as np
 from numpy import sqrt, mean, std
 import pandas as pd
 import matplotlib.pyplot as plt
-from ast_trial import AstTrialTranslation
-from ast_basic import AstTrial
+from ast_trial_translation import AstTrialTranslation
+from ast_trial import AstTrial
 from ast_hand_info import HandInfo
 from data_plotting import AsteriskPlotting
 from data_calculations import AsteriskCalculations
 import pdb
 
 
-class AveragedTrial(AstTrial):
+class AveragedTranslationTrial(AstTrial):
     """
     Class handles averaging a set of AstTrial objects: averaging the path and metrics
     """
@@ -762,7 +762,7 @@ if __name__ == '__main__':
              test15
             ]
 
-    avgln = AveragedTrial(trials=lines)
+    avgln = AveragedTranslationTrial(trials=lines)
     avgln.calculate_avg_line(show_debug=True, calc_ad=True, use_filtered_data=True)
     print(f"names: {avgln.names}")
     print(f"averaged line: {avgln.generate_name()}")

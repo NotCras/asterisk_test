@@ -57,7 +57,7 @@ class AstTrialRotation(AstTrialTranslation):
 
         return df
 
-    def add_data_by_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True, condition_data=True, old=False):
+    def load_data_by_aruco_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True, condition_data=True, old=False):
         """
         Add object path data as a file. By default, will run data through conditioning function
         """

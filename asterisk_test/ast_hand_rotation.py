@@ -3,7 +3,7 @@ import pdb
 import matplotlib.pyplot as plt
 import numpy as np
 from ast_hand_translation import AstHandTranslation
-from ast_avg_rotation import AveragedRotation
+from ast_avg_rotation import AveragedRotationTrial
 from matplotlib.patches import Wedge
 import data_manager as datamanager
 import ast_trial as atrial
@@ -180,7 +180,7 @@ class AstHandRotation(AstHandTranslation):
                                        exclude_path_labels=exclude_path_labels)
 
         if trials:
-            average = AveragedRotation(direction=direction, trials=trials)
+            average = AveragedRotationTrial(direction=direction, trials=trials)
             return average
 
         else:

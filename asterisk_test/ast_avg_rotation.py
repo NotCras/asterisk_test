@@ -8,7 +8,7 @@ from data_calculations import AsteriskCalculations
 import pdb
 
 
-class AveragedRotation:
+class AveragedRotationTrial:
     """
     Class functions as storage for averaged rotation trial values
     """  # We don't inherit from AveragedTrial because we don't store a path in the conventional sense
@@ -229,7 +229,7 @@ if __name__ == '__main__':
              test5,
             ]
 
-    avgln = AveragedRotation(direction=r, trials=lines)
+    avgln = AveragedRotationTrial(direction=r, trials=lines)
 #    avgln.calculate_avg_line(show_debug=True, calc_ad=True, use_filtered_data=True)
     print(f"names: {avgln.names}")
     print(f"averaged line: {avgln.generate_name()}")
