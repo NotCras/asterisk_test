@@ -338,14 +338,14 @@ class AstHandTranslation:
                                        exclude_path_labels=exclude_path_labels)
 
         if trials:
-            average = AveragedTranslationTrial(trials=trials)
+            average = AveragedTranslationTrial(file_obj=self.file_locs, trials=trials)
             return average
 
         else:
             print(f"No trials for {translation}_{self.rotation_type}, skipping averaging.")
             return None
 
-    def calc_averages(self, subjects=None, exclude_path_labels=None):
+    def calc_averages(self, subjects=None, exclude_path_labels=None, save_debug_plot=False, show_debug_plot=False):
         """
         calculate and store all averages
         :param subjects: subject(s) to include in the average. Defaults to all subjects in object
@@ -368,6 +368,9 @@ class AstHandTranslation:
                 if avg is not None:
                     label = f"{t}_{self.rotation_type}"
                     averages[label] = [avg]  # it is put in a list so it works with aplt.plot_asterisk()
+
+                    if save_debug_plot or show_debug_plot:
+                        avg.avg_debug_plot(show_plot=show_debug_plot, save_plot=save_debug_plot)
 
         self.averages = averages
         return averages
@@ -574,17 +577,11 @@ class AstHandTranslation:
         averages = self.averages
 
         # throw averages into plot_asterisk  # TODO: make an option to plot the avg paths ontop of the trials, greyed out?
-        ax = aplt.plot_asterisk(self.file_locs, averages,
+        ax, fig = aplt.plot_asterisk(self.file_locs, averages, #plotting_averages_with_sd=True,
                                 rotation_condition=self.rotation_type, hand_name=self.hand.get_name(),
                                 use_filtered=True, tdist_labels=tdist_labels, include_notes=include_notes,
                                 linestyle=linestyle, plot_orientations=plot_orientations, incl_obj_img=incl_obj_img,
-                                save_plot=False, show_plot=show_plot)
-
-        # TODO: add in the average deviation regions
-        if show_avg_deviation:
-            for a_k in list(averages.keys()):
-                a_trial = averages[a_k][0]
-                a_trial.plot_sd(aplt.get_dir_color(a_trial.trial_translation))
+                                save_plot=False, show_plot=False)
 
         """
         (file_loc, dict_of_trials, rotation_condition="x", hand_name="",
@@ -595,8 +592,19 @@ class AstHandTranslation:
         save_plot=False, show_plot=True):
         """
 
+        # # TODO: add in the average deviation regions
+        if show_avg_deviation:
+            for a_k in list(averages.keys()):
+                a_trial = averages[a_k][0]
+
+                aplt.plot_sd(ax, a_trial, aplt.get_dir_color(a_trial.trial_translation))
+
+        if show_plot:
+            # plt.legend()  # TODO: showing up weird, need to fix
+            plt.show()
+
         if save_plot:
-            ax.savefig(self.file_locs.result_figs / f"avg_ast_{self.hand.get_name()}_{self.rotation_type}.jpg", format='jpg')
+            plt.savefig(self.file_locs.result_figs / f"avg_ast_{self.hand.get_name()}_{self.rotation_type}.jpg", format='jpg')
             #plt.savefig(self.file_locs.result_figs / f"avg_ast_{self.hand.get_name()}_{self.set_rotation}.jpg", format='jpg')
             #plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{self.set_rotation}.jpg", format='jpg')
 

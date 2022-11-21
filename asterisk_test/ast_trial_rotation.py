@@ -19,7 +19,7 @@ class AstTrialRotation(AstTrialTranslation):
 
         self.total_distance = 0  # This will be the max rotation value of the trial
         self.dir = 1  # this will be another way to check cw and ccw
-        self.file_loc_obj = file_loc_obj
+        self.file_locs = file_loc_obj
         super().__init__(file_loc_obj, controller_label=controller_label)#), do_metrics=do_metrics,
                          #condition_data=condition_data, norm_data=norm_data)
 
@@ -31,7 +31,7 @@ class AstTrialRotation(AstTrialTranslation):
         :param file_name: name of file to read in
         :param folder: name of folder to read file from. Defaults csv folder
         """
-        total_path = self.file_loc_obj.aruco_data / file_name
+        total_path = self.file_locs.aruco_data / file_name
         #total_path = f"{folder}{file_name}"
         try:
             # print(f"Reading file: {total_path}")

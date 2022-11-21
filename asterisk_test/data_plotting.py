@@ -18,7 +18,10 @@ class AsteriskPlotting:
     @staticmethod
     def get_dir_color(dir):  # TODO: finalize colors based on color wheel?
         colors = {"a": "tab:blue", "b": "tab:purple", "c": "tab:red", "d": "tab:olive",
-                  "e": "tab:cyan", "f": "tab:green", "g": "tab:pink", "h": "tab:orange"}
+                  "e": "tab:cyan", "f": "tab:green", "g": "tab:pink", "h": "tab:orange",
+                  "no": "tab:blue", "ne": "tab:purple", "ea": "tab:red", "se": "tab:olive",
+                  "so": "tab:cyan", "sw": "tab:green", "we": "tab:pink", "nw": "tab:orange"
+                  }
         return colors[dir]
 
     @staticmethod
@@ -368,7 +371,37 @@ class AsteriskPlotting:
         plt.show()
 
     @staticmethod
+    def plot_sd(axes, avg_trial, color, use_filtered=True):
+
+        avg_x, avg_y, _ = avg_trial.get_poses(use_filtered=use_filtered)
+
+        ad_x_up, ad_y_up, _ = avg_trial.get_poses_ad(which_set=1)
+        ad_x_down, ad_y_down, _ = avg_trial.get_poses_ad(which_set=2)
+
+        # necessary for building the polygon
+        r_ad_x = list(reversed(ad_x_down))
+        r_ad_y = list(reversed(ad_y_down))
+
+        poly = []
+        for ax, ay in zip(ad_x_up, ad_y_up):
+            pt = [ax, ay]
+            poly.append(pt)
+
+        # add last point for nicer looking plot
+        last_pose = avg_trial.get_last_pose()
+        poly.append([last_pose[0], last_pose[1]])
+
+        for ax, ay in zip(r_ad_x, r_ad_y):
+            pt = [ax, ay]
+            poly.append(pt)
+
+        polyg = plt.Polygon(poly, color=color, alpha=0.4)
+        #plt.gca().add_patch(polyg)
+        axes.add_patch(polyg)
+
+    @staticmethod
     def plot_asterisk(file_loc, dict_of_trials, rotation_condition="x", hand_name="",
+                      #plotting_averages_with_sd=False,
                       use_filtered=True, linestyle="solid",
                       include_notes=False, labels=None,
                       plot_orientations=False, tdist_labels=True,
@@ -419,6 +452,12 @@ class AsteriskPlotting:
         # plt.yticks(np.linspace(-0.7, 0.7, 15))
         plt.gca().set_aspect('equal', adjustable='box')
 
+        # TODO: add in the average deviation regions
+        # if plotting_averages_with_sd:
+        #     for a_k in list(dict_of_trials.keys()):
+        #         a_trial = dict_of_trials[a_k][0]  # if plotting averages with sd, we can assume there is only one object
+        #         AsteriskPlotting.plot_sd(ax, a_trial, AsteriskPlotting.get_dir_color(a_trial.trial_translation))
+
         if show_plot:
             # plt.legend()  # TODO: showing up weird, need to fix
             plt.show()
@@ -431,5 +470,5 @@ class AsteriskPlotting:
             print("Figure saved.")
             print(" ")
 
-        return ax
+        return ax, fig
 

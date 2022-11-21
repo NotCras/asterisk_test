@@ -43,7 +43,7 @@ class AstTrialTranslation(AstTrial):
         self.filtered = False
         self.window_size = 0
 
-        self.file_loc_obj = file_loc_obj
+        self.file_locs = file_loc_obj
 
         # try:
         #     # Data can either be a dataframe or a filename
@@ -100,7 +100,7 @@ class AstTrialTranslation(AstTrial):
         :param file_name: name of file to read in
         :param folder: name of folder to read file from. Defaults csv folder
         """
-        total_path = self.file_loc_obj.aruco_data / file_name
+        total_path = self.file_locs.aruco_data / file_name
         print(f"{total_path}")
         try:
             # print(f"Reading file: {total_path}")

@@ -160,12 +160,12 @@ def get_option_list(key):
     # "no": "a", "ne": "b", "ea": "c", "se": "d", "so": "e", "sw": "f", "we": "g", "nw": "h", "x": "n"
 
     options = {
-        "hands": ["basic", "m2active", "palm1r", "2v2", "2v3", "3v3", "palm2r"],  #["m2stiff", "modelvf"]
-        "subjects": ["sub1", "sub2", "sub3"],  #["s11", "s12", "s13", "s14", "s15", "s16", "s17", "s18", "s19", "s20", "s21", "s22"]
-        "translation_options": ["a", "b", "c", "d", "e", "f", "g", "h", "x"],
-        "translation_only": ["a", "b", "c", "d", "e", "f", "g", "h"],
-        "rotations_only": ["cw", "ccw"],  #["pp", "mm"]
-        "rotation_types": ["n", "p15", "m15"]  #["x", "p15", "m15"]
+        "hands": ["2v1","p1vp1", "2v2", "2v3", "3v3", "p2vp2"],  #["basic", "m2active", "palm1r", "2v2", "2v3", "3v3", "palm2r"],  #["m2stiff", "modelvf"]
+        "subjects": ["s11", "s12", "s13", "s14", "s15", "s16"], #["sub1", "sub2", "sub3"],  #["s11", "s12", "s13", "s14", "s15", "s16", "s17", "s18", "s19", "s20", "s21", "s22"]
+        "translation_options": ["no", "ne", "ea", "se", "so", "sw", "we", "nw", "x"],  #["a", "b", "c", "d", "e", "f", "g", "h", "x"],
+        "translation_only": ["no", "ne", "ea", "se", "so", "sw", "we", "nw"],  #["a", "b", "c", "d", "e", "f", "g", "h"],
+        "rotations_only": ["pp", "mm"],  #["cw", "ccw"],  #
+        "rotation_types": ["x", "p15", "m15"]  #["n", "p15", "m15"]  #
     }
 
     # opt = AstNaming()  # TODO: revisit this!!!

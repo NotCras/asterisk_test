@@ -19,10 +19,15 @@ class AveragedTranslationTrial(AstTrial):
     Class handles averaging a set of AstTrial objects: averaging the path and metrics
     """
     rotations = {"a": 270, "b": 315, "c": 0, "d": 45, "e": 90,
-                 "f": 135, "g": 180, "h": 225, "n": 0}
+                 "f": 135, "g": 180, "h": 225, "n": 0,
+                 "no": 270, "ne": 315, "ea": 0, "se": 45, "so": 90,
+                 "sw": 135, "we": 180, "nw": 225, "x": 0
+                 }
 
-    def __init__(self, trials=None, sample_points=25):  # TODO make it work with non-normalized AstTrial objects?
+    def __init__(self, file_obj, trials=None, sample_points=25):  # TODO make it work with non-normalized AstTrial objects?
         # super(AveragedTrial, self).__init__()  # for making an empty AsteriskTrialData object
+
+        self.file_locs = file_obj
 
         self.subject = set()
         self.hand = None
@@ -600,7 +605,10 @@ class AveragedTranslationTrial(AstTrial):
         :param save_plot: flat to save plot as a file. Default is False
         """
 
-        plt.figure(figsize=(7, 7))
+        fig = plt.figure(figsize=(7, 7))
+        ax = fig.add_subplot()
+        fig.subplots_adjust(top=0.85)
+
         # plot the trials
         for i, t in enumerate(self.averaged_trialset):
             # if we averaged with filtered data, just show the filtered data
@@ -622,7 +630,7 @@ class AveragedTranslationTrial(AstTrial):
         plt.plot(a_x, a_y, label="avg", linewidth=2, color="tab:purple") #"xkcd:burnt orange")
 
         if with_ad:
-            self.plot_sd("tab:purple") #"xkcd:burnt orange", testing=True)
+            AsteriskPlotting.plot_sd(ax, self, color="tab:purple") #"xkcd:burnt orange", testing=True)
 
         # self.plot_line_contributions()
 
@@ -632,8 +640,8 @@ class AveragedTranslationTrial(AstTrial):
         self._plot_orientations(marker_scale=25, line_length=0.015, scale=1)
 
         if save_plot:
-            plt.savefig(f"results/pics/avgdebug_{self.hand.get_name()}_{len(self.subject)}subs_{self.trial_translation}_"
-                        f"{self.trial_rotation}.jpg", format='jpg')
+            file_name = f"avgdebug_{self.hand.get_name()}_{len(self.subject)}subs_{self.trial_translation}_{self.trial_rotation}.jpg"
+            plt.savefig(self.file_locs.debug_figs / file_name, format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")

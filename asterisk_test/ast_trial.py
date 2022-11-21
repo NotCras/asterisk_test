@@ -13,14 +13,19 @@ class AstTrial:
     """
     Base class for Asterisk Trial classes -> AstTrial and AveragedTrial so far
     """
-    def __init__(self, data, subject_label=None,  translation_label=None, rotation_label=None,
+    def __init__(self, file_obj, data=None, subject_label=None,  translation_label=None, rotation_label=None,
                  number_label=None, controller_label=None):
         self.subject, self.trial_translation, self.trial_rotation, \
             self.trial_num, self.controller_label = None, None, None, None, None
         self.data_demographics(subject=subject_label, translation=translation_label,
                                rotation=rotation_label, number=number_label, controller=controller_label)
 
-        self.poses = data[["x", "y", "rmag"]]
+        self.file_locs = file_obj
+
+        if data is not None:
+            self.poses = data[["x", "y", "rmag"]]
+        else:
+            self.poses=None
 
         self.target_line, self.total_distance = self.generate_target_line(100)  # 100 samples
         self.target_rotation = self.generate_target_rot()
@@ -280,7 +285,7 @@ class AstTrial:
         """ # TODO: add ability to specific your own folder
 
         if folder is None:
-            folder = "trial_paths/"
+            folder = self.file_locs.path_data
 
         if file_name_overwrite is None:
             new_file_name = f"{self.generate_name()}.csv"
@@ -291,12 +296,15 @@ class AstTrial:
         # if data has been filtered, we also want to include that in csv generation,
         # otherwise the filtered columns won't exist
         if self.filtered:
-            filtered_file_name = f"{folder}f{self.window_size}_{new_file_name}"
+            #filtered_file_name = f"{folder}f{self.window_size}_{new_file_name}"
+            filtered_name = f"f{self.window_size}_{new_file_name}.csv"
+            filtered_file_name = folder / filtered_name
 
             self.poses.to_csv(filtered_file_name, index=True, columns=[
                 "x", "y", "rmag", "f_x", "f_y", "f_rmag"])
         else:
-            self.poses.to_csv(f"{folder}{new_file_name}", index=True, columns=[
+
+            self.poses.to_csv(folder / new_file_name, index=True, columns=[
                 "x", "y", "rmag"])
 
         # print(f"CSV File generated with name: {new_file_name}")
