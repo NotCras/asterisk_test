@@ -614,8 +614,8 @@ class AstHandTranslation:
 
 if __name__ == '__main__':
     home_directory = Path("/home/john/Programs/new_ast_data")
-    data_directory = home_directory / "data"
-    new_ast_files = AstDirectory()
+    data_directory = home_directory
+    new_ast_files = AstDirectory(home_directory)
     new_ast_files.data_home = data_directory
     new_ast_files.compressed_data = data_directory / "compressed_data"
     new_ast_files.aruco_pics = data_directory / "viz"
@@ -624,11 +624,13 @@ if __name__ == '__main__':
     new_ast_files.metric_results = data_directory / "results"
     new_ast_files.result_figs = data_directory / "results" / "plots"
     new_ast_files.debug_figs = data_directory / "results" / "debug_plots"
-    new_ast_files.resources = data_directory.parent / "resources"
+
+    resources_home = Path(__file__).parent.parent.absolute()
+    new_ast_files.resources = resources_home.parent / "resources"
 
     logging.basicConfig(level=logging.WARNING)
 
-    hand_data = AstHandTranslation(my_ast_files, hand_name="2v2", rotation="n")
+    hand_data = AstHandTranslation(new_ast_files, hand_name="p2vp2", rotation="x")
     hand_data.load_trials()
     print(list(hand_data.data.keys()))
     hand_data.filter_data()
@@ -645,9 +647,9 @@ if __name__ == '__main__':
     #h.plot_ast_avg(subjects=None, show_plot=True, save_plot=False)
 
     trials = hand_data.data
-    aplt.plot_asterisk(my_ast_files, dict_of_trials=trials)
+    aplt.plot_asterisk(my_ast_files, hand_name=hand_data.hand.get_name(), dict_of_trials=trials)
 
-    hand_data.calc_averages(exclude_path_labels=["end deviated", ])
+    hand_data.calc_averages(exclude_path_labels=["end deviated", "deviated", "rot deviated"])
     hand_data.plot_avg_asterisk()
 
 

@@ -248,8 +248,26 @@ class AsteriskPlotting:
             y_plt = yt[1] + np.abs(yt[1]) * 0.1 * modifiers[atrial.trial_translation][1]
 
         # print(f"{atrial.trial_translation} => [{x_plt}, {y_plt}]")
+        translate_labels = {
+            "no": "N",
+            "ne": "NE",
+            "nw": "NW",
+            "ea": "E",
+            "we": "W",
+            "so": "S",
+            "se": "SE",
+            "sw": "SW",
+            "a": "N",
+            "b": "NE",
+            "h": "NW",
+            "c": "E",
+            "g": "W",
+            "e": "S",
+            "d": "SE",
+            "f": "SW"
+        }
 
-        ax.text(x_plt, y_plt, f"{atrial.trial_translation}: {np.round(atrial.total_distance, 2)}",
+        ax.text(x_plt, y_plt, f"{translate_labels[atrial.trial_translation]}: {np.round(atrial.total_distance, 2)}",
                 style='italic', ha='center', va='center'
                 #bbox={'facecolor': 'white', 'alpha': 0.75, 'pad': 2}
                 )
