@@ -647,7 +647,7 @@ if __name__ == '__main__':
     trials = hand_data.data
     aplt.plot_asterisk(my_ast_files, dict_of_trials=trials)
 
-    hand_data.calc_averages()
+    hand_data.calc_averages(exclude_path_labels=["end deviated", ])
     hand_data.plot_avg_asterisk()
 
 

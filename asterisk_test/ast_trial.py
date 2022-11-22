@@ -234,21 +234,23 @@ class AstTrial:
         # check whether total distance is an acceptable distance to consider it actually movement
         if self.total_distance < no_mvt_threshold:  # TODO: should this be arc len based? Or incorporate arc len too?
             self.path_labels.append("no_mvt")
-            print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
+            #print(f"No movement detected in {self.generate_name()}. Skipping metric calculation.")
 
         # check that data starts near center
         if not al.assess_initial_position(self, threshold=init_threshold, to_check=init_num_pts):
-            self.path_labels.append("not centered")
-            print(f"Data for {self.generate_name()} failed, did not start at center.")
+            self.path_labels.append("not centered")  # TODO: need to do this on non-normalized, non-relative intial values
+            #print(f"Data for {self.generate_name()} failed, did not start at center.")
 
-        deviated, dev_perc = al.assess_path_deviation(self)
+        deviated, too_deviated, rot_deviated = al.assess_path_deviation(self, rotation_threshold=75)
 
-        if deviated and dev_perc > dev_perc_threshold:
-            self.path_labels.append("major deviation")
-            print(f"Detected major deviation in {self.generate_name()} at {dev_perc}%. Labelled trial.")
-        elif deviated:
-            self.path_labels.append("deviation")
-            print(f"Detected minor deviation in {self.generate_name()} at {dev_perc}%. Labelled trial.")
+        if deviated:
+            self.path_labels.append("deviated")
+
+        if too_deviated:
+            self.path_labels.append("end deviated")
+
+        if rot_deviated:
+            self.path_labels.append("rot deviated")
 
         mvt_observations = al.assess_path_movement(self)  # TODO: make more in depth?
 

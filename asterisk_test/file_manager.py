@@ -8,9 +8,9 @@ from pathlib import Path
 
 class AstDirectory:
 
-    def __init__(self): 
+    def __init__(self, home_directory):
         # TODO: maybe save the file names as entries in a dictionary? Revisit.
-        self.data_home = None
+        self.data_home = home_directory
         self.compressed_data = None
         self.aruco_pics = None
         self.aruco_data = None
@@ -45,8 +45,8 @@ home_directory = Path(__file__).parent.parent.absolute()
 data_directory = home_directory / "data"
 
 # put together an AstDirectory manually
-my_ast_files = AstDirectory()
-my_ast_files.data_home = data_directory
+my_ast_files = AstDirectory(data_directory)
+#my_ast_files.data_home = data_directory
 my_ast_files.compressed_data = data_directory / "compressed_data"
 my_ast_files.aruco_pics = data_directory / "viz"
 my_ast_files.aruco_data = data_directory / "aruco_data"
@@ -55,3 +55,19 @@ my_ast_files.metric_results = data_directory / "results"
 my_ast_files.result_figs = data_directory / "results" / "plots"
 my_ast_files.debug_figs = data_directory / "results" / "debug_plots"
 my_ast_files.resources = data_directory.parent / "resources"
+
+
+new_home_directory = Path("/home/john/Programs/new_ast_data")
+data_directory = new_home_directory
+new_ast_files = AstDirectory(new_home_directory)
+#new_ast_files.data_home = data_directory
+new_ast_files.compressed_data = data_directory / "compressed_data"
+new_ast_files.aruco_pics = data_directory / "viz"
+new_ast_files.aruco_data = data_directory / "aruco_data"
+new_ast_files.path_data = data_directory / "trial_paths"
+new_ast_files.metric_results = data_directory / "results"
+new_ast_files.result_figs = data_directory / "results" / "plots"
+new_ast_files.debug_figs = data_directory / "results" / "debug_plots"
+
+resources_home = Path(__file__).parent.parent.absolute()
+new_ast_files.resources = resources_home.parent / "resources"

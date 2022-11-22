@@ -10,7 +10,7 @@ class AsteriskCalculations:
     rotations = {"a": 270, "b": 315, "c": 0, "d": 45, "e": 90,
                  "f": 135, "g": 180, "h": 225, "n": 0,
                  "no": 270, "ne": 315, "ea": 0, "se": 45, "so": 90,
-                 "sw": 135, "we": 180, "nw": 225, "x": 0,
+                 "sw": 135, "we": 180, "nw": 225, "x": 0
                  }
 
     def __init__(self):

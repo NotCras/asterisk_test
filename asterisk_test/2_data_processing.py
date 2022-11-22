@@ -10,7 +10,7 @@ from data_plotting import AsteriskPlotting as aplt
 
 home_directory = Path("/home/john/Programs/new_ast_data")
 data_directory = home_directory
-new_ast_files = AstDirectory()
+new_ast_files = AstDirectory(home_directory)
 new_ast_files.data_home = data_directory
 new_ast_files.compressed_data = data_directory / "compressed_data"
 new_ast_files.aruco_pics = data_directory / "viz"

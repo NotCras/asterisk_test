@@ -71,38 +71,59 @@ class AsteriskLabelling:  # TODO: add in rotational variants to metrics to work 
         return observation
 
     @staticmethod
-    def assess_path_deviation(ast_trial, threshold=25):
+    def assess_path_deviation(ast_trial, threshold=0.2, dev_perc=0.1, perc_tail_check=0.1,
+                              rotation_threshold=None, use_filtered=False):
         """
-        Returns percentage of points on the path that are out of bounds
-        """  # TODO: get a debug function for this?
-        last_target_pt = ast_trial.target_line[-1]
-        path_x, path_y, _ = ast_trial.get_poses()
+        Assesses how well path remains in within a threshold
+        """
 
-        num_pts = len(path_x)
-        pts_deviated = 0
-        result = False
+        rotations = {"a": 270, "b": 315, "c": 0, "d": 45, "e": 90,
+                     "f": 135, "g": 180, "h": 225, "n": 0,
+                     "no": 270, "ne": 315, "ea": 0, "se": 45, "so": 90,
+                     "sw": 135, "we": 180, "nw": 225, "x": 0
+                     }
 
-        for x, y in zip(path_x[1:], path_y[1:]):
-            if x == 0 and y == 0:  # skip points at the origin
-                continue
+        path = ast_trial.poses
 
-            # noise at the origin makes HUGE deviations... how should I avoid it?
-            # avoid points that are really short
-            mag_pt = np.sqrt(x ** 2 + y ** 2)
-            if mag_pt < 0.1:
-                continue
+        # first, we rotate the line to C
+        rotated_line = acalc.rotate_points(path, rotations[ast_trial.trial_translation], use_filtered=use_filtered)
 
-            angle_btwn = acalc.angle_between(last_target_pt, [x, y])
+        # next, we go through the y values and find if there are any which are outside the threshold
+        #rotated_line.loc[ abs(rotated_line["y"]) > threshold, "is_dev" ] = 1
+        # df.loc[df['set_of_numbers'] <= 4, 'equal_or_lower_than_4?'] = 'True'
+        # df.loc[df['set_of_numbers'] > 4, 'equal_or_lower_than_4?'] = 'False'
+        #rotated_line.loc['is_dev'].mask(rotated_line['y'] > threshold or rotated_line['y'] < -threshold, 1, inplace=True)
+        is_deviated = rotated_line["y"].apply(lambda x: 1 if x > threshold or x < -1*threshold else 0)
 
-            if angle_btwn > threshold or angle_btwn < -threshold:
-                #print(f"Greater than {threshold} deg deviation detected ({angle_btwn}) at pt: ({x}, {y})")
-                # count this towards the number of points that are out of bounds
-                pts_deviated += 1
-                result = True
+        num_pts = len(is_deviated)
+        try:
+            num_dev = is_deviated.value_counts()[1]
+        except KeyError:  # this means that 1 never showed up, and that no part of the line deviated
+            num_dev = 0
 
-        perc_deviated = pts_deviated / num_pts
+        perc_deviated = num_dev / num_pts
+        dev_assessment = perc_deviated > dev_perc
 
-        return result, perc_deviated
+        if rotation_threshold is not None:
+            is_rot_deviated = rotated_line["rmag"].apply(lambda x: 1 if x > rotation_threshold or x < -1*rotation_threshold else 0)
+
+            try:
+                num_rot_dev = is_rot_deviated.value_counts()[1]
+            except KeyError:  # this means that 1 never showed up, and that no part of the line deviated
+                num_rot_dev = 0
+
+            perc_rot_deviated = num_rot_dev / num_pts
+            rot_dev_assessment = perc_rot_deviated > dev_perc
+        else:
+            rot_dev_assessment = None
+
+        # also, we check the last 10% of the path to see if it ends deviated
+        last_section = is_deviated.tail(int(np.ceil(num_pts*perc_tail_check)))
+        too_dev_assessment = 1 in last_section.values
+
+        # return these values!
+        return dev_assessment, too_dev_assessment, rot_dev_assessment
+
 
     @staticmethod
     def assess_path_deviation_with_rotation(ast_trial_rot, threshold=0.1):
@@ -299,6 +320,46 @@ class AsteriskLabelling:  # TODO: add in rotational variants to metrics to work 
         Hold on this one, used in hand data
         """
         pass
+
+    @staticmethod
+    def rotate_debug(ast_trial, file_loc, use_filtered=False, show_plot=True, save_plot=False):
+        rotations = {"a": 270, "b": 315, "c": 0, "d": 45, "e": 90,
+                     "f": 135, "g": 180, "h": 225, "n": 0,
+                     "no": 270, "ne": 315, "ea": 0, "se": 45, "so": 90,
+                     "sw": 135, "we": 180, "nw": 225, "x": 0
+                     }
+        fig = plt.figure(figsize=(7, 7))
+        ax = fig.add_subplot()
+        fig.subplots_adjust(top=0.85)
+
+        aplt.plot_all_target_lines()
+
+        path = ast_trial.poses
+
+        # first, we rotate the line to C
+        rotated_line = acalc.rotate_points(path, rotations[ast_trial.trial_translation], use_filtered=use_filtered)
+
+        plt.plot(path["x"], path["y"])
+        plt.plot(rotated_line["x"], rotated_line["y"])
+
+        fig.suptitle(f"{ast_trial.generate_name()} Rotation Debug", fontweight="bold", fontsize=14)
+        # plt.title(f"{self.hand.get_name()} avg asterisk")  # , rot: {trials[0].trial_rotation}")
+        ax.axis([-0.7, 0.7, -0.7, 0.7])
+        ax.tick_params(axis="x", rotation=30)
+        # plt.xticks(np.linspace(-0.7, 0.7, 15), rotation=30)
+        # plt.yticks(np.linspace(-0.7, 0.7, 15))
+        plt.gca().set_aspect('equal', adjustable='box')
+
+        if show_plot:
+            plt.legend()
+            plt.show()
+
+        if save_plot:
+            plt.savefig(file_loc.debug_figs / f"rotate_debug_{ast_trial.hand.get_name()}.jpg", format='jpg')
+
+            # name -> tuple: subj, hand  names
+            print("Figure saved.")
+            print(" ")
 
 
 if __name__ == "__main__":

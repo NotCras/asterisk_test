@@ -19,7 +19,7 @@ from scipy import stats
 from ast_trial import AstTrial
 from aruco_tool import ArucoLoc, ArucoFunc
 from aruco_analysis import AstArucoAnalysis
-from file_manager import AstDirectory, my_ast_files
+from file_manager import AstDirectory, my_ast_files, new_ast_files
 from pathlib import Path
 
 
@@ -336,8 +336,11 @@ class AstTrialTranslation(AstTrial):
             plt.show()
 
 if __name__ == '__main__':
-    test = AstTrialTranslation(my_ast_files)
+    # test = AstTrialTranslation(my_ast_files)
+    # test.load_data_by_aruco_file(file_name="2v2_a_n_sub1_1.csv", do_metrics=True, norm_data=True)
 
+    test = AstTrialTranslation(new_ast_files)
+    test.load_data_by_aruco_file(file_name="2v2_no_x_s11_1.csv", do_metrics=True, norm_data=True)
     # test out arucoloc
     # print("running aruco analysis")
     # mtx = np.array(((617.0026849655, -0.153855356, 315.5900337131),  # fx, s,cx
@@ -351,7 +354,6 @@ if __name__ == '__main__':
     # test.add_data_by_arucoloc(test_al, condition_data=True, do_metrics=True, norm_data=True)
 
     # testing out filename
-    test.load_data_by_aruco_file(file_name="2v2_a_n_sub1_1.csv", do_metrics=True, norm_data=True)
 
     print(f"name: {test.generate_name()}")
     print(f"tot dist: {test.total_distance}")
