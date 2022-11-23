@@ -89,10 +89,6 @@ class AsteriskLabelling:  # TODO: add in rotational variants to metrics to work 
         rotated_line = acalc.rotate_points(path, rotations[ast_trial.trial_translation], use_filtered=use_filtered)
 
         # next, we go through the y values and find if there are any which are outside the threshold
-        #rotated_line.loc[ abs(rotated_line["y"]) > threshold, "is_dev" ] = 1
-        # df.loc[df['set_of_numbers'] <= 4, 'equal_or_lower_than_4?'] = 'True'
-        # df.loc[df['set_of_numbers'] > 4, 'equal_or_lower_than_4?'] = 'False'
-        #rotated_line.loc['is_dev'].mask(rotated_line['y'] > threshold or rotated_line['y'] < -threshold, 1, inplace=True)
         is_deviated = rotated_line["y"].apply(lambda x: 1 if x > threshold or x < -1*threshold else 0)
 
         num_pts = len(is_deviated)
@@ -119,14 +115,14 @@ class AsteriskLabelling:  # TODO: add in rotational variants to metrics to work 
 
         # also, we check the last 10% of the path to see if it ends deviated
         last_section = is_deviated.tail(int(np.ceil(num_pts*perc_tail_check)))
-        too_dev_assessment = 1 in last_section.values
+        end_dev_assessment = 1 in last_section.values
 
         # return these values!
-        return dev_assessment, too_dev_assessment, rot_dev_assessment
+        return dev_assessment, end_dev_assessment, rot_dev_assessment
 
 
     @staticmethod
-    def assess_path_deviation_with_rotation(ast_trial_rot, threshold=0.1):
+    def assess_rot_trial_deviation(ast_trial_rot, tmag_threshold=0.1, too_dev_perc=0.15, perc_tail_check=0.1,):
         """
         Returns percentage of points on the path that are out of bounds
         """  # TODO: get a debug function for this?
@@ -135,23 +131,29 @@ class AsteriskLabelling:  # TODO: add in rotational variants to metrics to work 
 
         num_pts = len(path_x)
         pts_deviated = 0
-        result = False
 
+        dev_assessment = False
         for x, y in zip(path_x[1:], path_y[1:]):
-            if x == 0 and y == 0:  # skip points at the origin
-                continue
+            # calculate magnitude of translation
+            tmag = np.sqrt(x**2 + y**2)
 
-            # for a AstTrialRotation, we don't care about the angle between b/c we (hopefully) are staying
-            # in one spot. So instead, we will look at whether the
-            if x > threshold or y > threshold:
-                #print(f"Greater than {threshold} deviation from center detected at pt: ({x}, {y})")
-                # count this towards the number of points that are out of bounds
+            if tmag > tmag_threshold:
+                dev_assessment = True
                 pts_deviated += 1
-                result = True
 
         perc_deviated = pts_deviated / num_pts
+        too_dev_assessment = perc_deviated > too_dev_perc
 
-        return result, perc_deviated
+        # get last section of trial
+        last_sec_amount = int(np.floor(perc_tail_check * num_pts))
+        end_dev_assessment = False
+        for x, y in zip(path_x[last_sec_amount:], path_y[last_sec_amount:]):
+            tmag = np.sqrt(x ** 2 + y ** 2)
+
+            if tmag > tmag_threshold:
+                end_dev_assessment = True
+
+        return dev_assessment, too_dev_assessment, end_dev_assessment
 
     @staticmethod
     def assess_movement(data, threshold=10, rot_threshold=15):

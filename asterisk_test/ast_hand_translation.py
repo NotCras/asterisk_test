@@ -227,7 +227,7 @@ class AstHandTranslation:
             trial_label = f"{t_label}_{r_label}"
 
             trial = AstTrialTranslation(self.file_locs)
-            trial.add_data_by_arucoloc(al)
+            trial.load_data_by_arucoloc(al)
 
             self.data[trial_label].append(trial)
 

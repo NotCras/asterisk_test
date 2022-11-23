@@ -159,7 +159,7 @@ class AveragedTranslationTrial(AstTrial):
     def is_avg_trial(self):
         return True
 
-    def is_standing_rot_trial(self):
+    def is_rot_only_trial(self):
         return False
 
     def add_trial(self, trial, rerun_avg=True):

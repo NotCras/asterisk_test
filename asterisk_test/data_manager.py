@@ -164,7 +164,7 @@ def get_option_list(key):
         "subjects": ["s11", "s12", "s13", "s14", "s15", "s16"], #["sub1", "sub2", "sub3"],  #["s11", "s12", "s13", "s14", "s15", "s16", "s17", "s18", "s19", "s20", "s21", "s22"]
         "translation_options": ["no", "ne", "ea", "se", "so", "sw", "we", "nw", "x"],  #["a", "b", "c", "d", "e", "f", "g", "h", "x"],
         "translation_only": ["no", "ne", "ea", "se", "so", "sw", "we", "nw"],  #["a", "b", "c", "d", "e", "f", "g", "h"],
-        "rotations_only": ["pp", "mm"],  #["cw", "ccw"],  #
+        "rotation_only": ["pp", "mm"],  #["cw", "ccw"],  #
         "rotation_types": ["x", "p15", "m15"]  #["n", "p15", "m15"]  #
     }
 

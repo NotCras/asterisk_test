@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 
 from file_manager import AstDirectory
 from ast_hand_translation import AstHandTranslation
+from ast_hand_rotation import AstHandRotation
+from metric_analyzers import AstHandAnalyzer
 from data_plotting import AsteriskPlotting as aplt
 
 home_directory = Path("/home/john/Programs/new_ast_data")
@@ -43,6 +45,9 @@ for rotation_type in ["x", "p15", "m15"]:
 
         plt.close("all")
 
+        metric_results = AstHandAnalyzer(new_ast_files, hand_data)
+        metric_results.save_data()
+
 
 for hand in ["2v1", "p1vp1"]:
     print(hand)
@@ -61,3 +66,6 @@ for hand in ["2v1", "p1vp1"]:
     print(" ")
 
     plt.close("all")
+
+    metric_results = AstHandAnalyzer(new_ast_files, hand_data)
+    metric_results.save_data()

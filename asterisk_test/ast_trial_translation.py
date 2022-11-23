@@ -151,7 +151,7 @@ class AstTrialTranslation(AstTrial):
         if do_metrics and self.poses is not None and "no_mvt" not in self.path_labels:
             self.update_all_metrics()
 
-    def add_data_by_arucoloc(self, aruco_loc, norm_data=True, condition_data=True, do_metrics=True):
+    def load_data_by_arucoloc(self, aruco_loc, norm_data=True, condition_data=True, do_metrics=True):
         """ Loads in data in aruco loc form (from aruco-tool)
 
         Args:
@@ -172,7 +172,7 @@ class AstTrialTranslation(AstTrial):
         else:
             data = path_df
         
-        self.poses = path_df[["x", "y", "rmag"]]
+        self.poses = data[["x", "y", "rmag"]]
         self.normalized = norm_data
 
         self.target_line, self.total_distance = self.generate_target_line(100, norm_data)  # 100 samples
@@ -250,7 +250,7 @@ class AstTrialTranslation(AstTrial):
     def is_avg_trial(self):
         return False
 
-    def is_standing_rot_trial(self):
+    def is_rot_only_trial(self):
         return False
 
     def is_trial(self, subject_name, hand_name, translation_name, rotation_name, trial_num=None):

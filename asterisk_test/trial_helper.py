@@ -323,7 +323,7 @@ def approve_new_data(file_obj, trial_name, best_trial, metrics_and_thresholds):
 
     # calculate metrics
     path = AstTrialTranslation(file_obj)
-    path.add_data_by_arucoloc(path_al, norm_data=True, condition_data=True, do_metrics=True)
+    path.load_data_by_arucoloc(path_al, norm_data=True, condition_data=True, do_metrics=True)
 
     # compare the two sets of metrics
     # which metrics do we want to compare?
@@ -357,7 +357,7 @@ def approve_new_data_rot(file_obj, trial_name, best_trial):
 
     # calculate metrics
     path = AstTrialRotation(file_obj)
-    path.add_data_by_arucoloc(path_al, norm_data=True, condition_data=True, do_metrics=True)
+    path.load_data_by_arucoloc(path_al, norm_data=True, condition_data=True, do_metrics=True)
 
     # compare the two sets of metrics
     # which metrics do we want to compare?

@@ -82,7 +82,7 @@ class AstTrial:
     def is_avg_trial(self):
         return False
 
-    def is_standing_rot_trial(self):
+    def is_rot_only_trial(self):
         return False
 
     def get_last_pose(self):

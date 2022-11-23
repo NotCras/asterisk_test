@@ -7,15 +7,14 @@ from matplotlib import cm
 from trial_labelling import AsteriskLabelling as al
 from metric_calculation import AstMetrics as am
 from ast_trial_translation import AstTrialTranslation
-
+from file_manager import my_ast_files
 
 class AstTrialRotation(AstTrialTranslation):
     """
     Class which handles cw/ccw trials, separating because we would appreciate the nuance
     """
 
-    def __init__(self, file_loc_obj, data=None,  # subject_label=None, rotation_label=None, number_label=None,
-                 controller_label=None, do_metrics=True, norm_data=True, condition_data=True):
+    def __init__(self, file_loc_obj, controller_label=None, do_metrics=True, norm_data=True, condition_data=True):
 
         self.total_distance = 0  # This will be the max rotation value of the trial
         self.dir = 1  # this will be another way to check cw and ccw
@@ -57,27 +56,32 @@ class AstTrialRotation(AstTrialTranslation):
 
         return df
 
-    def load_data_by_aruco_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True, condition_data=True, old=False):
+    def load_data_by_aruco_file(self, file_name, norm_data=True, handinfo_name=None, do_metrics=True,
+                                condition_data=True, aruco_id=None, old=False):
         """
         Add object path data as a file. By default, will run data through conditioning function
-        """
+        """  # TODO: this is for aruco_data, but we also should make one for trial_paths
         # Data will not be filtered in this step
         self.demographics_from_filename(file_name, old=old)
         path_df = self._read_file(file_name, condition_data=condition_data, norm_data=norm_data)
+        self.aruco_id = aruco_id
 
         self.poses = path_df[["x", "y", "rmag"]]
         self.normalized = norm_data
 
-        # self.target_line = self.generate_target_line(100)  # 100 samples
+        #self.target_line, self.total_distance = self.generate_target_line(100, norm_data)  # 100 samples
         self.target_line, self.total_distance = self.generate_target_rot()
 
         self.assess_path_labels()
-        print(self.path_labels)
+        if self.path_labels:
+            print(self.path_labels)
+        else:
+            print("No labels attributed to this data.")
 
         if do_metrics and self.poses is not None and "no_mvt" not in self.path_labels:
             self.update_all_metrics()
             
-    def add_data_by_arucoloc(self, aruco_loc, norm_data=True, condition_data=True, do_metrics=True):
+    def load_data_by_arucoloc(self, aruco_loc, norm_data=True, condition_data=True, do_metrics=True):
         """ Loads in data in aruco loc form (from aruco-tool)
 
         Args:
@@ -98,7 +102,7 @@ class AstTrialRotation(AstTrialTranslation):
         else:
             data = path_df
         
-        self.poses = path_df[["x", "y", "rmag"]]
+        self.poses = data[["x", "y", "rmag"]]
         self.normalized = norm_data
 
         # self.target_line = self.generate_target_line(100)  # 100 samples
@@ -141,7 +145,7 @@ class AstTrialRotation(AstTrialTranslation):
     def is_avg_trial(self):
         return False
 
-    def is_standing_rot_trial(self):
+    def is_rot_only_trial(self):
         return True
 
     def generate_target_line(self, n_samples=100, no_norm=0):
@@ -217,7 +221,7 @@ class AstTrialRotation(AstTrialTranslation):
                               #rotation_mode='anchor', va='center', ha='center'
                               ))
 
-        plt.title(f"Standing Rotation: {self.generate_name()}")
+        plt.title(f"Trial: {self.generate_name()}")
 
         self._plot_translations()
 
@@ -230,22 +234,21 @@ class AstTrialRotation(AstTrialTranslation):
         if provide_path:
             self._plot_rotation_path(fig=fig)
 
+        if show_plot:
+            plt.show()
+
         if save_plot:
-            plt.savefig(f"results/pics/plot_{self.generate_name()}.jpg", format='jpg')
+            plt.savefig(self.file_locs.result_figs / f"rot_{self.generate_name()}.jpg", format='jpg')
             # name -> tuple: subj, hand  names
             print("Figure saved.")
             print(" ")
 
-        if show_plot:
-            plt.show()
-
-    def _plot_translations(self, use_filtered=True):
+    def _plot_translations(self, use_filtered=True, target_line_dist=0.5, color="orange"):
         # translation of the trial
         line_x, line_y, _ = self.get_poses(use_filtered=use_filtered)
-        plt.plot(line_x, line_y)
+        plt.plot(line_x, line_y, color=color)
 
         # plot target lines  # TODO: clean up below, move into function in data_plotting?
-        target_line_dist = 0.5
 
         line_a_x = [0, 0]
         line_a_y = [0, target_line_dist]
@@ -271,7 +274,7 @@ class AstTrialRotation(AstTrialTranslation):
         radius = 0.1
         x_lim = radius * np.cos(angle)
         y_lim = radius * np.sin(angle)
-        plt.plot(x_lim, y_lim, color='red', linestyle=(0, (1, 3)))
+        plt.plot(x_lim, y_lim, color="black", linestyle=(0, (1, 3)))
 
     def _plot_rotation_path(self, fig):
         """
@@ -316,23 +319,17 @@ class AstTrialRotation(AstTrialTranslation):
             self.path_labels.append("not centered")
             print(f"Data for {self.generate_name()} failed, did not start at center.")
 
-        deviated, dev_perc = al.assess_path_deviation_with_rotation(self)
+        deviated, too_deviated, end_deviated = al.assess_rot_trial_deviation(self)
 
-        if deviated and dev_perc > dev_perc_threshold:
-            self.path_labels.append("major deviation")
-            print(f"Detected major deviation in {self.generate_name()} at {dev_perc}%. Labelled trial.")
-        elif deviated:
-            self.path_labels.append("deviation")
-            print(f"Detected minor deviation in {self.generate_name()} at {dev_perc}%. Labelled trial.")
+        if deviated:
+            self.path_labels.append("deviated")
 
-        # TODO: revisit this label for rotations... do we even want this?
-        # mvt_observations = al.assess_path_movement(self)
-        #
-        # if "backtracking" in mvt_observations:
-        #     self.path_labels.append("backtracking")
-        #
-        # if "shuttling" in mvt_observations:
-        #     self.path_labels.append("shuttling")
+        if too_deviated:
+            self.path_labels.append("too deviated")
+
+        if end_deviated:
+            self.path_labels.append("end deviated")
+
 
         return self.path_labels
 
@@ -372,7 +369,9 @@ class AstTrialRotation(AstTrialTranslation):
 
 
 if __name__ == '__main__':
-    test = AstTrialRotation(file_name="sub1_2v2_n_cw_2.csv", do_metrics=True, norm_data=True)
+    test = AstTrialRotation(my_ast_files)
+    test.load_data_by_aruco_file(file_name="2v2_n_cw_sub2_2.csv")
+    #test = AstTrialRotation(file_name="sub1_2v2_n_cw_2.csv", do_metrics=True, norm_data=True)
     print(f"name: {test.generate_name()}")
     print(f"tot dist: {test.total_distance}")
     print(f"path labels: {test.path_labels}")
