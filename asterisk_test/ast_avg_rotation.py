@@ -8,7 +8,7 @@ from data_calculations import AsteriskCalculations
 import pdb
 
 
-class AveragedRotationTrial:
+class AveragedRotationTrial():
     """
     Class functions as storage for averaged rotation trial values
     """  # We don't inherit from AveragedTrial because we don't store a path in the conventional sense
@@ -16,12 +16,19 @@ class AveragedRotationTrial:
         self.direction = direction
         self.averaged_trialset = trials
         self.hand = None
+        self.filtered = False
 
         self.names, self.max_rot, self.max_trans, self.max_trans_coords, self.max_trans_coords_sd = \
             None, None, None, None, None
         self.assess_trialset_labels()
         self.data_demographics(trials, do_translations=do_translations)
+
+        self.metrics = None  # metrics calculated on the averaged line
+        self.metrics_avgd = None  # average metrics averaged from AstTrial objects included
+        self.metrics_avgd_sds = None
+
         self.calc_avg_metrics()
+        #self.update_all_metrics()
         self.path_labels = []  # TODO: for now, keep it empty? Probably should inherit from AveragedTrial?
 
     def data_demographics(self, trials, do_translations=True):

@@ -1,23 +1,23 @@
 """
 Several analyzer classes which combine metric data for different sets of data and exports them. [NOT DONE]
 """
-
-
+import pdb
 
 import pandas as pd
 from scipy import stats
 from pathlib import Path
+import logging
 
 from ast_hand_translation import AstHandTranslation
 from ast_hand_rotation import AstHandRotation
-from file_manager import my_ast_files
+from file_manager import my_ast_files, AstDirectory
 
 
 class AstDirAnalyzer:
     """
     This class takes trials in one direction and stores (and saves) the metrics together
     """
-    def __init__(self, trials, file_obj, avg=None):
+    def __init__(self, file_obj, trials, avg=None):
         self.file_locs = file_obj
         self.t_dir = trials[0].trial_translation
         self.r_dir = trials[0].trial_rotation
@@ -73,7 +73,7 @@ class AstHandAnalyzer:
         for key in hd.data.keys():
             trials = hd.data[key]
             # TODO: implement average later
-            analyzer = AstDirAnalyzer(trials, self.file_locs)  # TODO: can we check for no metrics? or for no_mvt?
+            analyzer = AstDirAnalyzer(self.file_locs, trials)  # TODO: can we check for no metrics? or for no_mvt?
             complete_df = complete_df.append(analyzer.metrics)
             if analyzer.metrics is not None:
                 dir_analyzers.append(analyzer)
@@ -86,7 +86,9 @@ class AstHandAnalyzer:
         avg_df = pd.DataFrame()
         avg_sd_df = pd.DataFrame()
         all_avg_metrics = pd.DataFrame()
-        for avg in hd.averages:
+
+        for a_key in hd.averages.keys():
+            avg = hd.averages[a_key][0]  # there's only one average in the list
             avg_df = avg_df.append(avg.metrics_avgd, ignore_index=True)  # should have values in these
             avg_sd_df = avg_sd_df.append(avg.metrics_avgd_sds, ignore_index=True)
 
@@ -131,23 +133,37 @@ class AstHandAnalyzer:
 
 
 if __name__ == '__main__':
-    h = "2v2"
-    rot = "n"
-    subjects = ["sub1", "sub2", "sub3"]
-    translation = False
+    home_directory = Path("/home/john/Programs/new_ast_data")
+    data_directory = home_directory
+    new_ast_files = AstDirectory(home_directory)
+    new_ast_files.data_home = data_directory
+    new_ast_files.compressed_data = data_directory / "compressed_data"
+    new_ast_files.aruco_pics = data_directory / "viz"
+    new_ast_files.aruco_data = data_directory / "aruco_data"
+    new_ast_files.path_data = data_directory / "trial_paths"
+    new_ast_files.metric_results = data_directory / "results"
+    new_ast_files.result_figs = data_directory / "results" / "plots"
+    new_ast_files.debug_figs = data_directory / "results" / "debug_plots"
 
-    print(f"Getting {h} ({rot}) data...")
-    if translation:
-        data = AstHandTranslation(subjects, h, rotation=rot, blocklist_file="trial_blocklist.csv")
-        data.filter_data(10)
-        data.calc_averages()
-        results = AstHandAnalyzer(data, my_ast_files)
-    else:
-        data = AstHandRotation(subjects, h)
-        data.filter_data(10)
-        data.calc_averages()
-        results = AstHandAnalyzer(data, my_ast_files, do_avg_line_metrics=False)
+    resources_home = Path(__file__).parent.parent.absolute()
+    new_ast_files.resources = resources_home.parent / "resources"
 
-    print(f"Average Metrics: {results.metrics_avgd}")
-    print(f"Standard deviations of average metrics: {results.metrics_avgd_sds}")
-    print(f"Metrics of the average lines: {results.all_avg_metrics}")
+    logging.basicConfig(level=logging.WARNING)
+
+    hand_data = AstHandTranslation(new_ast_files, hand_name="p2vp2", rotation="x")
+    hand_data.load_trials()
+    hand_data.filter_data()
+    hand_data.calc_averages(exclude_path_labels=["end deviated", "deviated", "rot deviated"])
+    metric_results = AstHandAnalyzer(new_ast_files, hand_data)
+
+    # rot_hand = AstHandRotation(new_ast_files, hand_name="2v2")
+    # rot_hand.load_trials()
+    # rot_hand.filter_data()
+    # rot_hand.calc_averages(exclude_path_labels=["too deviated"])
+    # metric_results = AstHandAnalyzer(new_ast_files, rot_hand, do_avg_line_metrics=False)
+
+    print(metric_results.all_metrics)
+
+    print(f"Average Metrics: {metric_results.metrics_avgd}")
+    print(f"Standard deviations of average metrics: {metric_results.metrics_avgd_sds}")
+    print(f"Metrics of the average lines: {metric_results.all_avg_metrics}")

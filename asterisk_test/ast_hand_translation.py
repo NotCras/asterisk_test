@@ -635,17 +635,6 @@ if __name__ == '__main__':
     print(list(hand_data.data.keys()))
     hand_data.filter_data()
 
-    # # subject 1 averages
-    # h.plot_avg_data(rotation="n", subjects="sub1", show_plot=False, save_plot=True)
-    # plt.clf()
-    #
-    # # subject 2 averages
-    # h.plot_avg_data(rotation="n", subjects="sub2", show_plot=False, save_plot=True)
-    # plt.clf()
-    #
-    # # all subjects
-    #h.plot_ast_avg(subjects=None, show_plot=True, save_plot=False)
-
     trials = hand_data.data
     aplt.plot_asterisk(my_ast_files, hand_name=hand_data.hand.get_name(), dict_of_trials=trials)
 

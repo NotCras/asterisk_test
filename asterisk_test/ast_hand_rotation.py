@@ -87,64 +87,6 @@ class AstHandRotation(AstHandTranslation):
 
         return trial
 
-    def _gather_hand_data(self, blocklist=None, normalized_data=True):
-        """
-        Returns a dictionary with the data for the hand, sorted by task.
-        Each key,value pair of dictionary is:
-        key: name of task, string. Ex: "a_n"
-        value: list of AsteriskTrial objects for the corresponding task, with all subjects specified
-        :param subjects: list of subjects to get
-        """
-        data_dictionary = dict()
-
-        for r in datamanager.get_option_list("rotation_only"):
-            key = f"{r}"
-            data = self._make_asterisk_trials_from_filenames(subjects, r,
-                                                             datamanager.get_option_list("numbers"),
-                                                             blocklist=blocklist, normalized_data=normalized_data)
-            if data:
-                data_dictionary[key] = data
-                # pdb.set_trace()
-            else:
-                print(f"{key} not included, no valid data")
-                # pdb.set_trace()
-
-        return data_dictionary
-
-    def _make_asterisk_trials_from_filenames(self, subjects, rotation_label, trials,
-                                             blocklist=None, normalized_data=True):
-        """
-        Goes through data and compiles data with set attributes into an AsteriskTrial objects
-        :param subjects: name of subject
-        :param translation_label: name of translation trials
-        :param rotation_label: name of rotation trials
-        :param trial_num: trial numbers to include, default parameter
-        """
-        # Maybe make it return None? then we can return all dictionary keys that don't return none in the other func
-
-        gathered_data = list()
-        for s in subjects:  # TODO: subjects is a list, make a type recommendation?
-            for n in trials:
-                asterisk_trial = f"{s}_{self.hand.get_name()}_n_{rotation_label}_{n}"
-
-                if blocklist is not None and asterisk_trial in blocklist:
-                    print(f"{asterisk_trial} is blocklisted and will not be used.")
-                    continue
-
-                try:
-                    trial_data = AstTrialRotation(f"{asterisk_trial}.csv", norm_data=normalized_data)
-                    print(f"{trial_data.generate_name()}, labels: {trial_data.path_labels}")
-
-                    gathered_data.append(trial_data)
-
-                except Exception as e:
-                    print(f"AstTrial generation failed for {asterisk_trial}")
-                    print(e)
-                    #print(" ")
-                    continue
-
-        return gathered_data
-
     def _get_directions_in_data(self):
         """
         Returns a list of trial directions that exist in the data
@@ -152,10 +94,8 @@ class AstHandRotation(AstHandTranslation):
         """
         list_of_dirs = list()
         for k in list(self.data.keys()):
-            t, r = k.split("_")
-            if t != "n":
-                continue
-                # TODO: should we throw an error here?
+            r = k.split("_")
+
             list_of_dirs.append(r)
 
         return list_of_dirs
@@ -222,32 +162,37 @@ class AstHandRotation(AstHandTranslation):
         :param subjects: subject(s) to include in the average. Defaults to all subjects in object
         :param rotation: refers to the rotation type ("n", "m15", "p15"). Defaults to all options
         """
-        averages = []
+        averages = {}
         if subjects is None:  # if no subjects given, defaults to all subjects
             subjects = self.subjects_containing
 
-        dirs = self._get_directions_in_data()
-        print(f"Directions included: {dirs}")
+        dirs = self.data.keys()  #self._get_directions_in_data()
+        logging.info(f"Calculating averages for: {dirs}")
 
-        for r in datamanager.get_option_list("rotations_n_trans"):
+        for r in datamanager.get_option_list("rotation_only"):
             # make sure that we only include translations that are in the data
-            if r in dirs:
-                print(f"Averaging {r}")
-                avg = self._average_dir(direction=r, subject=subjects, exclude_path_labels=exclude_path_labels)
+            if r in dirs:  # TODO: why don't I just iterate through dirs?
+                logging.info(f"Averaging {r}")
+                avg = self._average_dir(direction=r, subject=subjects,
+                                        exclude_path_labels=exclude_path_labels)
                 if avg is not None:
-                    averages.append(avg)
+                    label = f"{r}"
+                    averages[label] = [avg]  # it is put in a list so it works with aplt.plot_asterisk()
 
         self.averages = averages
         return averages
 
-    def plot_ast_avg(self, subjects=None, show_plot=True, save_plot=False, include_notes=True,
-                     linestyle="solid", plot_contributions=False, exclude_path_labels=None):
+    # def plot_ast_avg(self, subjects=None, show_plot=True, save_plot=False, include_notes=True,
+    #                  linestyle="solid", plot_contributions=False, exclude_path_labels=None):
+    #
+    def plot_avg_asterisk(self, show_plot=True, save_plot=False, include_notes=True, show_avg_deviation=True,
+                          linestyle="solid", plot_contributions=False, exclude_path_labels=None, plot_orientations=False,
+                          picky_tlines=False, tdist_labels=True, incl_obj_img=True):
 
         fig_size = 7
         fig, ax = plt.subplots(figsize=(fig_size, fig_size), subplot_kw=dict(aspect="equal"))
 
-        if subjects is None:
-            subjects = self.subjects_containing
+        subjects = self.subjects_containing
 
         cw_rot = None
         ccw_rot = None
@@ -257,7 +202,8 @@ class AstHandRotation(AstHandTranslation):
         ccw_a = None
 
         if self.averages:
-            for a in self.averages:
+            for a_key in list(self.averages.keys()):
+                a = self.averages[a_key][0]
                 if a.direction == "pp":
                     cw_a = a
                     cw_rot = np.abs(a.max_rot[0])
@@ -268,7 +214,7 @@ class AstHandRotation(AstHandTranslation):
                     ccw_rot_std = a.max_rot[1]
                 else:
                     # TODO: throw an error here?
-                    print("We have an average that doesn't belong!")
+                    raise TypeError("We have an average stored in this object that doesn't belong!")
 
             if cw_rot is None or ccw_rot is None:
                 print(f"Error with existing averages. cw:{cw_rot}, ccw:{ccw_rot}")
@@ -419,4 +365,6 @@ if __name__ == '__main__':
     rot_hand = AstHandRotation(new_ast_files, hand_name="2v2")
     rot_hand.load_trials()
     rot_hand.filter_data()
-    rot_hand.plot_ast_avg(subjects=None, show_plot=True, save_plot=False)
+    rot_hand.calc_averages(exclude_path_labels=["too deviated"])
+    rot_hand.plot_avg_asterisk(show_plot=True, save_plot=False)
+

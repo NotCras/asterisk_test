@@ -9,6 +9,7 @@ from metric_calculation import AstMetrics as am
 from ast_trial_translation import AstTrialTranslation
 from file_manager import my_ast_files
 
+
 class AstTrialRotation(AstTrialTranslation):
     """
     Class which handles cw/ccw trials, separating because we would appreciate the nuance

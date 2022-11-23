@@ -26,8 +26,8 @@ resources_home = Path(__file__).parent.parent.absolute()
 new_ast_files.resources = resources_home.parent / "resources"
 
 #rotation_type = "x"
-for rotation_type in ["x", "p15", "m15"]:
-    for hand in ["2v2", "2v3", "3v3", "p2vp2"]:
+for hand in ["2v2", "2v3", "3v3", "p2vp2"]:
+    for rotation_type in ["x", "p15", "m15"]:
         print(hand)
         hand_data = AstHandTranslation(new_ast_files, hand_name=hand, rotation=rotation_type)
         hand_data.load_trials()
@@ -47,6 +47,16 @@ for rotation_type in ["x", "p15", "m15"]:
 
         metric_results = AstHandAnalyzer(new_ast_files, hand_data)
         metric_results.save_data()
+
+    # also do rotation only trials
+    hand_rot_data = AstHandRotation(new_ast_files, hand_name=hand)
+    hand_rot_data.load_trials()
+    hand_rot_data.filter_data()
+    hand_rot_data.calc_averages(exclude_path_labels=["too deviated"])
+    hand_rot_data.plot_avg_asterisk(show_plot=False, save_plot=True)
+
+    metric_results = AstHandAnalyzer(new_ast_files, hand_rot_data, do_avg_line_metrics=False)
+    metric_results.save_data()
 
 
 for hand in ["2v1", "p1vp1"]:
