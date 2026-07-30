@@ -6,7 +6,7 @@ from file_manager import AstDirectory
 from aruco_analysis import AstArucoAnalysis
 from ast_hand_info import get_hand_stats
 
-home_directory = Path("/home/john/Programs/new_ast_data")
+home_directory = Path("/home/cras/Workspace/asterisk_test/data/")
 data_directory = home_directory #/ "data"
 new_ast_files = AstDirectory(home_directory)
 new_ast_files.data_home = data_directory
@@ -29,7 +29,7 @@ marker_side_dims = 0.03  # in meters
 ar = AstArucoAnalysis(file_loc_obj=new_ast_files, camera_calib=mtx, camera_dists=dists, marker_side_dims=marker_side_dims)
 
 # run aruco analysis on all the new data in the new location
-viz_folders = [f for f in os.listdir(new_ast_files.aruco_pics) if f[0] != 'z']
+viz_folders = [f for f in os.listdir(new_ast_files.aruco_pics) if f[0] != 'z' or f[0] != "."]
 # z indicates archived data that I don't want to use right now
 
 for vf in viz_folders:

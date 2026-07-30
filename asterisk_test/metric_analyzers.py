@@ -27,8 +27,8 @@ class AstDirAnalyzer:
         for t in trials:  # TODO: what about trials  with no_mvt labels, metrics aren't calculated on them
             if "no_mvt" in t.path_labels:
                 continue
-
-            metric_df = metric_df.append(t.metrics, ignore_index=True)
+            #pdb.set_trace()
+            metric_df = metric_df._append(t.metrics, ignore_index=True)
 
         if len(metric_df) > 0:
             metric_df = metric_df.set_index("trial")
@@ -74,7 +74,7 @@ class AstHandAnalyzer:
             trials = hd.data[key]
             # TODO: implement average later
             analyzer = AstDirAnalyzer(self.file_locs, trials)  # TODO: can we check for no metrics? or for no_mvt?
-            complete_df = complete_df.append(analyzer.metrics)
+            complete_df = complete_df._append(analyzer.metrics)
             if analyzer.metrics is not None:
                 dir_analyzers.append(analyzer)
 
@@ -89,12 +89,12 @@ class AstHandAnalyzer:
 
         for a_key in hd.averages.keys():
             avg = hd.averages[a_key][0]  # there's only one average in the list
-            avg_df = avg_df.append(avg.metrics_avgd, ignore_index=True)  # should have values in these
-            avg_sd_df = avg_sd_df.append(avg.metrics_avgd_sds, ignore_index=True)
+            avg_df = avg_df._append(avg.metrics_avgd, ignore_index=True)  # should have values in these
+            avg_sd_df = avg_sd_df._append(avg.metrics_avgd_sds, ignore_index=True)
 
             # TODO: its stupid, but its a workaround for rotation avgs right now... see if we can make mor elegant
             if do_avg_line_metrics or "no_mvt" in avg.path_labels:
-                all_avg_metrics = all_avg_metrics.append(avg.metrics, ignore_index=True)
+                all_avg_metrics = all_avg_metrics._append(avg.metrics, ignore_index=True)
 
         avg_df = avg_df.set_index("trial")
         avg_sd_df = avg_sd_df.set_index("trial")

@@ -12,6 +12,8 @@ from pathlib import Path
 import csv
 import pdb
 import matplotlib.pyplot as plt
+plt.rcParams['svg.fonttype'] = 'none'
+
 import data_manager as datamanager
 from ast_trial_translation import AstTrialTranslation
 from ast_hand_info import HandInfo
@@ -58,7 +60,7 @@ class AstHandTranslation:
 
         return blocked_files
 
-    def load_trials(self, data_type="aruco_data", directions_to_exclude=None, subjects_to_exclude=None, trial_num_to_exclude=None):
+    def load_trials(self, data_type="aruco_data", directions_to_exclude=None, subjects_to_exclude=None, trial_num_to_exclude=None, norm_data=True):
         """
         Searches the file location indicated by data_loc (either "aruco_data" or "trial_paths")
         """
@@ -108,7 +110,7 @@ class AstHandTranslation:
 
             # Now we are sure that this trial is one that we want
             if data_type == "aruco_data":
-                trial = self.load_aruco_file(file_name)
+                trial = self.load_aruco_file(file_name, norm_data=norm_data)
             # elif data_type == "trial_paths":
             #     trial.add_data_by_df() # TODO: not actually correct, need a new function for this
             else:
@@ -121,12 +123,12 @@ class AstHandTranslation:
             self.data[label].append(trial)  # TODO: its up to the user to make sure data doubles don't happen?
             self.subjects_containing.add(s)
 
-    def load_aruco_file(self, file_name):
+    def load_aruco_file(self, file_name, norm_data=True):
         """
         Makes an AstTrialTranslation from an aruco_loc file
         """
         trial = AstTrialTranslation(file_loc_obj=self.file_locs)
-        trial.load_data_by_aruco_file(file_name)
+        trial.load_data_by_aruco_file(file_name, norm_data=norm_data)
 
         return trial
 
@@ -321,7 +323,7 @@ class AstHandTranslation:
         else:
             return trial_to_return
 
-    def _average_dir(self, translation, subject=None, exclude_path_labels=None):
+    def _average_dir(self, translation, sample_points=25, subject=None, exclude_path_labels=None):
         """
         Averages a set of asterisk_trial paths. We run this on groups of paths of the same direction.
         :param translation: trial direction to average
@@ -338,14 +340,14 @@ class AstHandTranslation:
                                        exclude_path_labels=exclude_path_labels)
 
         if trials:
-            average = AveragedTranslationTrial(file_obj=self.file_locs, trials=trials)
+            average = AveragedTranslationTrial(file_obj=self.file_locs, trials=trials, sample_points=sample_points)
             return average
 
         else:
             print(f"No trials for {translation}_{self.rotation_type}, skipping averaging.")
             return None
 
-    def calc_averages(self, subjects=None, exclude_path_labels=None, save_debug_plot=False, show_debug_plot=False):
+    def calc_averages(self, subjects=None, exclude_path_labels=None, save_debug_plot=False, show_debug_plot=False, sample_points=25):
         """
         calculate and store all averages
         :param subjects: subject(s) to include in the average. Defaults to all subjects in object
@@ -364,7 +366,7 @@ class AstHandTranslation:
             if t in dirs:  # TODO: why don't I just iterate through dirs?
                 logging.info(f"Averaging {t}")
                 avg = self._average_dir(translation=t, subject=subjects,
-                                        exclude_path_labels=exclude_path_labels)
+                                        exclude_path_labels=exclude_path_labels, sample_points=sample_points)
                 if avg is not None:
                     label = f"{t}_{self.rotation_type}"
                     averages[label] = [avg]  # it is put in a list so it works with aplt.plot_asterisk()
@@ -571,7 +573,7 @@ class AstHandTranslation:
 
     def plot_avg_asterisk(self, show_plot=True, save_plot=False, include_notes=True, show_avg_deviation=True,
                           linestyle="solid", plot_contributions=False, exclude_path_labels=None, plot_orientations=False,
-                          picky_tlines=False, tdist_labels=True, incl_obj_img=True):
+                          picky_tlines=False, tdist_labels=True, incl_obj_img=True, incl_grid=False):
 
         # generate averages (or get existing ones)
         averages = self.averages
@@ -581,7 +583,7 @@ class AstHandTranslation:
                                 rotation_condition=self.rotation_type, hand_name=self.hand.get_name(),
                                 use_filtered=True, tdist_labels=tdist_labels, include_notes=include_notes,
                                 linestyle=linestyle, plot_orientations=plot_orientations, incl_obj_img=incl_obj_img,
-                                save_plot=False, show_plot=False)
+                                save_plot=False, show_plot=False, incl_grid=incl_grid)
 
         """
         (file_loc, dict_of_trials, rotation_condition="x", hand_name="",
@@ -591,6 +593,8 @@ class AstHandTranslation:
         incl_obj_img=True, gray_it_out=False,
         save_plot=False, show_plot=True):
         """
+        # if incl_grid:
+        #     plt.grid(color='gray', linestyle='--', linewidth=0.5)
 
         # # TODO: add in the average deviation regions
         if show_avg_deviation:
@@ -604,7 +608,8 @@ class AstHandTranslation:
             plt.show()
 
         if save_plot:
-            plt.savefig(self.file_locs.result_figs / f"avg_ast_{self.hand.get_name()}_{self.rotation_type}.jpg", format='jpg')
+            plt.savefig(self.file_locs.result_figs / f"avg_ast_{self.hand.get_name()}_{self.rotation_type}.svg", format='svg')
+            plt.savefig(self.file_locs.result_figs / f"avg_ast_{self.hand.get_name()}_{self.rotation_type}.png", format='png')
             #plt.savefig(self.file_locs.result_figs / f"avg_ast_{self.hand.get_name()}_{self.set_rotation}.jpg", format='jpg')
             #plt.savefig(f"results/pics/avgd_{self.hand.get_name()}_{len(self.subjects_containing)}subs_{self.set_rotation}.jpg", format='jpg')
 

@@ -168,7 +168,7 @@ class AstTrial:
         :param n_samples: number of samples for target line. Defaults to 100
         """
 
-        x_vals, y_vals = aplt.get_direction(self.trial_translation, n_samples=n_samples)
+        x_vals, y_vals = aplt.get_direction(self.trial_translation, n_samples=n_samples, max=0.75)
 
         if not normalized:
             x_vals = x_vals*100  # units are in millimeters, so we end up with the potential for 10 cm of movement

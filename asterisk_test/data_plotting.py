@@ -102,28 +102,28 @@ class AsteriskPlotting:
         return x_coords, y_coords
 
     @staticmethod
-    def get_direction(translation_label, n_samples=100):
+    def get_direction(translation_label, n_samples=100, max=0.5):
         """ # TODO: adapt for new t labels
         return the appropriate x and y coordinates for any direction
         """
         # TODO: make it so we can customize the amount in each direction
         x_vals, y_vals = 0, 0
         if translation_label in ["a", "no"]:
-            x_vals, y_vals = AsteriskPlotting.get_a(n_samples)
+            x_vals, y_vals = AsteriskPlotting.get_a(n_samples, max)
         elif translation_label in ["b", "ne"]:
-            x_vals, y_vals = AsteriskPlotting.get_b(n_samples)
+            x_vals, y_vals = AsteriskPlotting.get_b(n_samples, max)
         elif translation_label in ["c", "ea"]:
-            x_vals, y_vals = AsteriskPlotting.get_c(n_samples)
+            x_vals, y_vals = AsteriskPlotting.get_c(n_samples, max)
         elif translation_label in ["d", "se"]:
-            x_vals, y_vals = AsteriskPlotting.get_d(n_samples)
+            x_vals, y_vals = AsteriskPlotting.get_d(n_samples, max)
         elif translation_label in ["e", "so"]:
-            x_vals, y_vals = AsteriskPlotting.get_e(n_samples)
+            x_vals, y_vals = AsteriskPlotting.get_e(n_samples, max)
         elif translation_label in ["f", "sw"]:
-            x_vals, y_vals = AsteriskPlotting.get_f(n_samples)
+            x_vals, y_vals = AsteriskPlotting.get_f(n_samples, max)
         elif translation_label in ["g", "we"]:
-            x_vals, y_vals = AsteriskPlotting.get_g(n_samples)
+            x_vals, y_vals = AsteriskPlotting.get_g(n_samples, max)
         elif translation_label in ["h", "nw"]:
-            x_vals, y_vals = AsteriskPlotting.get_h(n_samples)
+            x_vals, y_vals = AsteriskPlotting.get_h(n_samples, max)
         elif translation_label in ["n", "x"]:
             x_vals, y_vals = 0, 0  # want to rotate around center point
         else:
@@ -424,7 +424,8 @@ class AsteriskPlotting:
                       include_notes=False, labels=None,
                       plot_orientations=False, tdist_labels=True,
                       incl_obj_img=True, gray_it_out=False,
-                      save_plot=False, show_plot=True):
+                      save_plot=False, show_plot=True, 
+                      incl_grid=False):
         """
         Takes a dictionary of trials
         (key -> label of direction, value -> list of trials you want to plot
@@ -469,6 +470,9 @@ class AsteriskPlotting:
         # plt.xticks(np.linspace(-0.7, 0.7, 15), rotation=30)
         # plt.yticks(np.linspace(-0.7, 0.7, 15))
         plt.gca().set_aspect('equal', adjustable='box')
+
+        if incl_grid:
+            plt.grid(color='gray', linestyle='--', linewidth=0.5)
 
         # TODO: add in the average deviation regions
         # if plotting_averages_with_sd:

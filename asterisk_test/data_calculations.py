@@ -135,7 +135,7 @@ class AsteriskCalculations:
 
             new_x = x*np.cos(rad) - y*np.sin(rad)
             new_y = y*np.cos(rad) + x*np.sin(rad)
-            rotated_line = rotated_line.append({"x": new_x, "y": new_y, "rmag": p[1]['rmag']}, ignore_index=True)
+            rotated_line.loc[len(rotated_line) + 1] = {"x": new_x, "y": new_y, "rmag": p[1]['rmag']}
 
         return rotated_line
 

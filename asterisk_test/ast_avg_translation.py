@@ -265,12 +265,13 @@ class AveragedTranslationTrial(AstTrial):
             if not t.filtered and use_filtered_data:  # TODO: check for correct number of sample points
                 t.moving_average()
 
-            data_points = data_points.append(t.poses)  # put all poses in one dataframe for easy access
+            #pdb.set_trace()
+            data_points = t.poses  # put all poses in one dataframe for easy access
 
         # rotate the line so we can do everything based on the x axis. Yes, I know this is hacky
 
 
-        r_target_x, r_target_y = AsteriskPlotting.get_c(sample_points)
+        r_target_x, r_target_y = AsteriskPlotting.get_c(sample_points, max=0.75)
 
         if not self.normalized:
             r_target_x = r_target_x*120  # units are in millimeters, so we end up with the potential for 10 cm of movement
@@ -283,11 +284,11 @@ class AveragedTranslationTrial(AstTrial):
 
         rotated_data = AsteriskCalculations.rotate_points(data_points, self.rotations[self.trial_translation],
                                            use_filtered=use_filtered_data)
-        avg_line = pd.DataFrame()
+        avg_line = pd.DataFrame(columns=["x","y","rmag"])
 
         # otherwise, very low chance we will start at 0,0 -> we know it does if the test was set up properly
         first_avg = pd.Series({"x": 0., "y": 0., "rmag": 0.})
-        avg_line = avg_line.append(first_avg, ignore_index=True)
+        avg_line.loc[0] = first_avg
 
         for i, t in enumerate(rotated_target_line):
             t_x = t[0]
@@ -298,7 +299,7 @@ class AveragedTranslationTrial(AstTrial):
 
             averaged_point = points.mean(axis=0)  # averages each column in DataFrame
 
-            avg_line = avg_line.append(averaged_point, ignore_index=True)
+            avg_line.loc[len(avg_line)] = averaged_point
 
         correct_avg = AsteriskCalculations.rotate_points(avg_line, -1 * self.rotations[self.trial_translation])
         self.poses = correct_avg
@@ -331,9 +332,9 @@ class AveragedTranslationTrial(AstTrial):
         if not self.averaged_trialset or self.poses is None:
             self.calculate_avg_line(use_filtered_data=use_filtered_data)
 
-        avg_ads = pd.DataFrame()
-        avg_ads_up = pd.DataFrame()
-        avg_ads_down = pd.DataFrame()
+        avg_ads = pd.DataFrame(columns=["x","y","rmag"])
+        avg_ads_up = pd.DataFrame(columns=["x","y","rmag"])
+        avg_ads_down = pd.DataFrame(columns=["x","y","rmag"])
 
         avg_pts = AsteriskCalculations.rotate_points(self.poses, self.rotations[self.trial_translation],
                                                          use_filtered=use_filtered)
@@ -387,9 +388,9 @@ class AveragedTranslationTrial(AstTrial):
                 self._debug_avg_dev(i, vec_offset['x'], vec_offset['y'], tmags[i],
                                     pts_at_pt, next_avg, avg_pt, prev_avg, ad_up, ad_down)
 
-            avg_ads = avg_ads.append(vec_offset, ignore_index=True)
-            avg_ads_up = avg_ads_up.append(ad_up, ignore_index=True)
-            avg_ads_down = avg_ads_down.append(ad_down, ignore_index=True)
+            avg_ads.loc[len(avg_ads)] = vec_offset
+            avg_ads_up.loc[len(avg_ads_up)] = ad_up
+            avg_ads_down.loc[len(avg_ads_down)] = ad_down
 
         correct_ads = AsteriskCalculations.rotate_points(avg_ads, -1 * self.rotations[self.trial_translation])
         correct_ads_up = AsteriskCalculations.rotate_points(avg_ads_up, -1 * self.rotations[self.trial_translation])
